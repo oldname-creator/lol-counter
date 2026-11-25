@@ -5,6 +5,7 @@
  * - Data Dragon 영문 ID 매핑 포함 (초상화 자동 로딩용)
  */
 
+
 window.PATCH_VERSION_TOP = "26.23";
 
 window.CHAMPION_ID_MAP_TOP = {
