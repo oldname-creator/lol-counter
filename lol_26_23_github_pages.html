@@ -1,0 +1,2537 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>TOP COUNTER 26.23 | 롤 탑 카운터 검색 & 챔프폭 약점 분석기</title>
+  <meta name="description" content="리그 오브 레전드 26.23 패치 탑 라인 65개 챔피언 하드카운터·카운터 초고속 검색 및 내 챔프폭 약점·보완 추천 분석기" />
+
+  <!-- 카카오톡 / 디스코드 / SNS 공유용 Open Graph 메타태그 -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="TOP COUNTER 26.23 | 롤 탑 65챔프 카운터 & 챔프폭 분석기" />
+  <meta property="og:description" content="초성·별명 1초 검색, 역상성 자동 계산, 내 챔프폭 약점 진단 및 2~3챔프 보완 추천까지 한 번에!" />
+  <meta property="og:locale" content="ko_KR" />
+
+  <!-- 모바일 홈 화면 추가(PWA) 메타태그 -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="TOP 26.23" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#091428" />
+
+  <!-- 인라인 SVG 파비콘 (외부 파일 불필요) -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23091428'/%3E%3Cpath d='M32 8L12 16v16c0 13.5 8.6 25.4 20 29 11.4-3.6 20-15.5 20-29V16L32 8z' fill='%23132440' stroke='%23c8aa6e' stroke-width='4'/%3E%3Cpath d='M22 24h20v5h-7.5v17h-5V29H22z' fill='%23f0e6d2'/%3E%3C/svg%3E" />
+
+  <style>
+    /* =====================================================================
+       1. 디자인 토큰 & 기본 리셋 (외부 라이브러리 의존성 0% - 순수 CSS)
+       ===================================================================== */
+    :root {
+      --bg-outer: #050b16;
+      --bg-main: #091428;
+      --bg-card: #0f1d33;
+      --bg-card-alt: #132440;
+      --bg-hover: #192f52;
+      --border: #1e3250;
+      --border-soft: rgba(30, 50, 80, 0.75);
+      --gold: #c8aa6e;
+      --gold-bright: #f0e6d2;
+      --gold-bg: rgba(200, 170, 110, 0.16);
+      --gold-border: rgba(200, 170, 110, 0.6);
+      --text-main: #f1f5f9;
+      --text-sub: #cbd5e1;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --hard: #ef4444;
+      --hard-bg: rgba(239, 68, 68, 0.14);
+      --hard-border: rgba(239, 68, 68, 0.5);
+      --counter: #f59e0b;
+      --counter-bg: rgba(245, 158, 11, 0.14);
+      --counter-border: rgba(245, 158, 11, 0.5);
+      --good: #10b981;
+      --good-bg: rgba(16, 185, 129, 0.14);
+      --good-border: rgba(16, 185, 129, 0.5);
+      --meta: #38bdf8;
+      --meta-bg: rgba(56, 189, 248, 0.14);
+      --meta-border: rgba(56, 189, 248, 0.5);
+      --buff: #a78bfa;
+      --buff-bg: rgba(167, 139, 250, 0.15);
+      --buff-border: rgba(167, 139, 250, 0.5);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+      --shadow-card: 0 10px 28px rgba(0, 0, 0, 0.42);
+      --shadow-gold: 0 0 22px rgba(200, 170, 110, 0.22);
+      --font-sans: "Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", "Segoe UI", sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      background: var(--bg-main);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      line-height: 1.45;
+    }
+    button, input {
+      font-family: inherit;
+      color: inherit;
+    }
+    button {
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0;
+      touch-action: manipulation;
+    }
+    h1, h2, h3, h4, p { margin: 0; }
+
+    /* 커스텀 스크롤바 */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #2c466d; }
+
+    /* 유틸리티 */
+    .hidden { display: none !important; }
+    .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .flex-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
+    .flex-between { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .flex-row { display: flex; align-items: center; gap: 8px; }
+    .stack-sm { display: flex; flex-direction: column; gap: 8px; }
+    .stack-md { display: flex; flex-direction: column; gap: 14px; }
+    .stack-lg { display: flex; flex-direction: column; gap: 18px; }
+
+    /* 공통 카드 & 패널 */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+    }
+    .card-pad { padding: 20px; }
+    .card-pad-sm { padding: 14px; }
+
+    /* 버튼 & 배지 */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: var(--bg-main);
+      color: var(--text-sub);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 12px;
+      min-height: 38px;
+      transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+    }
+    .btn:hover { background: var(--bg-hover); border-color: #365582; color: #fff; }
+    .btn:active { transform: scale(0.98); }
+    .btn-gold {
+      border-color: var(--gold);
+      background: var(--gold-bg);
+      color: var(--gold-bright);
+      box-shadow: var(--shadow-gold);
+    }
+    .btn-gold:hover { background: rgba(200, 170, 110, 0.28); color: #fff; }
+    .btn-gold-solid {
+      border-color: var(--gold);
+      background: var(--gold);
+      color: #091428;
+      font-weight: 800;
+    }
+    .btn-gold-solid:hover { background: #d9be82; color: #091428; }
+    .btn-danger-ghost:hover { border-color: var(--hard-border); color: #fca5a5; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      padding: 2px 6px;
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1.25;
+      white-space: nowrap;
+    }
+    .badge-op { border-color: var(--gold-border); background: rgba(200,170,110,0.22); color: var(--gold-bright); }
+    .badge-t1 { border-color: var(--meta-border); background: var(--meta-bg); color: #7dd3fc; }
+    .badge-t2 { border-color: rgba(34,211,238,0.5); background: rgba(34,211,238,0.14); color: #67e8f9; }
+    .badge-honey { border-color: var(--good-border); background: var(--good-bg); color: #6ee7b7; }
+    .badge-buff { border-color: var(--buff-border); background: var(--buff-bg); color: #ddd6fe; }
+    .badge-rise { border-color: var(--counter-border); background: var(--counter-bg); color: #fcd34d; }
+    .badge-joker { border-color: rgba(244,114,182,0.5); background: rgba(244,114,182,0.14); color: #f9a8d4; }
+    .badge-hard { border-color: var(--hard-border); background: var(--hard-bg); color: #fca5a5; }
+    .badge-counter { border-color: var(--counter-border); background: var(--counter-bg); color: #fde68a; }
+    .badge-stat { border-color: var(--meta-border); background: var(--meta-bg); color: #7dd3fc; }
+    .badge-good { border-color: var(--good-border); background: var(--good-bg); color: #6ee7b7; }
+
+    /* 아바타 타일 */
+    .avatar {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      border-radius: 10px;
+      border: 1.5px solid #334e75;
+      background: linear-gradient(145deg, #1b2f4d, #0a162b);
+      color: #e2e8f0;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+    }
+    .avatar-sm { width: 28px; height: 28px; font-size: 10px; border-radius: 8px; }
+    .avatar-md { width: 36px; height: 36px; font-size: 12px; border-radius: 10px; }
+    .avatar-lg { width: 56px; height: 56px; font-size: 20px; border-radius: 16px; border-width: 2px; }
+    .avatar-op { border-color: var(--gold); background: linear-gradient(145deg, rgba(200,170,110,0.38), #12213b); color: var(--gold-bright); box-shadow: var(--shadow-gold); }
+    .avatar-honey { border-color: var(--good); background: linear-gradient(145deg, rgba(16,185,129,0.3), #0e2629); color: #a7f3d0; }
+    .avatar-t1 { border-color: var(--meta); background: linear-gradient(145deg, rgba(56,189,248,0.28), #0d213d); color: #bae6fd; }
+    .avatar-buff { border-color: var(--buff); background: linear-gradient(145deg, rgba(167,139,250,0.3), #1c193d); color: #e9d5ff; }
+    .avatar-rise { border-color: var(--counter); background: linear-gradient(145deg, rgba(245,158,11,0.28), #281f12); color: #fde68a; }
+
+    /* 검색 입력창 & 드롭다운 */
+    .search-wrap { position: relative; width: 100%; }
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--gold);
+      pointer-events: none;
+      display: flex;
+    }
+    .search-input {
+      width: 100%;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-main);
+      font-size: 13.5px;
+      padding: 10px 66px 10px 38px;
+      min-height: 42px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .search-input::placeholder { color: var(--text-dim); }
+    .search-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(200,170,110,0.18); }
+    .search-input-dark { background: var(--bg-main); }
+    .search-right {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .kbd-hint {
+      border: 1px solid var(--border);
+      background: var(--bg-main);
+      color: var(--text-muted);
+      border-radius: 6px;
+      padding: 2px 6px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .clear-btn {
+      border-radius: 6px;
+      background: #233859;
+      color: #e2e8f0;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 4px 6px;
+    }
+    .clear-btn:hover { background: #314d78; }
+
+    .dropdown {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(100% + 6px);
+      z-index: 60;
+      max-height: 330px;
+      overflow-y: auto;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--gold-border);
+      background: rgba(11, 22, 42, 0.98);
+      padding: 6px;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.72);
+      backdrop-filter: blur(10px);
+    }
+    .dd-meta {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 8px 6px;
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+    .dd-item {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 9px;
+      border: 1px solid transparent;
+      text-align: left;
+      transition: background 0.12s;
+    }
+    .dd-item:hover { background: var(--bg-hover); }
+    .dd-item.active { background: var(--gold-bg); border-color: var(--gold-border); }
+    .dd-empty { padding: 14px; text-align: center; font-size: 12px; color: var(--text-muted); }
+
+    /* 매치업 칩 */
+    .m-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      padding: 7px 11px;
+      min-height: 42px;
+      text-align: left;
+      transition: transform 0.1s, background 0.15s, border-color 0.15s;
+    }
+    .m-chip:active { transform: scale(0.97); }
+    .m-chip-hard { border-color: var(--hard-border); background: var(--hard-bg); }
+    .m-chip-hard:hover { border-color: var(--hard); background: rgba(239,68,68,0.24); }
+    .m-chip-counter { border-color: var(--counter-border); background: var(--counter-bg); }
+    .m-chip-counter:hover { border-color: var(--counter); background: rgba(245,158,11,0.24); }
+    .m-chip-stat { border-color: var(--meta-border); background: var(--meta-bg); }
+    .m-chip-stat:hover { border-color: var(--meta); background: rgba(56,189,248,0.24); }
+    .m-chip-good { border-color: var(--good-border); background: var(--good-bg); }
+    .m-chip-good:hover { border-color: var(--good); background: rgba(16,185,129,0.24); }
+    .m-chip-pool {
+      border-color: var(--gold) !important;
+      background: linear-gradient(115deg, rgba(200,170,110,0.26), rgba(15,29,51,0.92)) !important;
+      box-shadow: 0 0 0 1px rgba(200,170,110,0.45), var(--shadow-gold);
+    }
+    .m-chip-joker {
+      border-style: dashed;
+      border-color: #475569;
+      background: rgba(9, 20, 40, 0.7);
+      color: var(--text-muted);
+    }
+    .m-chip-joker:hover { border-color: var(--counter); }
+    .m-chip-name { font-size: 13px; font-weight: 800; color: #f8fafc; }
+    .m-chip-sub { display: block; font-size: 10px; font-weight: 800; color: var(--gold-bright); margin-top: 1px; }
+
+    /* 섹션 타이틀 도트 */
+    .dot { width: 9px; height: 9px; border-radius: 999px; flex-shrink: 0; }
+    .dot-hard { background: var(--hard); box-shadow: 0 0 8px var(--hard); }
+    .dot-counter { background: var(--counter); box-shadow: 0 0 8px var(--counter); }
+    .dot-stat { background: var(--meta); box-shadow: 0 0 8px var(--meta); }
+    .dot-good { background: var(--good); box-shadow: 0 0 8px var(--good); }
+
+    /* 배너류 */
+    .banner-gold {
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--gold);
+      background: linear-gradient(120deg, rgba(200,170,110,0.22), rgba(17,34,61,0.96), rgba(16,185,129,0.16));
+      padding: 15px 16px;
+      box-shadow: var(--shadow-gold);
+    }
+    .banner-danger {
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--hard-border);
+      background: linear-gradient(120deg, rgba(239,68,68,0.2), rgba(18,24,43,0.96));
+      padding: 15px 16px;
+    }
+    .note-box {
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(200,170,110,0.34);
+      background: linear-gradient(145deg, #091428, #12233e);
+      padding: 14px 16px;
+    }
+
+    /* =====================================================================
+       2. PC 전용 와이드 대시보드 레이아웃 (max 1460px, 2~3컬럼)
+       ===================================================================== */
+    .pc-shell { min-height: 100vh; display: flex; flex-direction: column; }
+    .pc-header {
+      position: sticky;
+      top: 0;
+      z-index: 45;
+      border-bottom: 1px solid var(--border);
+      background: rgba(9, 20, 40, 0.94);
+      backdrop-filter: blur(12px);
+    }
+    .pc-header-inner {
+      max-width: 1460px;
+      margin: 0 auto;
+      padding: 11px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .brand-icon {
+      width: 38px; height: 38px;
+      border-radius: 11px;
+      border: 1.5px solid var(--gold);
+      background: linear-gradient(135deg, rgba(200,170,110,0.28), #0f1d33);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--gold);
+      box-shadow: var(--shadow-gold);
+    }
+    .brand-title { font-size: 17px; font-weight: 900; letter-spacing: -0.02em; color: #fff; }
+    .brand-title span { color: var(--gold); }
+    .brand-sub { font-size: 11px; color: var(--text-muted); }
+
+    .pc-search-box { flex: 1; min-width: 240px; max-width: 410px; }
+
+    .seg-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      padding: 4px;
+    }
+    .seg-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--text-muted);
+      transition: background 0.15s, color 0.15s;
+    }
+    .seg-btn:hover { color: #fff; background: var(--bg-hover); }
+    .seg-btn.active { background: var(--gold); color: #091428; }
+    .seg-btn.active-soft { background: #1e3250; color: var(--gold-bright); }
+    .count-pill {
+      border-radius: 6px;
+      padding: 1px 6px;
+      font-size: 10.5px;
+      font-weight: 900;
+      background: rgba(200,170,110,0.22);
+      color: var(--gold-bright);
+    }
+    .seg-btn.active .count-pill { background: rgba(9,20,40,0.22); color: #091428; }
+
+    .pc-main {
+      width: 100%;
+      max-width: 1460px;
+      margin: 0 auto;
+      padding: 18px 20px 36px;
+      flex: 1;
+    }
+    .pc-grid-counter {
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+    .pc-grid-analyzer {
+      display: grid;
+      grid-template-columns: 330px minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+    .pc-sidebar {
+      position: sticky;
+      top: 76px;
+      max-height: calc(100vh - 96px);
+      display: flex;
+      flex-direction: column;
+      padding: 14px;
+    }
+    .pc-sidebar-list {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding-right: 4px;
+      margin-top: 8px;
+    }
+    .filter-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+    .filter-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+    .filter-btn {
+      border-radius: 9px;
+      border: 1px solid var(--border);
+      background: var(--bg-main);
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 7px 6px;
+      min-height: 34px;
+      transition: all 0.14s;
+    }
+    .filter-btn:hover { color: #fff; border-color: #35527d; }
+    .filter-btn.active { border-color: var(--gold); background: var(--gold-bg); color: var(--gold-bright); }
+    .filter-btn.active-hard { border-color: var(--hard); background: var(--hard-bg); color: #fecaca; }
+    .filter-btn.active-meta { border-color: var(--meta); background: var(--meta-bg); color: #bae6fd; }
+
+    .cho-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .cho-btn {
+      border-radius: 6px;
+      background: var(--bg-main);
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 3px 6px;
+      min-width: 24px;
+    }
+    .cho-btn:hover { color: #fff; border-color: var(--border); }
+    .cho-btn.active { background: var(--gold); color: #091428; font-weight: 900; }
+
+    .champ-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      background: rgba(9, 20, 40, 0.58);
+      padding: 5px 6px;
+      transition: background 0.12s, border-color 0.12s;
+    }
+    .champ-row:hover { background: var(--bg-hover); border-color: var(--border); }
+    .champ-row.selected { border-color: var(--gold); background: var(--gold-bg); }
+    .champ-row-btn {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      text-align: left;
+    }
+    .star-btn {
+      width: 28px; height: 28px;
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+      color: #475569;
+      flex-shrink: 0;
+    }
+    .star-btn:hover { color: var(--gold); background: rgba(200,170,110,0.12); }
+    .star-btn.in-pool { color: var(--gold); background: rgba(200,170,110,0.16); }
+
+    /* 분석기 KPI & 그리드 */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .kpi-grid-mobile { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; }
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      box-shadow: var(--shadow-card);
+    }
+    .kpi-label { font-size: 11px; font-weight: 700; color: var(--text-muted); }
+    .kpi-val { font-size: 23px; font-weight: 900; line-height: 1.15; margin-top: 4px; }
+    .kpi-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+    .progress-track {
+      width: 100%;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--bg-main);
+      overflow: hidden;
+      margin-top: 8px;
+      display: flex;
+    }
+    .progress-track-lg { height: 11px; margin-top: 6px; }
+    .progress-seg { height: 100%; transition: width 0.25s ease; }
+
+    .solo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .solo-grid-mobile { display: grid; grid-template-columns: 1fr; gap: 9px; }
+
+    .uncovered-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: rgba(9, 20, 40, 0.72);
+      padding: 10px 12px;
+      flex-wrap: wrap;
+    }
+    .uncovered-item.danger { border-color: var(--hard-border); background: rgba(239,68,68,0.1); }
+    .uncovered-item.meta { border-color: rgba(56,189,248,0.34); }
+    .solve-pill {
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: 800;
+      transition: filter 0.14s;
+    }
+    .solve-pill:hover { filter: brightness(1.18); }
+
+    /* 풀 칩 */
+    .pool-chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 10px;
+      border: 1px solid var(--gold-border);
+      background: var(--gold-bg);
+      color: var(--gold-bright);
+      overflow: hidden;
+    }
+    .pool-chip-main {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 6px 6px 8px;
+      font-size: 12px;
+      font-weight: 800;
+      min-height: 36px;
+    }
+    .pool-chip-del {
+      padding: 6px 9px;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--text-sub);
+      min-height: 36px;
+    }
+    .pool-chip-del:hover { color: #f87171; background: rgba(239,68,68,0.18); }
+
+    /* =====================================================================
+       3. 모바일 전용 네이티브 앱 UI (100dvh 풀스크린 / PC 430px 프레임)
+       ===================================================================== */
+    .mobile-host-desktop {
+      min-height: 100vh;
+      width: 100%;
+      background: radial-gradient(circle at top, #10203d, #050b16 65%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      gap: 12px;
+    }
+    .mobile-preview-bar {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      border-radius: 999px;
+      border: 1px solid var(--gold-border);
+      background: var(--bg-card);
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--gold-bright);
+      box-shadow: var(--shadow-card);
+    }
+    .mobile-shell {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-main);
+      overflow: hidden;
+      width: 100%;
+      height: 100dvh;
+    }
+    .mobile-shell.framed {
+      max-width: 430px;
+      height: min(860px, calc(100vh - 68px));
+      border-radius: 30px;
+      border: 2px solid #263f66;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.78), 0 0 0 1px rgba(200,170,110,0.28);
+    }
+    .mobile-header {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(9, 20, 40, 0.96);
+    }
+    .mobile-body {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 13px 13px 20px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .mobile-nav {
+      flex-shrink: 0;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      padding: 7px 10px calc(7px + env(safe-area-inset-bottom, 0px));
+      border-top: 1px solid var(--border);
+      background: rgba(11, 23, 44, 0.98);
+    }
+    .mobile-tab-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      min-height: 48px;
+      border-radius: 12px;
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 800;
+      transition: background 0.14s, color 0.14s;
+    }
+    .mobile-tab-btn.active { background: var(--gold-bg); color: var(--gold-bright); }
+    .mobile-tile-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .mobile-tile {
+      position: relative;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      padding: 10px 6px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      user-select: none;
+    }
+    .mobile-tile.selected { border-color: var(--gold); background: var(--gold-bg); }
+    .quick-strip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .quick-pill {
+      flex-shrink: 0;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-sub);
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      min-height: 34px;
+    }
+    .quick-pill.active { border-color: var(--gold); background: var(--gold-bg); color: var(--gold-bright); }
+
+    /* 토스트 알림 */
+    #toastContainer {
+      position: fixed;
+      right: 16px;
+      bottom: 76px;
+      z-index: 120;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+      max-width: min(360px, calc(100vw - 32px));
+    }
+    @media (min-width: 860px) {
+      #toastContainer { bottom: 20px; }
+    }
+    .toast {
+      pointer-events: auto;
+      border-radius: 12px;
+      border: 1px solid var(--gold-border);
+      background: rgba(15, 29, 51, 0.96);
+      color: var(--gold-bright);
+      padding: 10px 14px;
+      font-size: 12.5px;
+      font-weight: 700;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.55);
+      transform: translateY(8px);
+      opacity: 0;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.success { border-color: var(--good-border); background: rgba(10, 36, 30, 0.96); color: #a7f3d0; }
+    .toast.warn { border-color: var(--counter-border); background: rgba(38, 28, 12, 0.96); color: #fde68a; }
+
+    /* 반응형 미세 보정 (PC 모드에서 창이 좁아졌을 때) */
+    @media (max-width: 1120px) {
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .solo-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 960px) {
+      .pc-grid-counter, .pc-grid-analyzer { grid-template-columns: 1fr; }
+      .pc-sidebar { position: static; max-height: 360px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="appRoot"></div>
+  <div id="toastContainer" aria-live="polite"></div>
+
+  <script>
+    /* =========================================================================
+       ★ 패치 업데이트 편집 구역 (GitHub 웹 편집기에서 여기만 수정하면 즉시 반영!) ★
+       -------------------------------------------------------------------------
+       1. PATCH_VERSION: 다음 패치(예: "26.24")로 버전 문자열만 변경하세요.
+       2. CHAMPIONS 배열:
+          - name        : 챔피언 한글 정식 명칭
+          - tags        : 배지 배열 (가능 값: 'OP', '1티어', '2티어', '꿀챔', '버프', '급상승', '조커픽')
+          - aliases     : 줄임말 / 영문 검색 키워드
+          - hard        : 7:3+ 하드 카운터 배열 (없으면 [])
+          - counter     : 6:4+ 카운터 배열
+          - statCounters: 해당 패치 지표(승률·15분 골드) 강세 카운터 배열
+          - note        : 패치 지표 & 천상계 보정 메모
+       ========================================================================= */
+    const PATCH_VERSION = "26.23";
+
+    const CHAMPIONS = [
+      { name: "가렌", tags: [], aliases: ["garen"], hard: ["트린다미어", "카밀", "모데카이저", "퀸", "제이스", "베인"], counter: ["다리우스", "요릭", "세트", "티모"], statCounters: [], note: "26.23 크산테·잭스·피오라 후픽 카운터로 가치가 높음" },
+      { name: "갱플랭크", tags: ["OP", "1티어"], aliases: ["갱플", "gp", "gangplank"], hard: ["크산테", "요릭", "럼블", "블라디미르"], counter: ["이렐리아", "그웬", "제이스", "라이즈"], statCounters: ["사이온", "이렐리아"], note: "LOL.PS 1위(OP). 26.23 지표상 사이온(55.4%)·이렐리아(52.5%) 승률 우위" },
+      { name: "그라가스", tags: [], aliases: ["그라", "술통", "gragas"], hard: ["요릭"], counter: ["크산테", "아트록스"], statCounters: [], note: "선픽 안정성이 높아 하드 카운터가 적은 편" },
+      { name: "그웬", tags: [], aliases: ["gwen"], hard: ["트린다미어", "워윅", "올라프", "아칼리", "제이스"], counter: ["잭스", "우르곳"], statCounters: [], note: "26.23 탑 4~5티어권. 탱커 후픽 전용" },
+      { name: "나르", tags: ["버프"], aliases: ["gnar"], hard: ["제이스"], counter: ["이렐리아", "올라프", "말파이트", "야스오", "아칼리", "블라디미르"], statCounters: ["암베사", "제이스"], note: "26.23 Q 버프. 지표상 암베사(62.5%)·제이스(55.2%)가 최강 카운터" },
+      { name: "나서스", tags: [], aliases: ["개", "nasus"], hard: ["크산테", "럼블", "올라프"], counter: ["일라오이", "가렌", "아트록스"], statCounters: [], note: "초반 라인 프리징·다이브 압박이 강한 픽에 취약" },
+      { name: "다리우스", tags: ["1티어"], aliases: ["다리", "darius"], hard: ["케넨", "베인"], counter: ["요릭", "럼블", "제이스"], statCounters: [], note: "LOL.PS 5위. 최근 Q 쿨타임 버프 여파로 근접 브루저 대다수 압도" },
+      { name: "라이즈", tags: [], aliases: ["ryze"], hard: ["이렐리아"], counter: ["야스오", "요릭"], statCounters: [], note: "사거리 내 순간 돌진·지속 추격형 브루저에 취약" },
+      { name: "럼블", tags: [], aliases: ["rumble"], hard: [], counter: ["요릭", "요네", "라이즈"], statCounters: ["제이스", "요네", "아트록스", "이렐리아"], note: "26.23 지표상 제이스(56.9%), 요네(53.1%), 아트록스(52.9%) 우위. 15분 골드 격차는 이렐리아(+1,642G) 강세" },
+      { name: "레넥톤", tags: ["1티어", "급상승"], aliases: ["레넥", "악어", "renekton"], hard: ["럼블", "제이스", "바루스", "오로라"], counter: ["일라오이", "나서스", "케넨", "베인"], statCounters: [], note: "LOL.PS 10위(12계단 급상승). 브루저·탱커 메타 수혜" },
+      { name: "렝가", tags: [], aliases: ["rengar"], hard: ["다리우스", "워윅", "트런들"], counter: ["뽀삐"], statCounters: [], note: "부쉬 장악을 정면 맞다이·이동 차단으로 깨는 픽에 극약" },
+      { name: "리븐", tags: [], aliases: ["riven"], hard: ["레넥톤", "뽀삐", "볼리베어", "케넨", "퀸"], counter: ["트린다미어", "가렌", "나서스", "우르곳", "제이스"], statCounters: [], note: "뽀삐(W 돌진 차단)·레넥톤·볼리베어 상대로 주도권 상실" },
+      { name: "리산드라", tags: ["조커픽"], aliases: ["리산", "lissandra"], hard: ["볼리베어", "아칼리", "세트"], counter: ["그웬", "케일", "올라프"], statCounters: [], note: "LOL.PS 20위(고승률 조커픽). 유지력·강제 진입 브루저나 후반 스케일링 픽에 취약" },
+      { name: "마오카이", tags: [], aliases: ["마오", "maokai"], hard: ["그웬", "럼블", "일라오이", "피오라"], counter: ["레넥톤", "모데카이저"], statCounters: [], note: "체력 비례 피해·고정 피해 브루저 상대로 라인전 붕괴" },
+      { name: "말파이트", tags: ["1티어", "꿀챔"], aliases: ["말파", "malphite"], hard: ["사일러스", "사이온", "모데카이저", "럼블", "그라가스", "문도 박사"], counter: ["그웬", "나서스"], statCounters: [], note: "LOL.PS 3위(꿀챔). AP 지속딜·체급 탱커 후픽에 극도로 취약" },
+      { name: "모데카이저", tags: ["2티어", "급상승"], aliases: ["모데", "morde", "mordekaiser"], hard: ["올라프", "워윅", "트린다미어", "피오라"], counter: ["크산테", "볼리베어", "제이스"], statCounters: ["아칼리", "갱플랭크", "올라프", "하이머딩거"], note: "LOL.PS 13위(21계단 급상승). 지표상 아칼리(63.9%), 갱플랭크(59.1%), 올라프(58.9%) 강세" },
+      { name: "문도 박사", tags: [], aliases: ["문도", "mundo"], hard: ["아트록스", "그웬", "피오라", "요릭"], counter: ["요네", "이렐리아", "올라프", "일라오이"], statCounters: ["크산테"], note: "26.23 지표상 크산테(57.5%) 상대로도 고전" },
+      { name: "바루스", tags: [], aliases: ["varus"], hard: ["잭스", "올라프", "야스오"], counter: ["이렐리아"], statCounters: [], note: "최근 W 너프 여파로 탱커 분쇄력 하락. 돌진·저지불가에 취약" },
+      { name: "베인", tags: [], aliases: ["vayne"], hard: ["말파이트", "티모"], counter: ["나서스", "블라디미르"], statCounters: [], note: "타겟팅·실명·공속 감소 스킬에 무력화" },
+      { name: "볼리베어", tags: [], aliases: ["볼베", "voli", "volibear"], hard: ["잭스", "제이스"], counter: ["아칼리", "케넨", "나르", "티모"], statCounters: [], note: "평타 차단(잭스 E)·거리 유지형 원거리 포킹에 약함" },
+      { name: "블라디미르", tags: [], aliases: ["블라디", "vlad", "vladimir"], hard: ["요릭", "럼블"], counter: ["이렐리아", "나서스", "암베사", "라이즈"], statCounters: [], note: "초반 웨이브 장악력·강한 돌진기 보유 픽에 압박받음" },
+      { name: "뽀삐", tags: ["1티어"], aliases: ["poppy"], hard: ["갱플랭크", "럼블", "워윅", "올라프"], counter: ["다리우스", "가렌", "케넨", "블라디미르"], statCounters: [], note: "LOL.PS 9위(승률 53.7%). 돌진기 카운터 후픽으로 최상급" },
+      { name: "사이온", tags: ["2티어", "꿀챔"], aliases: ["sion"], hard: ["야스오"], counter: ["일라오이", "그웬", "초가스", "자헨", "요네", "아트록스"], statCounters: [], note: "LOL.PS 11위(꿀챔). 체급·궁 버프와 벼락폭풍검 너프 수혜" },
+      { name: "사일러스", tags: [], aliases: ["사일", "sylas"], hard: ["다리우스", "워윅", "볼리베어"], counter: ["일라오이", "세트", "판테온", "뽀삐", "제이스"], statCounters: [], note: "초반 1:1 체급이 강한 정통 탑 브루저 상대로 라인전 열세" },
+      { name: "세트", tags: [], aliases: ["sett"], hard: ["볼리베어", "레넥톤"], counter: ["모데카이저", "아트록스", "제이스", "티모", "베인"], statCounters: ["판테온"], note: "26.23 지표상 판테온(62.6%)도 W 보호막·스턴 교전 구도로 매우 강력" },
+      { name: "쉔", tags: [], aliases: ["shen"], hard: ["요릭", "모데카이저", "나르"], counter: ["아트록스", "가렌", "다리우스", "럼블", "제이스", "라이즈"], statCounters: [], note: "궁극기 로밍 시 포탑 채굴 속도가 압도적인 픽(요릭 등)에 치명적" },
+      { name: "스카너", tags: [], aliases: ["skarner"], hard: ["모데카이저", "럼블"], counter: ["그웬", "피오라", "일라오이"], statCounters: [], note: "체력 비례·지속 피해 정통 안티탱커에 취약" },
+      { name: "신 짜오", tags: [], aliases: ["신짜오", "짜오", "xinzhao"], hard: ["볼리베어", "잭스", "세트"], counter: ["워윅"], statCounters: [], note: "탑 채용 시 순수 맞다이 체급이 더 높은 브루저에 밀림" },
+      { name: "신지드", tags: [], aliases: ["singed"], hard: ["다리우스", "럼블", "갱플랭크", "베인"], counter: ["제이스", "케넨", "라이즈"], statCounters: [], note: "26.23 잭스 하드 카운터(66.7%)로 지표 상승. 원거리 카이팅·둔화 픽에 취약" },
+      { name: "아칼리", tags: [], aliases: ["아칼", "akali"], hard: ["판테온"], counter: ["사이온"], statCounters: [], note: "장막(W) 내 확정 CC·광역기 보유 및 체급 탱커에 까다로움" },
+      { name: "아트록스", tags: [], aliases: ["아트", "aatrox"], hard: ["요릭"], counter: ["이렐리아", "그웬", "제이스"], statCounters: ["갱플랭크", "레넥톤", "카밀", "하이머딩거"], note: "26.23 지표상 갱플랭크(60.5%), 레넥톤(58.3%), 카밀(56.6%), 하이머딩거 강력" },
+      { name: "암베사", tags: [], aliases: ["ambessa"], hard: ["레넥톤", "카시오페아"], counter: ["이렐리아", "요릭", "워윅", "제이스", "아트록스", "자헨"], statCounters: ["아트록스", "레넥톤", "자헨", "이렐리아"], note: "26.23 지표 최강 카운터는 아트록스(58.8%)·레넥톤(58.7%)·자헨(57.6%), 라인전은 이렐리아 강세" },
+      { name: "야스오", tags: [], aliases: ["yasuo"], hard: ["잭스", "레넥톤"], counter: ["볼리베어", "쉔"], statCounters: [], note: "근접 확정 CC 및 평타 무효화 픽에 취약" },
+      { name: "애니비아", tags: ["조커픽"], aliases: ["anivia"], hard: ["클레드", "요릭", "암베사"], counter: ["아트록스", "아칼리", "카밀", "피오라"], statCounters: [], note: "LOL.PS 36위(조커픽). 벽 넘기·궁 끊기·기동성이 뛰어난 브루저에 취약" },
+      { name: "오공", tags: [], aliases: ["wukong"], hard: ["모데카이저"], counter: ["볼리베어", "잭스", "말파이트", "럼블", "일라오이"], statCounters: [], note: "AP 브루저(모데·럼블) 및 맞다이 우위 픽에 약함" },
+      { name: "오로라", tags: [], aliases: ["aurora"], hard: ["이렐리아", "케넨", "카르마"], counter: ["제이스", "아칼리", "요네"], statCounters: [], note: "돌진·라인전 우위 픽(이렐리아 등)과 더 긴 견제 사거리에 취약" },
+      { name: "오른", tags: ["2티어", "급상승"], aliases: ["ornn"], hard: ["일라오이", "워윅", "피오라"], counter: ["다리우스", "뽀삐", "이렐리아", "요네"], statCounters: ["요네", "올라프"], note: "LOL.PS 18위(24계단 떡상). 26.23 지표상 요네(60.4%), 올라프(59.8%) 강력" },
+      { name: "올라프", tags: ["1티어"], aliases: ["olaf"], hard: ["아칼리"], counter: ["크산테", "잭스", "피오라"], statCounters: [], note: "LOL.PS 6위. 궁극기 지속 시간을 장막(아칼리)·회피/이동기로 흘리는 픽에 약함" },
+      { name: "요네", tags: [], aliases: ["yone"], hard: ["이렐리아", "잭스", "아칼리"], counter: ["레넥톤"], statCounters: [], note: "초반 라인전 압박이 극심한 돌진형 브루저·암살자에 취약" },
+      { name: "요릭", tags: [], aliases: ["yorick"], hard: ["이렐리아", "요네"], counter: ["그웬", "잭스"], statCounters: ["모데카이저"], note: "26.23 지표상 모데카이저(59.3%)도 궁극기로 안개 마녀를 분리해 강력한 카운터" },
+      { name: "우디르", tags: [], aliases: ["udyr"], hard: ["제이스", "바루스"], counter: ["다리우스", "그웬", "나르"], statCounters: [], note: "뚜벅이 특성상 거리 조절·카이팅이 뛰어난 원거리 픽에 극약" },
+      { name: "우르곳", tags: [], aliases: ["urgot"], hard: ["올라프"], counter: ["요릭", "이렐리아"], statCounters: [], note: "26.23 잭스 카운터(64.3%)로 부각. 궁(R) 처형을 저지불가로 씹는 올라프에 취약" },
+      { name: "워윅", tags: [], aliases: ["warwick", "ww"], hard: ["케넨", "베인"], counter: ["볼리베어", "잭스", "바루스"], statCounters: [], note: "원거리 카이팅·치감 및 근접 맞다이 최상위권(볼베·잭스)에 약함" },
+      { name: "이렐리아", tags: ["1티어", "꿀챔"], aliases: ["이렐", "irelia"], hard: ["볼리베어", "잭스", "워윅", "세트", "트린다미어"], counter: ["레넥톤", "말파이트"], statCounters: ["자헨", "볼리베어", "레넥톤"], note: "LOL.PS 2위(꿀챔). 26.23 지표상 자헨(60.5%), 볼리베어(59.6%), 레넥톤(55.3%) 최상위 카운터" },
+      { name: "일라오이", tags: [], aliases: ["일라", "illaoi"], hard: ["요릭", "케넨", "카시오페아"], counter: ["제이스", "티모", "라이즈", "베인"], statCounters: [], note: "E(영혼의 시험)를 소환수로 막는 요릭과 원거리 지속딜 픽에 무력" },
+      { name: "자크", tags: [], aliases: ["zac"], hard: ["모데카이저", "볼리베어", "일라오이"], counter: ["다리우스", "럼블", "크산테", "베인"], statCounters: [], note: "젤리 회수 방해·지속전 체급 우위 픽에 취약" },
+      { name: "자헨", tags: ["2티어", "꿀챔"], aliases: ["zahen", "zaahen"], hard: ["잭스", "볼리베어", "티모", "베인"], counter: ["말파이트", "워윅", "올라프", "제이스"], statCounters: ["티모"], note: "LOL.PS 14위(꿀챔). 26.23 지표상 티모(65.9%) 압도적 하드카운터" },
+      { name: "잭스", tags: ["1티어"], aliases: ["jax"], hard: ["가렌", "뽀삐", "일라오이", "케넨"], counter: ["말파이트", "판테온", "아칼리", "제이스", "블라디미르"], statCounters: ["신지드", "우르곳", "갱플랭크", "하이머딩거"], note: "LOL.PS 4위. 지표상 신지드(66.7%), 우르곳(64.3%), 갱플랭크(63.0%), 가렌(58.1%) 강세" },
+      { name: "제드", tags: [], aliases: ["zed"], hard: ["말파이트", "가렌", "초가스"], counter: ["이렐리아", "리산드라", "아칼리", "레넥톤"], statCounters: [], note: "26.23 벼락폭풍검 너프 직격탄. 방어력 탱커·체급 브루저 상대로 킬각 차단" },
+      { name: "제이스", tags: [], aliases: ["jayce"], hard: ["요릭", "이렐리아"], counter: ["카밀", "말파이트", "사이온"], statCounters: ["카밀", "갱플랭크", "사이온", "말파이트"], note: "26.23 지표상 카밀(63.6%), 갱플랭크(60.3%), 사이온(58.8%), 말파이트(56.0%) 강세" },
+      { name: "초가스", tags: [], aliases: ["초가", "chogath"], hard: ["모데카이저", "올라프", "베인"], counter: ["그웬", "피오라", "아트록스"], statCounters: [], note: "체력 비례 피해 브루저 및 원거리 퍼뎀에 취약" },
+      { name: "카밀", tags: ["1티어"], aliases: ["camille"], hard: ["모데카이저", "잭스", "레넥톤", "볼리베어", "티모"], counter: ["다리우스", "워윅", "제이스"], statCounters: [], note: "LOL.PS 7위. 평타 차단(잭스·티모)과 초반 정면 맞다이 강자에 약함" },
+      { name: "카시오페아", tags: [], aliases: ["카시", "cass", "cassiopeia"], hard: ["올라프"], counter: ["이렐리아", "제이스", "요릭"], statCounters: [], note: "독 장판(W) 위에서도 CC 면제로 돌진하는 올라프가 천적" },
+      { name: "케넨", tags: [], aliases: ["kennen"], hard: ["나서스", "요릭", "제이스"], counter: ["이렐리아"], statCounters: [], note: "26.23 천상계 피오라 카운터로 자주 기용. 유지력·라인 푸시 압박(요릭·나서스)에 약함" },
+      { name: "케일", tags: [], aliases: ["kayle"], hard: ["이렐리아", "잭스", "나서스", "럼블", "제이스", "티모"], counter: ["라이즈"], statCounters: [], note: "최근 Q·R 쿨타임 버프 후 후반 승률 최상위권. 초반 다이브·추격형 픽에 취약" },
+      { name: "퀸", tags: [], aliases: ["quinn"], hard: ["말파이트", "럼블", "이렐리아"], counter: ["요릭", "사이온", "티모"], statCounters: ["이렐리아", "티모", "다리우스"], note: "26.23 지표상 이렐리아(67.7%), 티모(63.3%), 다리우스(59.0%)가 최강 카운터" },
+      { name: "크산테", tags: ["버프"], aliases: ["크산", "ksante"], hard: ["암베사", "가렌"], counter: ["뽀삐", "일라오이", "요릭", "나르", "베인", "갱플랭크"], statCounters: ["암베사", "가렌", "갱플랭크", "럼블"], note: "26.23 W 버프. 마스터+ 지표 반등. 암베사(61.9%)·가렌(61.8%)·갱플랭크(58.9%)에 약함" },
+      { name: "클레드", tags: [], aliases: ["kled"], hard: ["피오라", "바루스"], counter: ["볼리베어", "잭스", "말파이트", "뽀삐", "가렌", "케넨"], statCounters: [], note: "Q 밧줄 응수(피오라) 및 재탑승 차단·처형 픽에 취약" },
+      { name: "탐 켄치", tags: [], aliases: ["탐켄치", "탐켄", "tahm"], hard: ["요릭"], counter: ["일라오이", "베인"], statCounters: [], note: "소환수로 Q(혀 채찍) 각을 원천 차단하는 요릭이 극상성" },
+      { name: "트런들", tags: [], aliases: ["trundle"], hard: ["볼리베어", "잭스", "나르"], counter: ["아칼리"], statCounters: [], note: "26.23 피오라 라인전 카운터(+1,197G). 평타 차단(잭스)과 카이팅(나르)에 취약" },
+      { name: "트린다미어", tags: [], aliases: ["트린", "tryn", "tryndamere"], hard: ["볼리베어", "퀸", "베인"], counter: ["말파이트", "크산테", "워윅"], statCounters: ["티모"], note: "26.23 지표상 티모(62.9%)도 실명으로 압도적 우위" },
+      { name: "티모", tags: [], aliases: ["teemo"], hard: ["올라프", "라이즈", "카시오페아"], counter: ["사이온", "나서스"], statCounters: ["모데카이저", "사이온", "말파이트", "이렐리아"], note: "26.23 지표상 모데카이저(59.5%), 사이온(57.0%), 말파이트(54.7%) 강세" },
+      { name: "판테온", tags: ["2티어"], aliases: ["판테", "pantheon"], hard: ["말파이트", "올라프"], counter: ["크산테", "요릭"], statCounters: ["피오라"], note: "LOL.PS 12위. 26.23 지표상 피오라(59.4%)도 W 응수 구도로 강력" },
+      { name: "피오라", tags: ["1티어"], aliases: ["fiora"], hard: ["퀸", "베인", "바루스"], counter: ["말파이트", "세트", "제이스"], statCounters: ["아트록스", "가렌", "레넥톤", "트런들", "케넨"], note: "LOL.PS 8위. 지표상 아트록스(57.0%), 가렌(56.4%), 레넥톤(53.3%), 트런들 및 케넨 강세" },
+      { name: "하이머딩거", tags: [], aliases: ["딩거", "하이머", "하딩", "heimer"], hard: ["야스오"], counter: ["갱플랭크", "나서스", "라이즈"], statCounters: [], note: "포탑을 장막·스택·원거리 스킬로 손쉽게 지우는 픽에 약함" }
+    ];
+
+    /* =========================================================================
+       이하 앱 코어 로직 (수정 불필요)
+       ========================================================================= */
+    (function () {
+      'use strict';
+
+      // 1. 한글 초성 인덱싱 & 역상성 계산
+      const CHOSEONG = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+      const RELAX_CHO = { 'ㄲ':'ㄱ', 'ㄸ':'ㄷ', 'ㅃ':'ㅂ', 'ㅆ':'ㅅ', 'ㅉ':'ㅈ' };
+      const CHO_FILTERS = ['전체','ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+      const META_TAGS = new Set(['OP', '1티어', '2티어']);
+
+      const PRESETS = [
+        { id: 'morde_teemo', label: '모데+티모 예시', champs: ['모데카이저', '티모'] },
+        { id: 'garen_malph', label: '가렌+말파', champs: ['가렌', '말파이트'] },
+        { id: 'darius_renek', label: '다리+레넥', champs: ['다리우스', '레넥톤'] },
+      ];
+
+      function norm(str) {
+        return String(str || '').toLowerCase().replace(/\s+/g, '');
+      }
+
+      function toChoseong(str, relax = false) {
+        let out = '';
+        for (const ch of str) {
+          const code = ch.charCodeAt(0);
+          if (code >= 0xAC00 && code <= 0xD7A3) {
+            const c = CHOSEONG[Math.floor((code - 0xAC00) / 588)];
+            out += relax && RELAX_CHO[c] ? RELAX_CHO[c] : c;
+          } else if (code >= 0x3131 && code <= 0x314E) {
+            out += relax && RELAX_CHO[ch] ? RELAX_CHO[ch] : ch;
+          } else if (ch !== ' ') {
+            out += ch.toLowerCase();
+          }
+        }
+        return out;
+      }
+
+      const DATA = CHAMPIONS.map((c) => {
+        const normName = norm(c.name);
+        const normAliases = (c.aliases || []).map(norm);
+        const isMeta = (c.tags || []).some((t) => META_TAGS.has(t));
+        return {
+          ...c,
+          tags: c.tags || [],
+          hard: c.hard || [],
+          counter: c.counter || [],
+          statCounters: c.statCounters || [],
+          isMeta,
+          normName,
+          normAliases,
+          cho: toChoseong(normName, false),
+          choRelax: toChoseong(normName, true),
+          aliasCho: normAliases.map((a) => toChoseong(a, false)),
+          aliasChoRelax: normAliases.map((a) => toChoseong(a, true)),
+          initial: toChoseong(normName[0], true),
+          strongHard: [],
+          strongCounter: [],
+          strongStat: [],
+        };
+      });
+
+      const CHAMP_MAP = new Map(DATA.map((c) => [c.name, c]));
+
+      // 65개 데이터 역추적: 각 챔피언이 유리하게 잡는 상대 자동 생성
+      DATA.forEach((enemy) => {
+        enemy.hard.forEach((name) => {
+          const c = CHAMP_MAP.get(name);
+          if (c && !c.strongHard.includes(enemy.name)) c.strongHard.push(enemy.name);
+        });
+        enemy.counter.forEach((name) => {
+          const c = CHAMP_MAP.get(name);
+          if (c && !c.strongCounter.includes(enemy.name)) c.strongCounter.push(enemy.name);
+        });
+        enemy.statCounters.forEach((name) => {
+          const c = CHAMP_MAP.get(name);
+          if (c && !c.strongHard.includes(enemy.name) && !c.strongCounter.includes(enemy.name) && !c.strongStat.includes(enemy.name)) {
+            c.strongStat.push(enemy.name);
+          }
+        });
+      });
+
+      // 2. 저장소 & URL 쿼리 파라미터 파싱 (URL 우선 > localStorage)
+      const STORAGE_KEYS = {
+        POOL: `lol_top_${PATCH_VERSION}_pool`,
+        LAST: `lol_top_${PATCH_VERSION}_last`,
+        RECENT: `lol_top_${PATCH_VERSION}_recent`,
+        MODE: `lol_top_${PATCH_VERSION}_mode`,
+      };
+
+      function readLS(key, fallback) {
+        try {
+          const v = localStorage.getItem(key);
+          return v ? JSON.parse(v) : fallback;
+        } catch (e) {
+          return fallback;
+        }
+      }
+      function writeLS(key, val) {
+        try {
+          localStorage.setItem(key, JSON.stringify(val));
+        } catch (e) { /* ignore */ }
+      }
+
+      function initState() {
+        const params = new URLSearchParams(window.location.search);
+
+        // (1) 화면 모드: URL ?mode= 우선 -> localStorage -> 860px 자동 감지
+        let viewMode = window.innerWidth < 860 ? 'mobile' : 'pc';
+        let userToggledMode = false;
+        const urlMode = params.get('mode');
+        const lsMode = readLS(STORAGE_KEYS.MODE, null);
+        if (urlMode === 'pc' || urlMode === 'mobile') {
+          viewMode = urlMode;
+          userToggledMode = true;
+        } else if (lsMode === 'pc' || lsMode === 'mobile') {
+          viewMode = lsMode;
+          userToggledMode = true;
+        }
+
+        // (2) 내 챔프폭: URL ?pool= 우선 -> localStorage -> 기본 예시(모데+티모)
+        let myPool = ['모데카이저', '티모'];
+        let loadedFromUrl = false;
+        if (params.has('pool')) {
+          const rawPool = params.get('pool') || '';
+          myPool = rawPool
+            .split(',')
+            .map((s) => s.trim())
+            .filter((n, idx, arr) => CHAMP_MAP.has(n) && arr.indexOf(n) === idx);
+          loadedFromUrl = true;
+        } else {
+          const savedPool = readLS(STORAGE_KEYS.POOL, null);
+          if (Array.isArray(savedPool)) {
+            myPool = savedPool.filter((n) => CHAMP_MAP.has(n));
+          }
+        }
+
+        // (3) 선택 챔피언: URL ?champ= 우선 -> localStorage -> 갱플랭크
+        let selectedName = '갱플랭크';
+        const urlChamp = params.get('champ');
+        const lsChamp = readLS(STORAGE_KEYS.LAST, null);
+        if (urlChamp && CHAMP_MAP.has(urlChamp)) {
+          selectedName = urlChamp;
+          loadedFromUrl = true;
+        } else if (lsChamp && CHAMP_MAP.has(lsChamp)) {
+          selectedName = lsChamp;
+        }
+
+        // (4) 시작 탭: URL ?tab=analyzer 지원
+        const urlTab = params.get('tab');
+        const startAnalyzer = urlTab === 'analyzer' || urlTab === 'pool' || (params.has('pool') && !urlChamp);
+
+        const recent = readLS(STORAGE_KEYS.RECENT, ['갱플랭크', '크산테', '이렐리아', '잭스', '올라프'])
+          .filter((n) => CHAMP_MAP.has(n))
+          .slice(0, 6);
+
+        return {
+          viewMode,
+          userToggledMode,
+          pcTab: startAnalyzer ? 'analyzer' : 'counter',
+          mobileTab: startAnalyzer ? 'pool' : 'counter',
+          selectedName,
+          recent,
+          myPool,
+          loadedFromUrl,
+          globalQuery: '',
+          globalResults: [],
+          globalActiveIdx: 0,
+          poolAddQuery: '',
+          listFilter: 'all', // 'all' | 'meta' | 'buff' | 'pool'
+          listCho: '전체',
+          counterCriteria: 'all', // 'all' (6:4+) | 'hard' (7:3+만)
+          includeStat: true,
+          priorityMode: 'total', // 'total' | 'meta' | 'danger'
+          mobileGroupOpen: { danger: true, meta: true, other: false },
+        };
+      }
+
+      const state = initState();
+
+      // 3. 검색 엔진 (한글명 / 줄임말·영문 / 초성)
+      function searchChamps(raw) {
+        const q = norm(raw);
+        if (!q) return [];
+        const qRelax = toChoseong(q, true);
+        const choOnly = /^[ㄱ-ㅎ]+$/.test(q);
+        const hits = [];
+
+        for (const c of DATA) {
+          let score = 0;
+          if (!choOnly) {
+            if (c.normName === q || c.normAliases.includes(q)) score = 100;
+            else if (c.normName.startsWith(q) || c.normAliases.some((a) => a.startsWith(q))) score = 85;
+            else if (c.normName.includes(q) || c.normAliases.some((a) => a.includes(q))) score = 55;
+          }
+          if (score === 0) {
+            if (c.cho === q || c.choRelax === qRelax || c.aliasCho.includes(q) || c.aliasChoRelax.includes(qRelax)) {
+              score = 90;
+            } else if (
+              c.cho.startsWith(q) ||
+              c.choRelax.startsWith(qRelax) ||
+              c.aliasCho.some((a) => a.startsWith(q)) ||
+              c.aliasChoRelax.some((a) => a.startsWith(qRelax))
+            ) {
+              score = 75;
+            } else if (
+              c.cho.includes(q) ||
+              c.choRelax.includes(qRelax) ||
+              c.aliasCho.some((a) => a.includes(q)) ||
+              c.aliasChoRelax.some((a) => a.includes(qRelax))
+            ) {
+              score = 40;
+            }
+          }
+          if (score > 0) hits.push({ champ: c, score });
+        }
+
+        hits.sort((a, b) => (b.score !== a.score ? b.score - a.score : a.champ.name.localeCompare(b.champ.name, 'ko')));
+        return hits.map((h) => h.champ);
+      }
+
+      // 4. 약점 분석 & Greedy Set Cover 2~3챔프 추천 엔진
+      function getCounterRelation(candidateName, targetChamp, opts) {
+        if (targetChamp.hard.includes(candidateName)) return 'hard';
+        if (opts.counterCriteria === 'all' && targetChamp.counter.includes(candidateName)) return 'counter';
+        if (opts.includeStat && targetChamp.statCounters.includes(candidateName)) return 'stat';
+        return null;
+      }
+
+      function getSolutionPicks(enemyChamp, opts) {
+        const res = [];
+        const seen = new Set();
+        const add = (name, type) => {
+          if (seen.has(name)) return;
+          seen.add(name);
+          res.push({ name, type, valid: CHAMP_MAP.has(name) });
+        };
+
+        [...enemyChamp.hard]
+          .sort((a, b) => Number(Boolean(CHAMP_MAP.get(b)?.isMeta)) - Number(Boolean(CHAMP_MAP.get(a)?.isMeta)))
+          .forEach((n) => add(n, 'hard'));
+
+        if (opts.counterCriteria === 'all') {
+          [...enemyChamp.counter]
+            .sort((a, b) => Number(Boolean(CHAMP_MAP.get(b)?.isMeta)) - Number(Boolean(CHAMP_MAP.get(a)?.isMeta)))
+            .forEach((n) => add(n, 'counter'));
+        }
+        if (opts.includeStat) {
+          enemyChamp.statCounters.forEach((n) => add(n, 'stat'));
+        }
+        return res.slice(0, 3);
+      }
+
+      function analyzePool() {
+        const opts = {
+          counterCriteria: state.counterCriteria,
+          includeStat: state.includeStat,
+          priorityMode: state.priorityMode,
+        };
+        const pool = state.myPool;
+        const poolSet = new Set(pool);
+        const total = DATA.length;
+        const metaList = DATA.filter((c) => c.isMeta);
+
+        const covered = [];
+        const uncovered = [];
+
+        DATA.forEach((enemy) => {
+          const hitBy = pool.filter((m) => Boolean(getCounterRelation(m, enemy, opts)));
+          if (hitBy.length > 0) covered.push(enemy);
+          else uncovered.push(enemy);
+        });
+
+        // 🚨 최우선 경계 / 필밴: 내 풀의 모든 챔프가 카운터를 맞는 상대 (1챔프 풀일 때는 하드카운터 기준)
+        const dangerAll = [];
+        const dangerHitMap = new Map();
+
+        if (pool.length > 0) {
+          DATA.forEach((enemy) => {
+            const relevant = pool.filter((m) => m !== enemy.name);
+            if (relevant.length === 0) return;
+            let hitCount = 0;
+            let hardCount = 0;
+            relevant.forEach((myName) => {
+              const myObj = CHAMP_MAP.get(myName);
+              if (!myObj) return;
+              const rel = getCounterRelation(enemy.name, myObj, opts);
+              if (rel) {
+                hitCount += 1;
+                if (rel === 'hard') hardCount += 1;
+              }
+            });
+            dangerHitMap.set(enemy.name, { hitCount, hardCount });
+            if (
+              (relevant.length === 1 && hardCount === 1) ||
+              (relevant.length >= 2 && hitCount === relevant.length)
+            ) {
+              dangerAll.push({
+                enemy,
+                isHardToAll: hardCount === relevant.length,
+              });
+            }
+          });
+        }
+
+        dangerAll.sort((a, b) => {
+          if (b.isHardToAll !== a.isHardToAll) return Number(b.isHardToAll) - Number(a.isHardToAll);
+          if (b.enemy.isMeta !== a.enemy.isMeta) return Number(b.enemy.isMeta) - Number(a.enemy.isMeta);
+          return a.enemy.name.localeCompare(b.enemy.name, 'ko');
+        });
+
+        const dangerSet = new Set(dangerAll.map((d) => d.enemy.name));
+
+        // 3그룹 분류
+        const uncoveredDanger = uncovered.filter((e) => dangerSet.has(e.name));
+        const uncoveredMeta = uncovered.filter((e) => !dangerSet.has(e.name) && e.isMeta);
+        const uncoveredOther = uncovered.filter((e) => !dangerSet.has(e.name) && !e.isMeta);
+
+        const metaCovered = metaList.filter((m) => !uncovered.some((u) => u.name === m.name)).length;
+
+        const weightEnemy = (enemy, rel) => {
+          const relBonus = rel === 'hard' ? 0.35 : rel === 'counter' ? 0.15 : 0.05;
+          const dInfo = dangerHitMap.get(enemy.name) || { hitCount: 0, hardCount: 0 };
+          if (opts.priorityMode === 'meta') {
+            return (enemy.isMeta ? 14 : 1) + (dangerSet.has(enemy.name) ? 3.5 : 0) + relBonus;
+          }
+          if (opts.priorityMode === 'danger') {
+            if (dangerSet.has(enemy.name)) return 32 + dInfo.hardCount * 3 + relBonus;
+            if (dInfo.hitCount > 0) return 6 * dInfo.hitCount + (enemy.isMeta ? 3 : 0) + relBonus;
+            return (enemy.isMeta ? 3 : 1) + relBonus;
+          }
+          return 10 + (dangerSet.has(enemy.name) ? 0.5 : 0) + (enemy.isMeta ? 0.28 : 0) + relBonus;
+        };
+
+        // 단독 효율 TOP 6
+        const soloTop6 = DATA.filter((c) => !poolSet.has(c.name))
+          .map((cand) => {
+            const solved = [];
+            let score = 0;
+            let metaSolved = 0;
+            uncovered.forEach((enemy) => {
+              const rel = getCounterRelation(cand.name, enemy, opts);
+              if (rel) {
+                solved.push({ enemy, rel });
+                score += weightEnemy(enemy, rel);
+                if (enemy.isMeta) metaSolved += 1;
+              }
+            });
+            if (cand.isMeta && solved.length > 0) score += 0.08;
+            return { cand, solved, score, metaSolved };
+          })
+          .filter((x) => x.solved.length > 0)
+          .sort((a, b) => {
+            if (opts.priorityMode === 'total' && b.solved.length !== a.solved.length) {
+              return b.solved.length - a.solved.length;
+            }
+            if (Math.abs(b.score - a.score) > 0.001) return b.score - a.score;
+            return b.solved.length - a.solved.length;
+          })
+          .slice(0, 6);
+
+        // Greedy Set Cover (+1 -> +2 -> +3)
+        const greedySteps = [];
+        let remaining = [...uncovered];
+        const picked = new Set(pool);
+        let cumulative = covered.length;
+
+        for (let step = 1; step <= 3; step += 1) {
+          if (remaining.length === 0) break;
+          let best = null;
+
+          for (const cand of DATA) {
+            if (picked.has(cand.name)) continue;
+            const newlySolved = [];
+            let score = 0;
+            let metaCount = 0;
+            let dangerCount = 0;
+
+            for (const enemy of remaining) {
+              const rel = getCounterRelation(cand.name, enemy, opts);
+              if (rel) {
+                newlySolved.push({ enemy, rel });
+                score += weightEnemy(enemy, rel);
+                if (enemy.isMeta) metaCount += 1;
+                if (dangerSet.has(enemy.name)) dangerCount += 1;
+              }
+            }
+            if (newlySolved.length === 0) continue;
+            if (cand.isMeta) score += 0.08;
+
+            const better =
+              !best ||
+              (opts.priorityMode === 'total' && newlySolved.length > best.newlySolved.length) ||
+              (opts.priorityMode === 'total' && newlySolved.length === best.newlySolved.length && score > best.score) ||
+              (opts.priorityMode !== 'total' && score > best.score);
+
+            if (better) best = { cand, newlySolved, score, metaCount, dangerCount };
+          }
+
+          if (!best) break;
+          picked.add(best.cand.name);
+          cumulative += best.newlySolved.length;
+          const solvedNames = new Set(best.newlySolved.map((s) => s.enemy.name));
+          remaining = remaining.filter((e) => !solvedNames.has(e.name));
+
+          best.newlySolved.sort((a, b) => {
+            const ad = dangerSet.has(a.enemy.name) ? 1 : 0;
+            const bd = dangerSet.has(b.enemy.name) ? 1 : 0;
+            if (bd !== ad) return bd - ad;
+            if (b.enemy.isMeta !== a.enemy.isMeta) return Number(b.enemy.isMeta) - Number(a.enemy.isMeta);
+            if ((b.rel === 'hard') !== (a.rel === 'hard')) return Number(b.rel === 'hard') - Number(a.rel === 'hard');
+            return a.enemy.name.localeCompare(b.enemy.name, 'ko');
+          });
+
+          greedySteps.push({
+            step,
+            champ: best.cand,
+            newlySolved: best.newlySolved,
+            metaCount: best.metaCount,
+            dangerCount: best.dangerCount,
+            cumulative,
+            pct: Math.round((cumulative / total) * 100),
+          });
+        }
+
+        return {
+          opts,
+          total,
+          coveredCount: covered.length,
+          coveredPct: Math.round((covered.length / total) * 100),
+          uncoveredCount: uncovered.length,
+          metaTotal: metaList.length,
+          metaCovered,
+          metaPct: Math.round((metaCovered / metaList.length) * 100),
+          dangerAll,
+          dangerSet,
+          uncoveredDanger,
+          uncoveredMeta,
+          uncoveredOther,
+          greedySteps,
+          soloTop6,
+        };
+      }
+
+      // 5. HTML 이스케이프, 배지, 클립보드, 토스트 유틸리티
+      function esc(str) {
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function initials(name) {
+        const clean = name.replace(/\s+/g, '');
+        return clean.length <= 2 ? clean : clean.slice(0, 2);
+      }
+
+      function avatarClass(champ) {
+        if (!champ || !champ.tags.length) return '';
+        if (champ.tags.includes('OP')) return 'avatar-op';
+        if (champ.tags.includes('꿀챔')) return 'avatar-honey';
+        if (champ.tags.includes('1티어')) return 'avatar-t1';
+        if (champ.tags.includes('버프')) return 'avatar-buff';
+        if (champ.tags.includes('급상승')) return 'avatar-rise';
+        return '';
+      }
+
+      function tagClass(tag) {
+        switch (tag) {
+          case 'OP': return 'badge-op';
+          case '1티어': return 'badge-t1';
+          case '2티어': return 'badge-t2';
+          case '꿀챔': return 'badge-honey';
+          case '버프': return 'badge-buff';
+          case '급상승': return 'badge-rise';
+          case '조커픽': return 'badge-joker';
+          default: return 'badge-t1';
+        }
+      }
+
+      function renderTags(tags, limit = 3) {
+        return (tags || []).slice(0, limit).map((t) => `<span class="badge ${tagClass(t)}">${esc(t)}</span>`).join('');
+      }
+
+      function highlightNote(note) {
+        let s = esc(note);
+        s = s.replace(/(LOL\.PS\s*\d+위(?:\([^)]+\))?)/g, '<strong style="color:#f0e6d2">$1</strong>');
+        s = s.replace(/(\d+(?:\.\d+)?%)/g, '<strong style="color:#6ee7b7">$1</strong>');
+        s = s.replace(/(\+[\d,]+G)/g, '<strong style="color:#fcd34d">$1</strong>');
+        return s;
+      }
+
+      function showToast(msg, tone = 'gold') {
+        const box = document.getElementById('toastContainer');
+        const el = document.createElement('div');
+        el.className = `toast ${tone}`;
+        el.textContent = msg;
+        box.appendChild(el);
+        requestAnimationFrame(() => el.classList.add('show'));
+        setTimeout(() => {
+          el.classList.remove('show');
+          setTimeout(() => el.remove(), 220);
+        }, 2500);
+      }
+
+      function copyToClipboard(text) {
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.setAttribute('readonly', '');
+          ta.style.position = 'fixed';
+          ta.style.left = '-9999px';
+          document.body.appendChild(ta);
+          ta.select();
+          const ok = document.execCommand('copy');
+          document.body.removeChild(ta);
+          return ok;
+        } catch (e) {
+          return false;
+        }
+      }
+
+      // URL 공유 링크 생성 & 복사 (?pool=...&champ=...&mode=...)
+      function shareCurrentLink() {
+        const base = window.location.href.split('?')[0].split('#')[0];
+        const params = new URLSearchParams();
+        if (state.myPool.length > 0) params.set('pool', state.myPool.join(','));
+        params.set('champ', state.selectedName);
+        params.set('mode', state.viewMode);
+        const onAnalyzer = (state.viewMode === 'pc' && state.pcTab === 'analyzer') || (state.viewMode === 'mobile' && state.mobileTab === 'pool');
+        if (onAnalyzer) params.set('tab', 'analyzer');
+
+        const shareUrl = `${base}?${params.toString()}`;
+        if (copyToClipboard(shareUrl)) {
+          const poolDesc = state.myPool.length ? state.myPool.join(',') : '빈 풀';
+          showToast(`🔗 공유 링크 복사 완료! (${poolDesc} · ${state.selectedName})`, 'success');
+        } else {
+          showToast('클립보드 복사에 실패했습니다.', 'warn');
+        }
+      }
+
+      function copyChampSummary(name) {
+        const c = CHAMP_MAP.get(name);
+        if (!c) return;
+        const tagStr = c.tags.length ? ` [${c.tags.join('/')}]` : '';
+        const txt = `[LoL ${PATCH_VERSION} 탑] ${c.name}${tagStr}\n• 하드카운터(7:3+): ${c.hard.join(', ') || '없음'}\n• 카운터(6:4+): ${c.counter.join(', ') || '없음'}${c.statCounters.length ? `\n• ${PATCH_VERSION} 지표 강세: ${c.statCounters.join(', ')}` : ''}\n• 비고: ${c.note}`;
+        if (copyToClipboard(txt)) showToast(`📋 '${c.name}' 카운터 요약을 복사했습니다.`, 'success');
+        else showToast('복사에 실패했습니다.', 'warn');
+      }
+
+      // 6. 상태 변경 액션
+      function setViewMode(mode, manual = true) {
+        state.viewMode = mode;
+        if (manual) {
+          state.userToggledMode = true;
+          writeLS(STORAGE_KEYS.MODE, mode);
+          showToast(mode === 'pc' ? '🖥️ PC 와이드 대시보드로 전환했습니다.' : '📱 모바일 전용 앱 모드로 전환했습니다.', 'gold');
+        }
+        renderApp();
+      }
+
+      function selectChamp(name, switchDetail = true) {
+        if (!CHAMP_MAP.has(name)) {
+          showToast(`'${name}'은(는) 65개 메인 탑 티어 목록 외 조커 픽입니다.`, 'warn');
+          return;
+        }
+        state.selectedName = name;
+        writeLS(STORAGE_KEYS.LAST, name);
+        state.recent = [name, ...state.recent.filter((n) => n !== name)].slice(0, 6);
+        writeLS(STORAGE_KEYS.RECENT, state.recent);
+        if (switchDetail) {
+          if (state.viewMode === 'pc') state.pcTab = 'counter';
+          else state.mobileTab = 'counter';
+        }
+        state.globalQuery = '';
+        state.globalResults = [];
+        state.globalActiveIdx = 0;
+        renderApp();
+        const mobBody = document.getElementById('mobileBody');
+        if (mobBody && switchDetail) mobBody.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      function togglePool(name) {
+        if (!CHAMP_MAP.has(name)) {
+          showToast(`'${name}'은(는) 메인 65개 탑 목록에 없습니다.`, 'warn');
+          return;
+        }
+        const i = state.myPool.indexOf(name);
+        if (i >= 0) {
+          state.myPool.splice(i, 1);
+          showToast(`'${name}'을(를) 내 챔프폭에서 제거했습니다.`, 'gold');
+        } else {
+          state.myPool.push(name);
+          showToast(`⭐ '${name}'을(를) 내 챔프폭에 등록했습니다!`, 'success');
+        }
+        writeLS(STORAGE_KEYS.POOL, state.myPool);
+        renderApp();
+      }
+
+      function addPool(name) {
+        if (!CHAMP_MAP.has(name)) return;
+        if (state.myPool.includes(name)) {
+          showToast(`'${name}'은(는) 이미 등록되어 있습니다.`, 'warn');
+          return;
+        }
+        state.myPool.push(name);
+        writeLS(STORAGE_KEYS.POOL, state.myPool);
+        showToast(`✨ '${name}' 추가! 커버리지를 실시간 재계산했습니다.`, 'success');
+        renderApp();
+      }
+
+      function applyPreset(id) {
+        if (id === 'clear') {
+          state.myPool = [];
+          writeLS(STORAGE_KEYS.POOL, state.myPool);
+          showToast('내 챔프폭을 초기화했습니다.', 'gold');
+          renderApp();
+          return;
+        }
+        const p = PRESETS.find((x) => x.id === id);
+        if (!p) return;
+        state.myPool = [...p.champs];
+        writeLS(STORAGE_KEYS.POOL, state.myPool);
+        showToast(`프리셋 [${p.label}] 적용 완료!`, 'success');
+        renderApp();
+      }
+
+      // 7. 공통 UI 컴포넌트 빌더
+      function buildMatchupChip(name, variant) {
+        const c = CHAMP_MAP.get(name);
+        if (!c) {
+          return `
+            <button type="button" data-missing="${esc(name)}" class="m-chip m-chip-joker">
+              <span class="avatar avatar-sm">${esc(initials(name))}</span>
+              <span>
+                <span class="m-chip-name" style="color:#94a3b8">${esc(name)}</span>
+                <span class="m-chip-sub" style="color:#64748b">조커픽</span>
+              </span>
+            </button>
+          `;
+        }
+        const inPool = state.myPool.includes(name);
+        const canRecommend = variant === 'hard' || variant === 'counter' || variant === 'stat';
+        const clsMap = {
+          hard: 'm-chip-hard',
+          counter: 'm-chip-counter',
+          stat: 'm-chip-stat',
+          good: 'm-chip-good',
+          goodCounter: 'm-chip-stat',
+        };
+        return `
+          <button type="button" data-jump="${esc(name)}" class="m-chip ${clsMap[variant] || 'm-chip-stat'} ${canRecommend && inPool ? 'm-chip-pool' : ''}">
+            <span class="avatar avatar-sm ${avatarClass(c)}">${esc(initials(name))}</span>
+            <span>
+              <span class="flex-row" style="gap:5px">
+                <span class="m-chip-name">${esc(name)}</span>
+                ${c.tags[0] ? `<span class="badge ${tagClass(c.tags[0])}">${esc(c.tags[0])}</span>` : ''}
+              </span>
+              ${canRecommend && inPool ? `<span class="m-chip-sub">⭐ 내 풀 추천</span>` : ''}
+            </span>
+          </button>
+        `;
+      }
+
+      function buildDropdownHtml() {
+        if (!state.globalQuery.trim()) return '';
+        if (state.globalResults.length === 0) {
+          return `<div class="dropdown"><div class="dd-empty">'<strong style="color:#fff">${esc(state.globalQuery)}</strong>' 일치 챔피언 없음</div></div>`;
+        }
+        return `
+          <div class="dropdown" id="globalDropdown">
+            <div class="dd-meta">
+              <span>일치 ${state.globalResults.length}명</span>
+              <span>↑↓ 이동 · Enter 선택</span>
+            </div>
+            ${state.globalResults.slice(0, 10).map((c, idx) => `
+              <button type="button" data-dd-pick="${esc(c.name)}" class="dd-item ${idx === state.globalActiveIdx ? 'active' : ''}">
+                <div class="flex-row" style="min-width:0;gap:9px">
+                  <span class="avatar avatar-sm ${avatarClass(c)}">${esc(initials(c.name))}</span>
+                  <div style="min-width:0">
+                    <div class="flex-row" style="gap:5px">
+                      <span style="font-size:13.5px;font-weight:800;color:#fff">${esc(c.name)}</span>
+                      ${renderTags(c.tags, 2)}
+                    </div>
+                    <p class="truncate" style="font-size:11px;color:#94a3b8">하드: ${esc(c.hard.slice(0, 4).join(', ') || '없음')}</p>
+                  </div>
+                </div>
+                <span style="font-size:11px;font-weight:700;color:#64748b">${esc(c.cho)}</span>
+              </button>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      function buildPoolAddResultsHtml() {
+        if (!state.poolAddQuery.trim()) return '';
+        const list = searchChamps(state.poolAddQuery).filter((c) => !state.myPool.includes(c.name)).slice(0, 6);
+        if (list.length === 0) {
+          return `<p style="margin-top:6px;font-size:11px;color:#64748b;padding:0 4px">추가 가능한 일치 챔피언이 없습니다.</p>`;
+        }
+        return `
+          <div class="flex-wrap" style="margin-top:8px;padding:8px;border-radius:10px;border:1px solid var(--gold-border);background:var(--bg-main)">
+            ${list.map((c) => `
+              <button type="button" data-quick-add="${esc(c.name)}" class="btn btn-gold" style="padding:6px 10px;min-height:34px">+ ${esc(c.name)}</button>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      // 상세 대시보드
+      function buildDetailHtml(isMobile) {
+        const c = CHAMP_MAP.get(state.selectedName);
+        if (!c) return '';
+        const inPool = state.myPool.includes(c.name);
+
+        // 내 풀 대응 체크
+        const myHard = c.hard.filter((n) => state.myPool.includes(n));
+        const myCounter = c.counter.filter((n) => state.myPool.includes(n));
+        const myStat = c.statCounters.filter((n) => state.myPool.includes(n) && !myHard.includes(n) && !myCounter.includes(n));
+        const hasCounter = myHard.length + myCounter.length + myStat.length > 0;
+
+        // 역으로 상대가 내 풀 중 누구를 카운터 치는지
+        const countersMyPool = state.myPool.filter((m) => {
+          const obj = CHAMP_MAP.get(m);
+          return obj && (obj.hard.includes(c.name) || obj.counter.includes(c.name));
+        });
+
+        let poolBanner = '';
+        if (state.myPool.length > 0) {
+          if (hasCounter) {
+            poolBanner = `
+              <div class="banner-gold">
+                <div class="flex-between" style="flex-wrap:wrap">
+                  <div>
+                    <p style="font-size:11px;font-weight:900;color:#f0e6d2">⭐ 내 챔프폭 대응 가능! 추천 후픽</p>
+                    <p style="font-size:12.5px;color:#e2e8f0;margin-top:2px">상대 <strong>${esc(c.name)}</strong> 상대로 내 폭에서 바로 꺼낼 수 있는 카운터입니다.</p>
+                  </div>
+                  <div class="flex-wrap">
+                    ${myHard.map((n) => `<button type="button" data-jump="${esc(n)}" class="btn" style="border-color:var(--hard);background:rgba(239,68,68,0.22);color:#fecaca">${esc(n)} <span class="badge badge-hard">7:3</span></button>`).join('')}
+                    ${myCounter.map((n) => `<button type="button" data-jump="${esc(n)}" class="btn" style="border-color:var(--counter);background:rgba(245,158,11,0.22);color:#fde68a">${esc(n)} <span class="badge badge-counter">6:4</span></button>`).join('')}
+                    ${myStat.map((n) => `<button type="button" data-jump="${esc(n)}" class="btn" style="border-color:var(--meta);background:rgba(56,189,248,0.22);color:#bae6fd">${esc(n)} <span class="badge badge-stat">지표</span></button>`).join('')}
+                  </div>
+                </div>
+              </div>
+            `;
+          } else {
+            const allThreat = countersMyPool.length === state.myPool.length && state.myPool.length > 0;
+            poolBanner = `
+              <div class="banner-danger">
+                <div class="flex-between" style="flex-wrap:wrap">
+                  <div>
+                    <p style="font-size:11px;font-weight:900;color:#f87171">${allThreat ? '🚨 위험! 내 챔프폭 전체 카운터 상대' : '⚠️ 내 챔프폭 미커버 상대'}</p>
+                    <p style="font-size:12.5px;color:#e2e8f0;margin-top:2px">
+                      ${allThreat
+                        ? `상대 ${esc(c.name)}이(가) 내 챔프폭 전체(${esc(countersMyPool.join(', '))})를 카운터칩니다!`
+                        : `현재 내 챔프폭(${esc(state.myPool.join(', '))})에 ${esc(c.name)} 직접 카운터가 없습니다.`}
+                    </p>
+                  </div>
+                  <button type="button" data-goto-analyzer class="btn btn-gold">🧬 보완 픽 분석 →</button>
+                </div>
+              </div>
+            `;
+          }
+        }
+
+        const totalStrong = c.strongHard.length + c.strongCounter.length + c.strongStat.length;
+
+        return `
+          <div class="stack-md">
+            ${poolBanner}
+
+            <!-- 메인 카운터 상세 카드 -->
+            <div class="card ${isMobile ? 'card-pad-sm' : 'card-pad'} stack-lg">
+              <!-- 상단 헤더 -->
+              <div class="flex-between" style="flex-wrap:wrap;padding-bottom:14px;border-bottom:1px solid var(--border)">
+                <div class="flex-row" style="gap:12px">
+                  <div class="avatar avatar-lg ${avatarClass(c)}" style="${isMobile ? 'width:48px;height:48px;font-size:17px;border-radius:13px' : ''}">
+                    ${esc(initials(c.name))}
+                  </div>
+                  <div>
+                    <div class="flex-row" style="flex-wrap:wrap;gap:6px">
+                      <h2 style="font-size:${isMobile ? '20px' : '24px'};font-weight:900;color:#fff;letter-spacing:-0.02em">${esc(c.name)}</h2>
+                      ${renderTags(c.tags, 4)}
+                    </div>
+                    <p style="font-size:11.5px;color:#94a3b8;margin-top:4px">
+                      초성 <strong style="color:#cbd5e1">${esc(c.cho)}</strong>
+                      ${c.aliases.length ? ` · 별명 <strong style="color:#cbd5e1">${esc(c.aliases.slice(0, 4).join(', '))}</strong>` : ''}
+                    </p>
+                  </div>
+                </div>
+
+                <div class="flex-row" style="${isMobile ? 'width:100%' : ''}">
+                  <button type="button" data-copy-summary="${esc(c.name)}" class="btn">📋 요약</button>
+                  <button type="button" data-share-link class="btn">🔗 링크</button>
+                  <button type="button" data-toggle-pool="${esc(c.name)}" class="btn ${inPool ? 'btn-gold' : ''}" style="${isMobile ? 'flex:1' : ''}">
+                    ${inPool ? '⭐ 내 폭 등록됨' : '☆ 내 폭 추가'}
+                  </button>
+                </div>
+              </div>
+
+              <!-- 하드 카운터 (7:3+) -->
+              <div>
+                <div class="flex-between" style="margin-bottom:10px">
+                  <div class="flex-row">
+                    <span class="dot dot-hard"></span>
+                    <h3 style="font-size:14.5px;font-weight:900;color:#f87171">하드 카운터</h3>
+                    <span class="badge badge-hard">7:3 이상</span>
+                  </div>
+                  <span style="font-size:12px;font-weight:700;color:#64748b">${c.hard.length}명</span>
+                </div>
+                <div class="flex-wrap">
+                  ${c.hard.length
+                    ? c.hard.map((n) => buildMatchupChip(n, 'hard')).join('')
+                    : `<div style="width:100%;border-radius:10px;border:1px solid var(--border);background:rgba(9,20,40,0.68);padding:10px 12px;font-size:12px;color:#94a3b8">라인전 순수 7:3 하드 카운터가 거의 없는 선픽 안정형 챔피언입니다. 아래 카운터 및 ${PATCH_VERSION} 지표를 참고하세요.</div>`}
+                </div>
+              </div>
+
+              <!-- 일반 카운터 (6:4+) -->
+              <div>
+                <div class="flex-between" style="margin-bottom:10px">
+                  <div class="flex-row">
+                    <span class="dot dot-counter"></span>
+                    <h3 style="font-size:14.5px;font-weight:900;color:#fbbf24">카운터</h3>
+                    <span class="badge badge-counter">6:4 이상</span>
+                  </div>
+                  <span style="font-size:12px;font-weight:700;color:#64748b">${c.counter.length}명</span>
+                </div>
+                <div class="flex-wrap">
+                  ${c.counter.length
+                    ? c.counter.map((n) => buildMatchupChip(n, 'counter')).join('')
+                    : `<span style="font-size:12px;color:#64748b">등록된 일반 카운터 없음</span>`}
+                </div>
+              </div>
+
+              <!-- 26.23 지표 강세 카운터 -->
+              ${c.statCounters.length ? `
+                <div>
+                  <div class="flex-between" style="margin-bottom:10px">
+                    <div class="flex-row">
+                      <span class="dot dot-stat"></span>
+                      <h3 style="font-size:14.5px;font-weight:900;color:#38bdf8">${PATCH_VERSION} 지표 강세 카운터</h3>
+                      <span class="badge badge-stat">승률·골드 우위</span>
+                    </div>
+                    <span style="font-size:12px;font-weight:700;color:#64748b">${c.statCounters.length}명</span>
+                  </div>
+                  <div class="flex-wrap">
+                    ${c.statCounters.map((n) => buildMatchupChip(n, 'stat')).join('')}
+                  </div>
+                </div>
+              ` : ''}
+
+              <!-- 26.23 지표 & 비고 -->
+              <div class="note-box">
+                <p style="font-size:11.5px;font-weight:900;color:#c8aa6e;margin-bottom:5px">📊 ${PATCH_VERSION} 패치 지표 · 천상계 보정 비고</p>
+                <p style="font-size:13px;color:#e2e8f0;line-height:1.58">${highlightNote(c.note)}</p>
+              </div>
+            </div>
+
+            <!-- 역상성 자동 계산 카드 -->
+            <div class="card ${isMobile ? 'card-pad-sm' : 'card-pad'} stack-md">
+              <div class="flex-between" style="padding-bottom:10px;border-bottom:1px solid var(--border)">
+                <div class="flex-row">
+                  <span class="dot dot-good"></span>
+                  <h3 style="font-size:14.5px;font-weight:900;color:#34d399">${esc(c.name)} 픽이 카운터치는 상대 (역상성)</h3>
+                </div>
+                <span class="badge badge-good">총 ${totalStrong}명 우위</span>
+              </div>
+
+              ${totalStrong === 0
+                ? `<p style="font-size:12.5px;color:#94a3b8">65개 탑 데이터 기준 직접 카운터로 등록된 상대가 없습니다.</p>`
+                : `
+                  <div class="stack-md">
+                    ${c.strongHard.length ? `
+                      <div>
+                        <p style="font-size:11.5px;font-weight:800;color:#6ee7b7;margin-bottom:8px">▲ 7:3+ 하드 카운터로 압도 (${c.strongHard.length}명)</p>
+                        <div class="flex-wrap">${c.strongHard.map((n) => buildMatchupChip(n, 'good')).join('')}</div>
+                      </div>
+                    ` : ''}
+                    ${c.strongCounter.length ? `
+                      <div>
+                        <p style="font-size:11.5px;font-weight:800;color:#7dd3fc;margin-bottom:8px">△ 6:4+ 카운터 우위 (${c.strongCounter.length}명)</p>
+                        <div class="flex-wrap">${c.strongCounter.map((n) => buildMatchupChip(n, 'goodCounter')).join('')}</div>
+                      </div>
+                    ` : ''}
+                    ${c.strongStat.length ? `
+                      <div>
+                        <p style="font-size:11.5px;font-weight:800;color:#c4b5fd;margin-bottom:8px">📈 ${PATCH_VERSION} 지표 우위 (${c.strongStat.length}명)</p>
+                        <div class="flex-wrap">${c.strongStat.map((n) => buildMatchupChip(n, 'stat')).join('')}</div>
+                      </div>
+                    ` : ''}
+                  </div>
+                `}
+            </div>
+          </div>
+        `;
+      }
+
+      // 내 챔프폭 컨트롤 패널
+      function buildPoolControlHtml(isMobile) {
+        return `
+          <div class="card ${isMobile ? 'card-pad-sm' : 'card-pad'} stack-md">
+            <div class="flex-between">
+              <div>
+                <h2 style="font-size:15px;font-weight:900;color:#f0e6d2">⭐ 내 탑 챔피언 폭 <span class="count-pill">${state.myPool.length}명</span></h2>
+                <p style="font-size:11px;color:#94a3b8;margin-top:2px">등록 즉시 약점과 2~3챔프 보완 조합을 계산합니다.</p>
+              </div>
+              <button type="button" data-share-link class="btn btn-gold" style="padding:6px 10px;min-height:34px">🔗 링크 복사</button>
+            </div>
+
+            <!-- 프리셋 -->
+            <div>
+              <p style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:6px">빠른 프리셋</p>
+              <div class="flex-wrap" style="gap:6px">
+                ${PRESETS.map((p) => `<button type="button" data-preset="${p.id}" class="btn" style="padding:6px 10px;min-height:34px;border-color:rgba(200,170,110,0.45);background:rgba(200,170,110,0.1);color:#f0e6d2">${esc(p.label)}</button>`).join('')}
+                <button type="button" data-preset="clear" class="btn btn-danger-ghost" style="padding:6px 10px;min-height:34px">초기화</button>
+              </div>
+            </div>
+
+            <!-- 내 폭 챔프 빠른 추가 검색창 -->
+            <div>
+              <input
+                id="poolAddInput"
+                type="text"
+                value="${esc(state.poolAddQuery)}"
+                autocomplete="off"
+                placeholder="내 챔프 검색·추가 (모데, 티모, ㄱㅍ, 볼베...)"
+                class="search-input search-input-dark"
+                style="padding:9px 12px"
+              />
+              <div id="poolAddResultsSlot">${buildPoolAddResultsHtml()}</div>
+            </div>
+
+            <!-- 등록된 챔프 목록 -->
+            <div class="flex-wrap" style="gap:6px">
+              ${state.myPool.length === 0
+                ? `<div style="width:100%;border:1px dashed var(--border);border-radius:10px;padding:12px;text-align:center;font-size:12px;color:#94a3b8">등록된 챔프가 없습니다. 위 프리셋이나 검색창으로 추가해 보세요.</div>`
+                : state.myPool.map((name) => {
+                    const c = CHAMP_MAP.get(name);
+                    return `
+                      <div class="pool-chip">
+                        <button type="button" data-jump="${esc(name)}" class="pool-chip-main">
+                          <span class="avatar avatar-sm ${avatarClass(c)}" style="width:20px;height:20px;font-size:9px;border-radius:6px">${esc(initials(name))}</span>
+                          <span>${esc(name)}</span>
+                        </button>
+                        <button type="button" data-toggle-pool="${esc(name)}" class="pool-chip-del" aria-label="${esc(name)} 제거">×</button>
+                      </div>
+                    `;
+                  }).join('')}
+            </div>
+
+            <!-- 판정 기준 & 추천 기준 -->
+            <div class="stack-sm" style="padding-top:12px;border-top:1px solid var(--border)">
+              <p style="font-size:11px;font-weight:700;color:#94a3b8">카운터 판정 기준</p>
+              <div class="filter-grid-2">
+                <button type="button" data-criteria="all" class="filter-btn ${state.counterCriteria === 'all' ? 'active' : ''}">6:4+ 카운터 포함</button>
+                <button type="button" data-criteria="hard" class="filter-btn ${state.counterCriteria === 'hard' ? 'active-hard' : ''}">7:3+ 하드카운터만</button>
+              </div>
+              <label style="display:flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:9px;background:var(--bg-main);padding:8px 10px;cursor:pointer;font-size:12px;font-weight:700">
+                <input id="statCheck" type="checkbox" ${state.includeStat ? 'checked' : ''} style="width:15px;height:15px;accent-color:#38bdf8" />
+                <span>${PATCH_VERSION} 지표 카운터 포함</span>
+                <span class="badge badge-stat" style="margin-left:auto">권장</span>
+              </label>
+
+              <p style="font-size:11px;font-weight:700;color:#94a3b8;margin-top:4px">추천 우선순위 기준</p>
+              <div class="stack-sm" style="gap:6px">
+                <button type="button" data-priority="total" class="filter-btn flex-between ${state.priorityMode === 'total' ? 'active' : ''}" style="padding:8px 10px">
+                  <span>🎯 전체 최다 해결</span><span style="font-size:10px;opacity:0.8">커버율 극대화</span>
+                </button>
+                <button type="button" data-priority="meta" class="filter-btn flex-between ${state.priorityMode === 'meta' ? 'active-meta' : ''}" style="padding:8px 10px">
+                  <span>🔥 메타(OP/1~2티어) 우선</span><span style="font-size:10px;opacity:0.8">주류 픽 저격</span>
+                </button>
+                <button type="button" data-priority="danger" class="filter-btn flex-between ${state.priorityMode === 'danger' ? 'active-hard' : ''}" style="padding:8px 10px">
+                  <span>🚨 위험군(내 풀 전부 불리) 우선</span><span style="font-size:10px;opacity:0.8">천적 제거</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // 미커버 행
+      function buildUncoveredRow(enemy, analysis, isDanger) {
+        const picks = getSolutionPicks(enemy, analysis.opts);
+        return `
+          <div class="uncovered-item ${isDanger ? 'danger' : enemy.isMeta ? 'meta' : ''}">
+            <button type="button" data-jump="${esc(enemy.name)}" class="flex-row" style="text-align:left;min-width:0">
+              <span class="avatar avatar-sm ${avatarClass(enemy)}">${esc(initials(enemy.name))}</span>
+              <span class="flex-row" style="flex-wrap:wrap;gap:5px">
+                <strong style="font-size:13px;color:#fff">${esc(enemy.name)}</strong>
+                ${isDanger ? `<span class="badge badge-hard">🚨 풀 전부 불리</span>` : ''}
+                ${renderTags(enemy.tags, 2)}
+              </span>
+            </button>
+            <div class="flex-row" style="flex-wrap:wrap;gap:5px">
+              <span style="font-size:10.5px;font-weight:700;color:#94a3b8">해결 픽:</span>
+              ${picks.length
+                ? picks.map((p) => {
+                    const sty = p.type === 'hard'
+                      ? 'border-color:var(--hard-border);background:var(--hard-bg);color:#fecaca'
+                      : p.type === 'counter'
+                        ? 'border-color:var(--counter-border);background:var(--counter-bg);color:#fde68a'
+                        : 'border-color:var(--meta-border);background:var(--meta-bg);color:#bae6fd';
+                    return `<button type="button" ${p.valid ? `data-jump="${esc(p.name)}"` : `data-missing="${esc(p.name)}"`} class="solve-pill" style="${sty}">${esc(p.name)}</button>`;
+                  }).join('')
+                : `<span style="font-size:11px;color:#64748b">상성 대등</span>`}
+            </div>
+          </div>
+        `;
+      }
+
+      // 약점 분석 결과 대시보드
+      function buildAnalyzerResultsHtml(isMobile) {
+        const a = analyzePool();
+        const maxPct = a.greedySteps.length ? a.greedySteps[a.greedySteps.length - 1].pct : a.coveredPct;
+        const stepColors = ['#c8aa6e', '#10b981', '#38bdf8'];
+
+        const renderGroup = (key, title, desc, list, isDanger, color) => {
+          const open = !isMobile || state.mobileGroupOpen[key];
+          return `
+            <div class="card" style="overflow:hidden">
+              <button
+                type="button"
+                ${isMobile ? `data-toggle-group="${key}"` : ''}
+                class="flex-between"
+                style="width:100%;padding:13px 15px;text-align:left;${open ? 'border-bottom:1px solid var(--border);' : ''}${isMobile ? 'cursor:pointer' : 'cursor:default'}"
+              >
+                <div>
+                  <div class="flex-row" style="gap:6px">
+                    <h4 style="font-size:13.5px;font-weight:900;color:${color}">${title}</h4>
+                    <span class="count-pill" style="background:var(--bg-main);border:1px solid var(--border)">${list.length}명</span>
+                  </div>
+                  <p style="font-size:11px;color:#94a3b8;margin-top:2px">${desc}</p>
+                </div>
+                ${isMobile ? `<span style="color:#94a3b8;font-size:12px;font-weight:800">${open ? '▲' : '▼'}</span>` : ''}
+              </button>
+              ${open ? `
+                <div class="stack-sm" style="padding:12px">
+                  ${list.length === 0
+                    ? `<p style="padding:10px;text-align:center;font-size:12px;font-weight:700;color:#34d399">🎉 이 그룹의 미커버 챔피언이 없습니다!</p>`
+                    : list.map((e) => buildUncoveredRow(e, a, isDanger)).join('')}
+                </div>
+              ` : ''}
+            </div>
+          `;
+        };
+
+        return `
+          <div class="stack-lg">
+            <!-- KPI 요약 4카드 -->
+            <div class="${isMobile ? 'kpi-grid-mobile' : 'kpi-grid'}">
+              <div class="kpi-card">
+                <p class="kpi-label">전체 탑 커버율</p>
+                <div class="kpi-val" style="color:#10b981">${a.coveredPct}% <span style="font-size:12px;color:#94a3b8;font-weight:700">${a.coveredCount}/${a.total}</span></div>
+                <div class="progress-track"><div class="progress-seg" style="width:${a.coveredPct}%;background:#10b981"></div></div>
+              </div>
+              <div class="kpi-card">
+                <p class="kpi-label">메타(OP/1~2티어) 커버</p>
+                <div class="kpi-val" style="color:#38bdf8">${a.metaPct}% <span style="font-size:12px;color:#94a3b8;font-weight:700">${a.metaCovered}/${a.metaTotal}</span></div>
+                <div class="progress-track"><div class="progress-seg" style="width:${a.metaPct}%;background:#38bdf8"></div></div>
+              </div>
+              <div class="kpi-card">
+                <p class="kpi-label">카운터 못 치는 챔프</p>
+                <div class="kpi-val" style="color:#f59e0b">${a.uncoveredCount}명</div>
+                <p class="kpi-sub">메타 미커버 <strong style="color:#7dd3fc">${a.uncoveredMeta.length + a.uncoveredDanger.filter((e) => e.isMeta).length}명</strong></p>
+              </div>
+              <div class="kpi-card" style="${a.dangerAll.length ? 'border-color:var(--hard-border);background:linear-gradient(135deg,rgba(239,68,68,0.16),var(--bg-card))' : ''}">
+                <p class="kpi-label" style="${a.dangerAll.length ? 'color:#fca5a5' : ''}">🚨 최우선 경계 / 필밴</p>
+                <div class="kpi-val" style="color:${a.dangerAll.length ? '#ef4444' : '#10b981'}">${a.dangerAll.length}명</div>
+                <p class="kpi-sub truncate">${a.dangerAll.length ? esc(a.dangerAll.slice(0, 3).map((d) => d.enemy.name).join(', ')) : '전원 카운터 천적 없음'}</p>
+              </div>
+            </div>
+
+            <!-- 🚨 최우선 경계 / 필밴 배너 -->
+            ${a.dangerAll.length ? `
+              <div class="banner-danger stack-sm">
+                <p style="font-size:13px;font-weight:900;color:#fca5a5">🚨 최우선 경계 대상 & 추천 필밴 (${state.myPool.length >= 2 ? '내 챔프폭 전체가 카운터를 맞는 천적' : '내 주력 픽의 하드 카운터'})</p>
+                <p style="font-size:12px;color:#cbd5e1"><strong>${esc(state.myPool.join(' + '))}</strong> 조합은 아래 상대에게 꺼낼 카드가 극도로 불리합니다. 밴하거나 아래 추천 보완 픽을 익혀두세요.</p>
+                <div class="flex-wrap" style="margin-top:4px">
+                  ${a.dangerAll.map((d) => `
+                    <button type="button" data-jump="${esc(d.enemy.name)}" class="btn" style="border-color:var(--hard);background:rgba(239,68,68,0.22);color:#fee2e2">
+                      ${esc(d.enemy.name)}
+                      <span class="badge ${d.isHardToAll ? 'badge-hard' : 'badge-counter'}">${d.isHardToAll ? '전원 하드' : '전원 카운터'}</span>
+                    </button>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+
+            <!-- Greedy Set Cover +1 -> +2 -> +3 보완 추천 -->
+            <div class="card ${isMobile ? 'card-pad-sm' : 'card-pad'} stack-md" style="border-color:var(--gold-border);background:linear-gradient(155deg,#132440,#0f1d33 65%,#0a1527)">
+              <div>
+                <span class="badge badge-op" style="margin-bottom:6px">GREEDY SET COVER 조합 추천</span>
+                <h3 style="font-size:17px;font-weight:900;color:#fff">✨ 이 챔피언 ${a.greedySteps.length || 3}개만 더 할 줄 알면 해결!</h3>
+                <p style="font-size:12.5px;color:#cbd5e1;margin-top:3px">
+                  현재 커버율 <strong style="color:#34d399">${a.coveredCount}/${a.total} (${a.coveredPct}%)</strong> → 추천 조합 추가 시 최대 <strong style="color:#f0e6d2">${maxPct}%</strong> 달성
+                </p>
+              </div>
+
+              <!-- 누적 프로그레스 바 -->
+              <div style="border:1px solid var(--border);border-radius:12px;background:var(--bg-main);padding:11px 12px">
+                <div class="flex-between" style="font-size:11px;font-weight:800">
+                  <span style="color:#cbd5e1">단계별 누적 커버율 시뮬레이션</span>
+                  <span style="color:#f0e6d2">${a.coveredPct}% → ${maxPct}%</span>
+                </div>
+                <div class="progress-track progress-track-lg">
+                  <div class="progress-seg" style="width:${(a.coveredCount / a.total) * 100}%;background:#94a3b8" title="현재 내 폭"></div>
+                  ${a.greedySteps.map((s, i) => `
+                    <div class="progress-seg" style="width:${(s.newlySolved.length / a.total) * 100}%;background:${stepColors[i]};border-left:1px solid #091428" title="+${s.champ.name}"></div>
+                  `).join('')}
+                </div>
+                <div class="flex-wrap" style="margin-top:8px;gap:10px;font-size:10.5px;color:#94a3b8">
+                  <span class="flex-row" style="gap:4px"><span style="width:8px;height:8px;border-radius:99px;background:#94a3b8"></span>현재 ${a.coveredCount}명</span>
+                  ${a.greedySteps.map((s, i) => `
+                    <span class="flex-row" style="gap:4px"><span style="width:8px;height:8px;border-radius:99px;background:${stepColors[i]}"></span>+${s.step}순위 ${esc(s.champ.name)}(+${s.newlySolved.length} → ${s.pct}%)</span>
+                  `).join('')}
+                </div>
+              </div>
+
+              ${a.greedySteps.length === 0
+                ? `<div style="border-radius:12px;border:1px solid var(--good-border);background:var(--good-bg);padding:14px;text-align:center;font-size:13px;font-weight:800;color:#6ee7b7">🏆 현재 판정 기준의 모든 탑 챔피언을 이미 커버할 수 있습니다!</div>`
+                : `
+                  <div class="stack-sm" style="gap:10px">
+                    ${a.greedySteps.map((s, i) => `
+                      <div style="border-radius:14px;border:1px solid ${stepColors[i]};background:rgba(9,20,40,0.68);padding:14px" class="stack-sm">
+                        <div class="flex-between" style="flex-wrap:wrap">
+                          <div class="flex-row" style="gap:10px">
+                            <span style="width:28px;height:28px;border-radius:8px;background:${stepColors[i]};color:#091428;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;flex-shrink:0">+${s.step}</span>
+                            <button type="button" data-jump="${esc(s.champ.name)}" class="flex-row" style="text-align:left;gap:10px">
+                              <span class="avatar avatar-md ${avatarClass(s.champ)}">${esc(initials(s.champ.name))}</span>
+                              <div>
+                                <div class="flex-row" style="gap:5px;flex-wrap:wrap">
+                                  <strong style="font-size:15px;color:#fff">${esc(s.champ.name)}</strong>
+                                  ${renderTags(s.champ.tags, 2)}
+                                </div>
+                                <p style="font-size:11.5px;color:#cbd5e1;margin-top:2px">
+                                  <strong style="color:#34d399">+${s.newlySolved.length}개 새로 해결</strong> · 누적 <strong style="color:#f0e6d2">${s.cumulative}/${a.total} (${s.pct}%)</strong>
+                                  ${s.dangerCount ? ` · <strong style="color:#fca5a5">위험군 ${s.dangerCount}명 저격</strong>` : ''}
+                                  ${s.metaCount ? ` · <strong style="color:#7dd3fc">메타 ${s.metaCount}명</strong>` : ''}
+                                </p>
+                              </div>
+                            </button>
+                          </div>
+                          <button type="button" data-sim-add="${esc(s.champ.name)}" class="btn btn-gold">+ 내 폭에 추가 (시뮬레이션)</button>
+                        </div>
+
+                        <div style="padding-top:8px;border-top:1px solid rgba(255,255,255,0.08)">
+                          <p style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:6px">새로 해결되는 상대 (${s.newlySolved.length}명)</p>
+                          <div class="flex-wrap" style="gap:5px">
+                            ${s.newlySolved.map(({ enemy, rel }) => {
+                              const isDan = a.dangerSet.has(enemy.name);
+                              const sty = isDan
+                                ? 'border-color:var(--hard);background:rgba(239,68,68,0.24);color:#fee2e2'
+                                : rel === 'hard'
+                                  ? 'border-color:var(--good-border);background:var(--good-bg);color:#a7f3d0'
+                                  : 'border-color:var(--meta-border);background:var(--meta-bg);color:#bae6fd';
+                              return `<button type="button" data-jump="${esc(enemy.name)}" class="solve-pill" style="${sty}">${isDan ? '🚨 ' : ''}${esc(enemy.name)}${rel === 'hard' ? ' (7:3)' : ''}</button>`;
+                            }).join('')}
+                          </div>
+                        </div>
+                      </div>
+                    `).join('')}
+                  </div>
+                `}
+            </div>
+
+            <!-- 단독 효율 TOP 6 -->
+            ${a.soloTop6.length ? `
+              <div class="card ${isMobile ? 'card-pad-sm' : 'card-pad'} stack-sm">
+                <div>
+                  <h3 style="font-size:14.5px;font-weight:900;color:#fff">🎯 단독 보완 효율 TOP ${a.soloTop6.length} (대체 추천 픽)</h3>
+                  <p style="font-size:11.5px;color:#94a3b8;margin-top:2px">추천 조합 픽이 취향에 맞지 않는다면 아래 단독 효율 상위권 중 골라보세요.</p>
+                </div>
+                <div class="${isMobile ? 'solo-grid-mobile' : 'solo-grid'}">
+                  ${a.soloTop6.map((item, idx) => `
+                    <div style="border:1px solid var(--border);border-radius:12px;background:rgba(9,20,40,0.82);padding:11px" class="stack-sm">
+                      <div class="flex-between">
+                        <button type="button" data-jump="${esc(item.cand.name)}" class="flex-row" style="text-align:left;min-width:0">
+                          <span class="avatar avatar-sm ${avatarClass(item.cand)}">${esc(initials(item.cand.name))}</span>
+                          <div style="min-width:0">
+                            <p class="truncate" style="font-size:13px;font-weight:800;color:#fff">${idx + 1}. ${esc(item.cand.name)}</p>
+                            <p style="font-size:10.5px;font-weight:800;color:#34d399">+${item.solved.length}명 해결 (메타 ${item.metaSolved})</p>
+                          </div>
+                        </button>
+                        <button type="button" data-sim-add="${esc(item.cand.name)}" class="btn btn-gold" style="padding:5px 9px;min-height:32px">+ 추가</button>
+                      </div>
+                      <p style="font-size:11px;color:#94a3b8">해결: ${esc(item.solved.slice(0, 5).map((s) => s.enemy.name).join(', '))}${item.solved.length > 5 ? ` 외 ${item.solved.length - 5}명` : ''}</p>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+
+            <!-- 카운터 못 치는 챔피언 3그룹 -->
+            <div class="stack-sm">
+              <h3 style="font-size:15px;font-weight:900;color:#fff">❌ 카운터 못 치는 챔피언 목록 & 해결 픽 (${a.uncoveredCount}명)</h3>
+              ${renderGroup('danger', '🚨 위험군 (내 풀 전부 불리)', '내 챔프폭 어느 픽을 꺼내도 불리한 최우선 대응 대상입니다.', a.uncoveredDanger, true, '#f87171')}
+              ${renderGroup('meta', '🔥 메타 미커버 (OP/1~2티어)', `${PATCH_VERSION} 랭크 주류 메타 중 아직 카운터 픽이 없는 상대입니다.`, a.uncoveredMeta, false, '#38bdf8')}
+              ${renderGroup('other', '📌 기타 미커버', '나머지 미커버 탑 챔피언과 추천 해결 픽입니다.', a.uncoveredOther, false, '#e2e8f0')}
+            </div>
+          </div>
+        `;
+      }
+
+      // 8. 필터된 전체 목록
+      function getFilteredList() {
+        let list = DATA;
+        if (state.listFilter === 'meta') list = list.filter((c) => c.isMeta);
+        else if (state.listFilter === 'buff') list = list.filter((c) => c.tags.some((t) => ['꿀챔', '버프', '급상승'].includes(t)));
+        else if (state.listFilter === 'pool') list = list.filter((c) => state.myPool.includes(c.name));
+        if (state.listCho !== '전체') list = list.filter((c) => c.initial === state.listCho);
+        return list;
+      }
+
+      // 9. PC 레이아웃 렌더링
+      function renderPc() {
+        const list = getFilteredList();
+        return `
+          <div class="pc-shell">
+            <header class="pc-header">
+              <div class="pc-header-inner">
+                <div class="brand">
+                  <div class="brand-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm0 2.18l6 2.25v4.66c0 4.02-2.66 7.81-6 8.85-3.34-1.04-6-4.83-6-8.85V6.43l6-2.25z"/></svg>
+                  </div>
+                  <div>
+                    <h1 class="brand-title">TOP COUNTER <span>${PATCH_VERSION}</span></h1>
+                    <p class="brand-sub">탑 65챔프 카운터 검색 & 챔프폭 약점 분석</p>
+                  </div>
+                </div>
+
+                <!-- 초고속 검색창 -->
+                <div class="pc-search-box">
+                  <div class="search-wrap">
+                    <span class="search-icon">
+                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.3"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/></svg>
+                    </span>
+                    <input
+                      id="globalSearchInput"
+                      type="text"
+                      value="${esc(state.globalQuery)}"
+                      autocomplete="off"
+                      placeholder="챔프 검색 (갱플, ㄱㅍ, ㅁㅍ, ㅋㅅㅌ, 볼베...)"
+                      class="search-input"
+                    />
+                    <div class="search-right">
+                      <button type="button" id="clearGlobalBtn" class="clear-btn ${state.globalQuery ? '' : 'hidden'}">ESC</button>
+                      <kbd class="kbd-hint">/</kbd>
+                    </div>
+                    <div id="globalDropdownSlot">${buildDropdownHtml()}</div>
+                  </div>
+                </div>
+
+                <!-- 메인 탭 -->
+                <nav class="seg-group">
+                  <button type="button" data-pc-tab="counter" class="seg-btn ${state.pcTab === 'counter' ? 'active' : ''}">⚔️ 카운터 검색</button>
+                  <button type="button" data-pc-tab="analyzer" class="seg-btn ${state.pcTab === 'analyzer' ? 'active' : ''}">
+                    <span>🧬 내 챔프폭 분석</span>
+                    <span class="count-pill">${state.myPool.length}</span>
+                  </button>
+                </nav>
+
+                <!-- 공유 + PC/모바일 전환 -->
+                <div class="flex-row">
+                  <button type="button" data-share-link class="btn btn-gold" title="현재 내 챔프폭과 조회 상태를 링크로 복사">🔗 링크 복사</button>
+                  <div class="seg-group">
+                    <button type="button" data-view="pc" class="seg-btn active-soft" style="padding:6px 10px">🖥️ PC</button>
+                    <button type="button" data-view="mobile" class="seg-btn" style="padding:6px 10px">📱 모바일</button>
+                  </div>
+                </div>
+              </div>
+            </header>
+
+            <main class="pc-main">
+              ${state.pcTab === 'counter' ? `
+                <div class="pc-grid-counter">
+                  <aside class="card pc-sidebar">
+                    <div class="flex-between" style="margin-bottom:8px">
+                      <strong style="font-size:13px;color:#f0e6d2">탑 챔피언 목록</strong>
+                      <span class="count-pill">${list.length} / ${DATA.length}</span>
+                    </div>
+                    <div class="filter-grid-2">
+                      ${[
+                        { id: 'all', label: '전체' },
+                        { id: 'meta', label: 'OP·1~2티어' },
+                        { id: 'buff', label: '꿀챔·버프' },
+                        { id: 'pool', label: `⭐ 내 폭(${state.myPool.length})` },
+                      ].map((f) => `<button type="button" data-list-filter="${f.id}" class="filter-btn ${state.listFilter === f.id ? 'active' : ''}">${f.label}</button>`).join('')}
+                    </div>
+                    <div class="cho-bar">
+                      ${CHO_FILTERS.map((c) => `<button type="button" data-list-cho="${c}" class="cho-btn ${state.listCho === c ? 'active' : ''}">${c}</button>`).join('')}
+                    </div>
+                    <div class="pc-sidebar-list">
+                      ${list.length === 0
+                        ? `<p style="padding:28px 0;text-align:center;font-size:12px;color:#64748b">조건에 맞는 챔피언이 없습니다.</p>`
+                        : list.map((c) => {
+                            const sel = c.name === state.selectedName;
+                            const inPool = state.myPool.includes(c.name);
+                            return `
+                              <div class="champ-row ${sel ? 'selected' : ''}">
+                                <button type="button" data-jump="${esc(c.name)}" class="champ-row-btn">
+                                  <span class="avatar avatar-sm ${avatarClass(c)}">${esc(initials(c.name))}</span>
+                                  <div style="min-width:0;flex:1">
+                                    <div class="flex-row" style="gap:4px">
+                                      <span class="truncate" style="font-size:12.5px;font-weight:800;color:${sel ? '#f0e6d2' : '#e2e8f0'}">${esc(c.name)}</span>
+                                      ${c.tags[0] ? `<span class="badge ${tagClass(c.tags[0])}">${esc(c.tags[0])}</span>` : ''}
+                                    </div>
+                                    <p style="font-size:10px;color:#64748b">하드 ${c.hard.length} · 카운터 ${c.counter.length}</p>
+                                  </div>
+                                </button>
+                                <button type="button" data-toggle-pool="${esc(c.name)}" class="star-btn ${inPool ? 'in-pool' : ''}" title="${inPool ? '내 폭에서 제거' : '내 폭에 추가'}">${inPool ? '★' : '☆'}</button>
+                              </div>
+                            `;
+                          }).join('')}
+                    </div>
+                  </aside>
+                  <section>${buildDetailHtml(false)}</section>
+                </div>
+              ` : `
+                <div class="pc-grid-analyzer">
+                  <aside style="position:sticky;top:76px">${buildPoolControlHtml(false)}</aside>
+                  <section>${buildAnalyzerResultsHtml(false)}</section>
+                </div>
+              `}
+            </main>
+          </div>
+        `;
+      }
+
+      // 10. 모바일 전용 레이아웃 렌더링
+      function renderMobile() {
+        const isDesktopHost = window.innerWidth >= 860;
+        const list = getFilteredList();
+        let bodyHtml = '';
+
+        if (state.mobileTab === 'counter') {
+          bodyHtml = `
+            <div class="stack-md">
+              <div class="stack-sm">
+                <div class="search-wrap">
+                  <span class="search-icon">
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.3"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/></svg>
+                  </span>
+                  <input
+                    id="globalSearchInput"
+                    type="text"
+                    value="${esc(state.globalQuery)}"
+                    autocomplete="off"
+                    placeholder="상대 챔프 검색 (갱플, ㄱㅍ, ㅁㅍ, 볼베...)"
+                    class="search-input"
+                    style="padding-right:42px;min-height:46px"
+                  />
+                  <div class="search-right">
+                    <button type="button" id="clearGlobalBtn" class="clear-btn ${state.globalQuery ? '' : 'hidden'}">✕</button>
+                  </div>
+                  <div id="globalDropdownSlot">${buildDropdownHtml()}</div>
+                </div>
+
+                <div class="quick-strip">
+                  <span style="font-size:10.5px;font-weight:800;color:#64748b;flex-shrink:0">최근:</span>
+                  ${state.recent.map((n) => `
+                    <button type="button" data-jump="${esc(n)}" class="quick-pill ${n === state.selectedName ? 'active' : ''}">${esc(n)}</button>
+                  `).join('')}
+                </div>
+              </div>
+              ${buildDetailHtml(true)}
+            </div>
+          `;
+        } else if (state.mobileTab === 'pool') {
+          bodyHtml = `
+            <div class="stack-md">
+              ${buildPoolControlHtml(true)}
+              ${buildAnalyzerResultsHtml(true)}
+            </div>
+          `;
+        } else {
+          bodyHtml = `
+            <div class="stack-md">
+              <div class="card card-pad-sm stack-sm">
+                <div class="flex-between">
+                  <strong style="font-size:13.5px;color:#f0e6d2">탑 챔피언 목록 (${list.length}/${DATA.length})</strong>
+                  <span style="font-size:10.5px;color:#94a3b8">☆ 터치로 내 폭 등록</span>
+                </div>
+                <div class="filter-grid-4">
+                  ${[
+                    { id: 'all', label: '전체' },
+                    { id: 'meta', label: '메타' },
+                    { id: 'buff', label: '꿀·버프' },
+                    { id: 'pool', label: `⭐(${state.myPool.length})` },
+                  ].map((f) => `<button type="button" data-list-filter="${f.id}" class="filter-btn ${state.listFilter === f.id ? 'active' : ''}">${f.label}</button>`).join('')}
+                </div>
+                <div class="cho-bar" style="border-bottom:none;padding-bottom:0">
+                  ${CHO_FILTERS.map((c) => `<button type="button" data-list-cho="${c}" class="cho-btn ${state.listCho === c ? 'active' : ''}" style="padding:5px 7px;min-width:28px">${c}</button>`).join('')}
+                </div>
+              </div>
+
+              <div class="mobile-tile-grid">
+                ${list.length === 0
+                  ? `<div class="card card-pad" style="grid-column:1/-1;text-align:center;font-size:12px;color:#94a3b8">일치하는 챔피언이 없습니다.</div>`
+                  : list.map((c) => {
+                      const sel = c.name === state.selectedName;
+                      const inPool = state.myPool.includes(c.name);
+                      return `
+                        <div class="mobile-tile ${sel ? 'selected' : ''}">
+                          <button type="button" data-toggle-pool="${esc(c.name)}" class="star-btn ${inPool ? 'in-pool' : ''}" style="position:absolute;top:4px;right:4px" aria-label="${esc(c.name)} 챔프폭 토글">${inPool ? '★' : '☆'}</button>
+                          <button type="button" data-jump="${esc(c.name)}" style="width:100%;display:flex;flex-direction:column;align-items:center;padding-top:4px">
+                            <span class="avatar avatar-md ${avatarClass(c)}" style="margin-bottom:6px">${esc(initials(c.name))}</span>
+                            <span class="truncate" style="max-width:100%;font-size:12px;font-weight:800;color:${sel ? '#f0e6d2' : '#f1f5f9'}">${esc(c.name)}</span>
+                            <span style="font-size:10px;font-weight:700;color:${c.tags[0] ? '#c8aa6e' : '#64748b'};margin-top:2px">${esc(c.tags[0] || `하드 ${c.hard.length}`)}</span>
+                          </button>
+                        </div>
+                      `;
+                    }).join('')}
+              </div>
+            </div>
+          `;
+        }
+
+        const shell = `
+          <div class="mobile-shell ${isDesktopHost ? 'framed' : ''}">
+            <header class="mobile-header">
+              <div class="flex-row" style="min-width:0;gap:8px">
+                <div class="brand-icon" style="width:32px;height:32px;border-radius:9px;font-size:11px;font-weight:900">${PATCH_VERSION.split('.')[0]}</div>
+                <div style="min-width:0">
+                  <h1 class="truncate" style="font-size:14px;font-weight:900;color:#fff">TOP <span style="color:#c8aa6e">${PATCH_VERSION}</span></h1>
+                  <p style="font-size:10px;color:#94a3b8">탑 카운터 & 챔프폭 분석</p>
+                </div>
+              </div>
+              <div class="flex-row" style="gap:5px;flex-shrink:0">
+                <button type="button" data-share-link class="btn btn-gold" style="padding:5px 8px;min-height:32px;font-size:11px">🔗</button>
+                <div class="seg-group" style="padding:2px">
+                  <button type="button" data-view="pc" class="seg-btn" style="padding:5px 8px;font-size:11px">🖥️</button>
+                  <button type="button" data-view="mobile" class="seg-btn active" style="padding:5px 8px;font-size:11px">📱</button>
+                </div>
+              </div>
+            </header>
+
+            <main id="mobileBody" class="mobile-body">${bodyHtml}</main>
+
+            <nav class="mobile-nav">
+              <button type="button" data-mob-tab="counter" class="mobile-tab-btn ${state.mobileTab === 'counter' ? 'active' : ''}">
+                <span style="font-size:16px">🔍</span><span>카운터</span>
+              </button>
+              <button type="button" data-mob-tab="pool" class="mobile-tab-btn ${state.mobileTab === 'pool' ? 'active' : ''}">
+                <span style="font-size:16px">🧬</span><span>챔프폭(${state.myPool.length})</span>
+              </button>
+              <button type="button" data-mob-tab="list" class="mobile-tab-btn ${state.mobileTab === 'list' ? 'active' : ''}">
+                <span style="font-size:16px">📋</span><span>목록</span>
+              </button>
+            </nav>
+          </div>
+        `;
+
+        if (isDesktopHost) {
+          return `
+            <div class="mobile-host-desktop">
+              <div class="mobile-preview-bar">
+                <span>📱 모바일 전용 모드 (430px 프레임)</span>
+                <button type="button" data-view="pc" class="btn btn-gold-solid" style="padding:4px 10px;min-height:28px;border-radius:999px;font-size:11px">🖥️ PC로 전환</button>
+              </div>
+              ${shell}
+            </div>
+          `;
+        }
+        return shell;
+      }
+
+      // 11. 루트 렌더러
+      function renderApp() {
+        document.getElementById('appRoot').innerHTML = state.viewMode === 'pc' ? renderPc() : renderMobile();
+      }
+
+      // 12. 전역 이벤트 바인딩 (한글 IME 조합을 깨지 않도록 input 시 드롭다운 슬롯만 부분 갱신!)
+      function bindEvents() {
+        const root = document.getElementById('appRoot');
+
+        root.addEventListener('input', (e) => {
+          const t = e.target;
+          if (t.id === 'globalSearchInput') {
+            state.globalQuery = t.value;
+            state.globalResults = searchChamps(state.globalQuery);
+            state.globalActiveIdx = 0;
+            const slot = document.getElementById('globalDropdownSlot');
+            if (slot) slot.innerHTML = buildDropdownHtml();
+            const clearBtn = document.getElementById('clearGlobalBtn');
+            if (clearBtn) clearBtn.classList.toggle('hidden', !state.globalQuery);
+          } else if (t.id === 'poolAddInput') {
+            state.poolAddQuery = t.value;
+            const slot = document.getElementById('poolAddResultsSlot');
+            if (slot) slot.innerHTML = buildPoolAddResultsHtml();
+          }
+        });
+
+        root.addEventListener('change', (e) => {
+          if (e.target.id === 'statCheck') {
+            state.includeStat = e.target.checked;
+            renderApp();
+          }
+        });
+
+        root.addEventListener('keydown', (e) => {
+          if (e.target.id === 'globalSearchInput') {
+            if (e.key === 'Escape') {
+              state.globalQuery = '';
+              state.globalResults = [];
+              state.globalActiveIdx = 0;
+              e.target.value = '';
+              const slot = document.getElementById('globalDropdownSlot');
+              if (slot) slot.innerHTML = '';
+              const clearBtn = document.getElementById('clearGlobalBtn');
+              if (clearBtn) clearBtn.classList.add('hidden');
+              return;
+            }
+            if (state.globalResults.length === 0) return;
+            const maxIdx = Math.min(state.globalResults.length, 10) - 1;
+            if (e.key === 'ArrowDown') {
+              e.preventDefault();
+              state.globalActiveIdx = state.globalActiveIdx >= maxIdx ? 0 : state.globalActiveIdx + 1;
+              const slot = document.getElementById('globalDropdownSlot');
+              if (slot) slot.innerHTML = buildDropdownHtml();
+            } else if (e.key === 'ArrowUp') {
+              e.preventDefault();
+              state.globalActiveIdx = state.globalActiveIdx <= 0 ? maxIdx : state.globalActiveIdx - 1;
+              const slot = document.getElementById('globalDropdownSlot');
+              if (slot) slot.innerHTML = buildDropdownHtml();
+            } else if (e.key === 'Enter' && !e.isComposing) {
+              e.preventDefault();
+              const chosen = state.globalResults[state.globalActiveIdx] || state.globalResults[0];
+              if (chosen) selectChamp(chosen.name, true);
+            }
+          } else if (e.target.id === 'poolAddInput' && e.key === 'Enter' && !e.isComposing) {
+            e.preventDefault();
+            const hits = searchChamps(state.poolAddQuery).filter((c) => !state.myPool.includes(c.name));
+            if (hits.length > 0) {
+              state.poolAddQuery = '';
+              addPool(hits[0].name);
+            }
+          }
+        });
+
+        // 전역 단축키 ('/' 검색창 포커스, 'ESC' 드롭다운 닫기)
+        document.addEventListener('keydown', (e) => {
+          const tag = document.activeElement?.tagName;
+          if (e.key === '/' && tag !== 'INPUT' && tag !== 'TEXTAREA') {
+            e.preventDefault();
+            const inp = document.getElementById('globalSearchInput');
+            if (inp) {
+              inp.focus();
+              inp.select();
+            } else if (state.viewMode === 'mobile') {
+              state.mobileTab = 'counter';
+              renderApp();
+              document.getElementById('globalSearchInput')?.focus();
+            }
+          } else if (e.key === 'Escape' && state.globalResults.length > 0) {
+            state.globalResults = [];
+            const slot = document.getElementById('globalDropdownSlot');
+            if (slot) slot.innerHTML = '';
+          }
+        });
+
+        // 클릭 이벤트 위임
+        root.addEventListener('click', (e) => {
+          const t = e.target;
+
+          const viewBtn = t.closest('[data-view]');
+          if (viewBtn) {
+            if (viewBtn.dataset.view !== state.viewMode) setViewMode(viewBtn.dataset.view, true);
+            return;
+          }
+
+          const pcTab = t.closest('[data-pc-tab]');
+          if (pcTab) { state.pcTab = pcTab.dataset.pcTab; renderApp(); return; }
+
+          const mobTab = t.closest('[data-mob-tab]');
+          if (mobTab) { state.mobileTab = mobTab.dataset.mobTab; renderApp(); return; }
+
+          if (t.closest('#clearGlobalBtn')) {
+            state.globalQuery = '';
+            state.globalResults = [];
+            const inp = document.getElementById('globalSearchInput');
+            if (inp) { inp.value = ''; inp.focus(); }
+            const slot = document.getElementById('globalDropdownSlot');
+            if (slot) slot.innerHTML = '';
+            t.closest('#clearGlobalBtn').classList.add('hidden');
+            return;
+          }
+
+          if (t.closest('[data-share-link]')) { shareCurrentLink(); return; }
+
+          const ddPick = t.closest('[data-dd-pick]');
+          if (ddPick) { selectChamp(ddPick.dataset.ddPick, true); return; }
+
+          const toggleBtn = t.closest('[data-toggle-pool]');
+          if (toggleBtn) { togglePool(toggleBtn.dataset.togglePool); return; }
+
+          const simAdd = t.closest('[data-sim-add]');
+          if (simAdd) { addPool(simAdd.dataset.simAdd); return; }
+
+          const quickAdd = t.closest('[data-quick-add]');
+          if (quickAdd) { state.poolAddQuery = ''; addPool(quickAdd.dataset.quickAdd); return; }
+
+          const preset = t.closest('[data-preset]');
+          if (preset) { applyPreset(preset.dataset.preset); return; }
+
+          const crit = t.closest('[data-criteria]');
+          if (crit) { state.counterCriteria = crit.dataset.criteria; renderApp(); return; }
+
+          const prio = t.closest('[data-priority]');
+          if (prio) { state.priorityMode = prio.dataset.priority; renderApp(); return; }
+
+          if (t.closest('[data-goto-analyzer]')) {
+            if (state.viewMode === 'pc') state.pcTab = 'analyzer';
+            else state.mobileTab = 'pool';
+            renderApp();
+            return;
+          }
+
+          const copyBtn = t.closest('[data-copy-summary]');
+          if (copyBtn) { copyChampSummary(copyBtn.dataset.copySummary); return; }
+
+          const jump = t.closest('[data-jump]');
+          if (jump) { selectChamp(jump.dataset.jump, true); return; }
+
+          const missing = t.closest('[data-missing]');
+          if (missing) { showToast(`'${missing.dataset.missing}'은(는) 65개 메인 탑 티어 목록 외 조커 픽입니다.`, 'warn'); return; }
+
+          const lf = t.closest('[data-list-filter]');
+          if (lf) { state.listFilter = lf.dataset.listFilter; renderApp(); return; }
+
+          const lc = t.closest('[data-list-cho]');
+          if (lc) { state.listCho = lc.dataset.listCho; renderApp(); return; }
+
+          const grp = t.closest('[data-toggle-group]');
+          if (grp) {
+            const k = grp.dataset.toggleGroup;
+            state.mobileGroupOpen[k] = !state.mobileGroupOpen[k];
+            renderApp();
+            return;
+          }
+
+          // 드롭다운 외부 클릭 닫기
+          if (state.globalResults.length > 0 && !t.closest('#globalDropdown') && t.id !== 'globalSearchInput') {
+            state.globalResults = [];
+            const slot = document.getElementById('globalDropdownSlot');
+            if (slot) slot.innerHTML = '';
+          }
+        });
+
+        // 리사이즈 대응 (수동 전환 안 했을 때 860px 자동 전환)
+        let rTimer = null;
+        window.addEventListener('resize', () => {
+          clearTimeout(rTimer);
+          rTimer = setTimeout(() => {
+            if (!state.userToggledMode) {
+              const auto = window.innerWidth < 860 ? 'mobile' : 'pc';
+              if (auto !== state.viewMode) {
+                state.viewMode = auto;
+                renderApp();
+                return;
+              }
+            }
+            if (state.viewMode === 'mobile') renderApp();
+          }, 150);
+        });
+      }
+
+      document.addEventListener('DOMContentLoaded', () => {
+        renderApp();
+        bindEvents();
+        if (state.loadedFromUrl) {
+          showToast('🔗 공유된 링크의 챔프폭·조회 설정을 자동으로 불러왔습니다!', 'success');
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
