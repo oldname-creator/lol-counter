@@ -1,5 +1,5 @@
 /**
- * BANPICK - 순수 계산 & 분석 엔진 (engine.js v2.3.2)
+ * BANPICK - 순수 계산 & 분석 엔진 (engine.js v2.3.3)
  * - DOM / HTML과 완전히 분리된 순수 연산 모듈 (향후 UI 교체 및 미드·바텀 확장 공용)
  * - 티켓 1 반영: 50:50 평균 합산 폐기 -> 2축 분리 카운터 판정(승률 축 / 라인전 축)
  *   · 승률(+) & 라인전(+) -> 🔥 라인전 압도 (정석 카운터)
@@ -7,7 +7,7 @@
  *   · 승률(-) & 라인전(+) -> ⚠ 초반 압박 주의 (정식 카운터 제외, 주의 섹션 분리)
  */
 window.BANPICK_ENGINE = (function () {
-  const VERSION = "2.3.2";
+  const VERSION = "2.3.3";
 
   const TIER_BASE = { "OP": 95, "1티어": 83, "2티어": 69, "3티어": 55, "4티어": 41, "5티어": 28 };
   const TIER_ORDER = { "OP": 0, "1티어": 1, "2티어": 2, "3티어": 3, "4티어": 4, "5티어": 5 };
@@ -130,19 +130,8 @@ window.BANPICK_ENGINE = (function () {
       }
     }
 
-    // 2) 승률 미검증 + 라인전 압박 수치만 있을 때 (예: 15분 골드 격차 단독 지표)
-    if (winState === null && laneState === "+") {
-      return {
-        archetype: "lane_trap",
-        label: labels.lane_trap,
-        winState: null,
-        laneState: "+",
-        isOfficialCounter: false,
-        source: "auto_lane_only"
-      };
-    }
-
-    // 3) API 라인전 수치가 아직 비어 있을 때: 수동 성향 태그 폴백
+    // 2) API 2축 중 한쪽 수치가 비어 있을 때: 수동 검증 성향 태그 우선 적용
+    //    (예: 제이스 vs 이렐리아처럼 정식 카운터로 확정됐으나 현재 gd15만 입력된 매치업 보호)
     if (mStat.archetype && labels[mStat.archetype]) {
       return {
         archetype: mStat.archetype,
@@ -151,6 +140,18 @@ window.BANPICK_ENGINE = (function () {
         laneState,
         isOfficialCounter: mStat.archetype !== "lane_trap",
         source: "manual_fallback"
+      };
+    }
+
+    // 3) 성향 태그 없이 라인전 압박 수치만 단독으로 들어왔을 때: 초반 압박 주의로 분류
+    if (winState === null && laneState === "+") {
+      return {
+        archetype: "lane_trap",
+        label: labels.lane_trap,
+        winState: null,
+        laneState: "+",
+        isOfficialCounter: false,
+        source: "auto_lane_only"
       };
     }
 
@@ -242,14 +243,14 @@ window.BANPICK_ENGINE = (function () {
       const metaTargets = [];
 
       snipedHard.forEach((target) => {
-        const t = raw[target].tier;
+        const t = raw[target] ? raw[target].tier : "3티어";
         snipeRaw += (SNIPE_WEIGHT[t] || [4, 2])[0];
         if (t === "OP" || t === "1티어") {
           metaTargets.push({ name: target, tier: t, type: "hard" });
         }
       });
       snipedSoft.forEach((target) => {
-        const t = raw[target].tier;
+        const t = raw[target] ? raw[target].tier : "3티어";
         snipeRaw += (SNIPE_WEIGHT[t] || [4, 2])[1];
         if (t === "OP" || t === "1티어") {
           metaTargets.push({ name: target, tier: t, type: "soft" });
@@ -580,7 +581,6 @@ window.BANPICK_ENGINE = (function () {
 
     const diag = diagnosePool(cleanPool, byName, items);
     const topMeta = items.filter((it) => it.tier === "OP" || it.tier === "1티어");
-    const topMetaSet = new Set(topMeta.map((it) => it.name));
 
     const coveredTopMeta = new Set();
     topMeta.forEach((enemy) => {

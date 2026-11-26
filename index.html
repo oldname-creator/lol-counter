@@ -915,9 +915,9 @@
 
   <div id="toast" class="toast"></div>
 
-  <!-- External Data (v2.3.0) & Calculation Engine (v2.3.2 cache-busted) -->
-  <script src="data_top.js?v=2.3.0"></script>
-  <script src="engine.js?v=2.3.2"></script>
+  <!-- External Data & Calculation Engine (v2.3.3 audited release) -->
+  <script src="data_top.js?v=2.3.3"></script>
+  <script src="engine.js?v=2.3.3"></script>
 
   <script>
     /* =========================================================================
@@ -951,6 +951,25 @@
     };
 
     let ANALYTICS = null;
+    let poolEvalCacheKey = "";
+    let poolEvalCache = {};
+
+    function getCachedPoolEval(enemyName) {
+      const key = state.pool.join(",");
+      if (key !== poolEvalCacheKey) {
+        poolEvalCacheKey = key;
+        poolEvalCache = {};
+      }
+      if (!Object.prototype.hasOwnProperty.call(poolEvalCache, enemyName)) {
+        poolEvalCache[enemyName] = window.BANPICK_ENGINE.evaluatePoolVsEnemy(
+          state.pool,
+          enemyName,
+          ANALYTICS.byName,
+          ANALYTICS.counterModel
+        );
+      }
+      return poolEvalCache[enemyName];
+    }
 
     function escapeHtml(str) {
       return String(str == null ? "" : str)
@@ -1101,7 +1120,7 @@
     }
 
     /* =========================================================================
-     * 3. RENDERERS (Scroll-Safe & Surgical Updates)
+     * 2. RENDERERS (Scroll-Safe & Surgical Updates)
      * ========================================================================= */
     function tierBadgeHtml(tier) {
       const cls =
@@ -1353,7 +1372,7 @@
 
         let poolSignal = "";
         if (state.pool.length && !isPool) {
-          const pv = window.BANPICK_ENGINE.evaluatePoolVsEnemy(state.pool, it.name, ANALYTICS.byName, ANALYTICS.counterModel);
+          const pv = getCachedPoolEval(it.name);
           if (pv && pv.verdict === "optimal") {
             const isHard = pv.bestPick && pv.bestPick.strength === "hard";
             poolSignal = isHard
@@ -1475,7 +1494,7 @@
       const safeName = escapeHtml(it.name);
 
       // Ticket 2: 4-Tier Pool Response Verdict & Damage-Control Fallback vs Enemy Pick
-      const poolEval = window.BANPICK_ENGINE.evaluatePoolVsEnemy(state.pool, it.name, ANALYTICS.byName, ANALYTICS.counterModel);
+      const poolEval = getCachedPoolEval(it.name);
       let poolRecHtml = "";
 
       function renderArchBadge(archetype, label) {
@@ -1640,7 +1659,7 @@
 
       const reverseHtml = (it.snipedHard.length || it.snipedSoft.length) ? `
         <div style="display:flex;gap:5px;flex-wrap:wrap;">
-          ${it.snipedHard.map((t) => `<span class="mini-chip ${ANALYTICS.byName[t].tier === 'OP' ? 'snipe-op' : 'snipe-t1'}" style="cursor:pointer;" data-jump="${escapeHtml(t)}">${avatarHtml(t, "avatar-sm")} ${escapeHtml(t)} (7:3)</span>`).join("")}
+          ${it.snipedHard.map((t) => { const tTier = ANALYTICS.byName[t] ? ANALYTICS.byName[t].tier : ''; const tCls = tTier === 'OP' ? 'snipe-op' : (tTier === '1티어' ? 'snipe-t1' : ''); return `<span class="mini-chip ${tCls}" style="cursor:pointer;" data-jump="${escapeHtml(t)}">${avatarHtml(t, "avatar-sm")} ${escapeHtml(t)} (7:3)</span>`; }).join("")}
           ${it.snipedSoft.map((t) => `<span class="mini-chip" style="cursor:pointer;" data-jump="${escapeHtml(t)}">${avatarHtml(t, "avatar-sm")} ${escapeHtml(t)} (6:4)</span>`).join("")}
         </div>
       ` : `<div style="font-size:12px;color:var(--text-muted);">역상성 데이터 없음</div>`;
@@ -1779,6 +1798,11 @@
         state.pool.push(name);
         showToast(`${name} — 내 챔프폭에 추가`);
       }
+      if (!state.pool.length && state.poolOnly) {
+        state.poolOnly = false;
+        const poolBtn = document.getElementById("btnPoolOnly");
+        if (poolBtn) poolBtn.classList.remove("on-gold");
+      }
       savePool();
       renderPoolBar();
       renderTierTable(true);
@@ -1802,7 +1826,7 @@
     }
 
     /* =========================================================================
-     * 4. EVENT BINDING & BOOTSTRAP
+     * 3. EVENT BINDING & BOOTSTRAP
      * ========================================================================= */
     function bindEvents() {
       document.querySelectorAll(".mode-btn").forEach((btn) => {
@@ -1883,6 +1907,11 @@
 
       document.getElementById("btnClearPool").addEventListener("click", () => {
         state.pool = [];
+        if (state.poolOnly) {
+          state.poolOnly = false;
+          const poolBtn = document.getElementById("btnPoolOnly");
+          if (poolBtn) poolBtn.classList.remove("on-gold");
+        }
         savePool();
         renderPoolBar();
         renderTierTable(true);
@@ -1973,7 +2002,7 @@
     }
 
     function bootstrap() {
-      const EXPECTED_ENGINE_VER = "2.3.2";
+      const EXPECTED_ENGINE_VER = "2.3.3";
       const err = document.getElementById("errorBanner");
       const topBundle = window.BANPICK_DATA && window.BANPICK_DATA.top;
       if (!topBundle || !topBundle.champions) {
@@ -1981,9 +2010,14 @@
         err.innerHTML = "<strong>data_top.js 파일을 불러오지 못했습니다.</strong> 깃허브 최상위에 <code>data_top.js</code>가 있는지 확인 후 <code>Ctrl + Shift + R</code>로 새로고침해 주세요.";
         return;
       }
-      if (!window.BANPICK_ENGINE || typeof window.BANPICK_ENGINE.computeTopAnalytics !== "function") {
+      if (
+        !window.BANPICK_ENGINE ||
+        typeof window.BANPICK_ENGINE.computeTopAnalytics !== "function" ||
+        typeof window.BANPICK_ENGINE.evaluatePoolVsEnemy !== "function" ||
+        typeof window.BANPICK_ENGINE.buildPoolCoach !== "function"
+      ) {
         err.style.display = "block";
-        err.innerHTML = "<strong>engine.js 파일을 불러오지 못했습니다.</strong> 깃허브 최상위에 <code>engine.js</code>를 함께 업로드했는지 확인 후 <code>Ctrl + Shift + R</code>로 새로고침해 주세요.";
+        err.innerHTML = "<strong>engine.js가 없거나 구버전 캐시가 로드되었습니다.</strong> 깃허브 최상위에 최신 <code>engine.js</code>를 올린 뒤 <code>Ctrl + Shift + R</code>로 강제 새로고침해 주세요.";
         return;
       }
       if (window.BANPICK_ENGINE.VERSION !== EXPECTED_ENGINE_VER) {
@@ -1999,7 +2033,7 @@
 
       const m = ANALYTICS.meta;
       document.getElementById("patchPill").textContent =
-        `패치 ${m.patch || "26.23"} · 탑 ${ANALYTICS.items.length}종 (v${window.BANPICK_ENGINE.VERSION || "2.3.2"})`;
+        `패치 ${m.patch || "26.23"} · 탑 ${ANALYTICS.items.length}종 (v${window.BANPICK_ENGINE.VERSION || "2.3.3"})`;
       if (m.isCollecting) {
         document.getElementById("collectingPill").style.display = "inline-block";
       }

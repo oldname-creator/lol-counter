@@ -1,29 +1,19 @@
 /**
- * BANPICK - LoL 26.23 패치 탑 라인 통합 데이터 (data_top.js v2.3.0)
+ * BANPICK - LoL 26.23 패치 탑 라인 통합 데이터 (data_top.js v2.3.3)
  * - 총 65종 탑 챔피언 (메인 53종 + 조커 12종) + 목록 외 조커 픽(1종) 안전 매핑
- * - 스키마 v2.3.0 (티켓 1): 2축 분리 카운터(승률·라인전 분리, 🔥라인전 압도 / ⏳중후반 역전 / ⚠초반 압박 주의),
- *   OP 단순 승률 과승격 정리(갱플랭크 등), 3패치 표본 적응형 집계 규격 & API 라인전 지표 슬롯 포함
+ * - 스키마 v2.3.3 (1차 감사 완료): 2축 분리 카운터(🔥라인전 압도 / ⏳중후반 역전 / ⚠초반 압박 주의),
+ *   OP 단순 승률 과승격 정리, 중복 메타 키 제거, 3패치 표본 적응형 & API 라인전 지표 슬롯 완비
  */
 
 window.BANPICK_DATA = window.BANPICK_DATA || {};
 
 window.BANPICK_DATA.top = {
   meta: {
-  "schemaVersion": "2.3.0",
+  "schemaVersion": "2.3.3",
   "lane": "top",
   "patch": "26.23",
   "tierScope": "EMERALD_PLUS",
   "tierAvgWinRate": 51.8,
-  "counterPatchWindow": [
-    "26.23",
-    "26.22",
-    "26.21"
-  ],
-  "patchWeights": [
-    0.55,
-    0.3,
-    0.15
-  ],
   "isCollecting": false,
   "updatedAt": "2026-11-26",
   "rosterCutline": {
@@ -32,7 +22,7 @@ window.BANPICK_DATA.top = {
     "newOrReworkMinPickRate": 1.0,
     "bayesianPriorGames": 200
   },
-  "dataVersion": "2.3.0",
+  "dataVersion": "2.3.3",
   "counterModel": {
     "type": "two_axis_separated",
     "aggregation": "sample_adaptive_3patch",
