@@ -1,1996 +1,3603 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BANPICK — 탑 3종 티어리스트 &amp; 카운터 엔진</title>
-  <style>
-    :root {
-      --bg-base: #111115;
-      --bg-surface: #18181f;
-      --bg-elevated: #202029;
-      --bg-hover: #272733;
-      --border: #2c2c38;
-      --border-strong: #3a3a4a;
-      --text-main: #f3f4f6;
-      --text-sub: #a1a1b3;
-      --text-muted: #6e6e82;
+/**
+ * BANPICK - LoL 26.23 패치 탑 라인 통합 데이터 (data_top.js v2.1)
+ * - 총 65종 탑 챔피언 (메인 53종 + 조커 12종) + 목록 외 조커 픽(1종) 안전 매핑
+ * - 스키마 v2.1: rosterType(main/joker), 공격타입(damageType), 사거리(rangeType), 입문난이도(difficulty),
+ *   강한타이밍(timing), 운영태그(playstyleTags), 패치변동(patchFlag), 매치업수치·팁(matchupStats)
+ * - 하위 호환 어댑터 및 오타 자동 검증 내장
+ */
 
-      /* Fixed semantic palette (Obsidian x Champagne Gold) */
-      --gold: #D4AF37;
-      --gold-dim: rgba(212, 175, 55, 0.14);
-      --gold-border: rgba(212, 175, 55, 0.45);
-      --emerald: #10B981;
-      --emerald-dim: rgba(16, 185, 129, 0.14);
-      --rose: #F43F5E;
-      --rose-dim: rgba(244, 63, 94, 0.14);
-      --amber: #F59E0B;
-      --amber-dim: rgba(245, 158, 11, 0.14);
-      --violet: #A78BFA;
-      --violet-dim: rgba(167, 139, 250, 0.16);
-      --sky: #38BDF8;
-    }
+window.BANPICK_DATA = window.BANPICK_DATA || {};
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
-      background: var(--bg-base);
-      color: var(--text-main);
-      line-height: 1.45;
-      min-height: 100vh;
-    }
-
-    /* Header */
-    header {
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      background: rgba(17, 17, 21, 0.94);
-      backdrop-filter: blur(8px);
-      border-bottom: 1px solid var(--border);
-    }
-    .header-inner {
-      max-width: 1380px;
-      margin: 0 auto;
-      padding: 12px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .brand-logo {
-      font-size: 19px;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      color: var(--gold);
-    }
-    .patch-pill {
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--text-sub);
-      background: var(--bg-elevated);
-      border: 1px solid var(--border);
-      padding: 3px 8px;
-      border-radius: 999px;
-    }
-    .lane-tabs {
-      display: flex;
-      gap: 6px;
-    }
-    .lane-tab {
-      background: var(--bg-surface);
-      color: var(--text-sub);
-      border: 1px solid var(--border);
-      padding: 6px 12px;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    .lane-tab.active {
-      background: var(--gold-dim);
-      color: var(--gold);
-      border-color: var(--gold-border);
-    }
-    .lane-tab:disabled {
-      opacity: 0.42;
-      cursor: not-allowed;
-    }
-
-    /* Main container */
-    .container {
-      max-width: 1380px;
-      margin: 0 auto;
-      padding: 14px 16px 40px;
-    }
-
-    /* Pool bar */
-    .pool-bar {
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px 14px;
-      margin-bottom: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .pool-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    .pool-title {
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--gold);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .pool-diag {
-      font-size: 12px;
-      color: var(--text-sub);
-    }
-    .pool-actions {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-    .btn {
-      background: var(--bg-elevated);
-      color: var(--text-main);
-      border: 1px solid var(--border-strong);
-      padding: 5px 10px;
-      border-radius: 7px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.15s, border-color 0.15s;
-    }
-    .btn:hover { background: var(--bg-hover); }
-    .btn-gold {
-      background: var(--gold-dim);
-      color: var(--gold);
-      border-color: var(--gold-border);
-    }
-    .btn-gold:hover { background: rgba(212, 175, 55, 0.22); }
-    .pool-chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      align-items: center;
-    }
-    .pool-empty {
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-    .pool-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: var(--gold-dim);
-      border: 1px solid var(--gold-border);
-      color: var(--text-main);
-      border-radius: 999px;
-      padding: 3px 9px 3px 4px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    .pool-chip .remove-x {
-      color: var(--text-sub);
-      font-weight: 700;
-      margin-left: 2px;
-    }
-    .pool-chip .remove-x:hover { color: var(--rose); }
-
-    /* Main 2-column layout */
-    .workspace {
-      display: grid;
-      grid-template-columns: minmax(0, 1.35fr) minmax(350px, 0.95fr);
-      gap: 16px;
-      align-items: start;
-    }
-    @media (max-width: 1024px) {
-      .workspace {
-        grid-template-columns: 1fr;
+window.BANPICK_DATA.top = {
+  meta: {
+  "schemaVersion": "2.1",
+  "lane": "top",
+  "patch": "26.23",
+  "tierScope": "EMERALD_PLUS",
+  "tierAvgWinRate": 51.8,
+  "counterPatchWindow": [
+    "26.23",
+    "26.22",
+    "26.21"
+  ],
+  "patchWeights": [
+    0.55,
+    0.3,
+    0.15
+  ],
+  "isCollecting": false,
+  "updatedAt": "2026-11-25",
+  "rosterCutline": {
+    "mainMinPickRate": 0.5,
+    "jokerMinPickRate": 0.15,
+    "newOrReworkMinPickRate": 1.0,
+    "bayesianPriorGames": 200
+  }
+},
+  externalChampions: {
+  "카르마": {
+    "id": "Karma",
+    "aliases": [
+      "카르마"
+    ],
+    "damageType": "AP",
+    "rangeType": "원거리",
+    "roleTags": [
+      "메이지",
+      "서포터"
+    ],
+    "difficulty": "쉬움",
+    "timing": "초반",
+    "playstyleTags": [
+      "#라인전",
+      "#한타"
+    ],
+    "isExternal": true,
+    "rosterType": "joker"
+  }
+},
+  champions: {
+  "가렌": {
+    "id": "Garen",
+    "aliases": [
+      "가렌",
+      "ㄱㄹ"
+    ],
+    "damageType": "AD",
+    "rangeType": "근접",
+    "roleTags": [
+      "브루저",
+      "탱커"
+    ],
+    "difficulty": "쉬움",
+    "timing": "중반",
+    "playstyleTags": [
+      "#사이드",
+      "#유동적"
+    ],
+    "tier": "2티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "트린다미어",
+      "카밀",
+      "모데카이저",
+      "퀸",
+      "제이스",
+      "베인"
+    ],
+    "counter": [
+      "다리우스",
+      "요릭",
+      "세트",
+      "티모"
+    ],
+    "matchupStats": {
+      "카밀": {
+        "wr": null,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 3,
+        "tip": "카밀 패시브 보호막이 빠진 뒤 Q-E로 딜교하고, E(갈고리) 각을 주지 마세요."
+      },
+      "모데카이저": {
+        "wr": null,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 3,
+        "tip": "6렙 이후 모데 궁극기 안에서는 정면 맞다이가 밀리므로 짧은 Q-E 후 W로 빠지세요."
       }
-    }
+    },
+    "note": "26.23 크산테·잭스·피오라 후픽 카운터로 가치가 높음",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "갱플랭크": {
+    "id": "Gangplank",
+    "aliases": [
+      "갱플",
+      "GP",
+      "선장"
+    ],
+    "damageType": "AD",
+    "rangeType": "근접",
+    "roleTags": [
+      "스커미셔",
+      "딜러"
+    ],
+    "difficulty": "어려움",
+    "timing": "후반",
+    "playstyleTags": [
+      "#한타",
+      "#사이드"
+    ],
+    "tier": "OP",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": "meta_up",
+      "label": "26.23 탑 1위(OP)",
+      "resetHistory": false
+    },
+    "hard": [
+      "크산테",
+      "요릭",
+      "럼블",
+      "블라디미르"
+    ],
+    "counter": [
+      "이렐리아",
+      "그웬",
+      "제이스",
+      "라이즈"
+    ],
+    "matchupStats": {
+      "사이온": {
+        "wr": 44.6,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "사이온 Q 차징을 화약통이나 패시브 이속으로 피하고, 귤(W)은 궁극기 에어본 해제에 아끼세요."
+      },
+      "이렐리아": {
+        "wr": 47.5,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "이렐리아 Q로 화약통을 지우기 쉬우므로 발밑에 통을 미리 깔아두고 4스택 타이밍을 피하세요."
+      }
+    },
+    "note": "26.23 탑 1위(OP). 지표상 사이온(55.4%)·이렐리아(52.5%) 승률 우위. 반면 제이스·아트록스·잭스 상대로는 갱플 지표 우세",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "그라가스": {
+    "id": "Gragas",
+    "aliases": [
+      "그라",
+      "술통",
+      "돼지"
+    ],
+    "damageType": "AP",
+    "rangeType": "근접",
+    "roleTags": [
+      "탱커",
+      "메이지"
+    ],
+    "difficulty": "보통",
+    "timing": "중반",
+    "playstyleTags": [
+      "#한타",
+      "#유동적"
+    ],
+    "tier": "3티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "요릭"
+    ],
+    "counter": [
+      "크산테",
+      "아트록스"
+    ],
+    "matchupStats": {
+      "요릭": {
+        "wr": null,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 3,
+        "tip": "요릭 구울에 배치기(E)가 막히므로 벽(W)에 갇혔을 때만 탈출용으로 아끼세요."
+      }
+    },
+    "note": "선픽 안정성이 높아 하드 카운터가 적은 편",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "그웬": {
+    "id": "Gwen",
+    "aliases": [
+      "그웬",
+      "가위"
+    ],
+    "damageType": "AP",
+    "rangeType": "근접",
+    "roleTags": [
+      "스커미셔",
+      "브루저"
+    ],
+    "difficulty": "보통",
+    "timing": "후반",
+    "playstyleTags": [
+      "#사이드",
+      "#한타"
+    ],
+    "tier": "4티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "트린다미어",
+      "워윅",
+      "올라프",
+      "아칼리",
+      "제이스"
+    ],
+    "counter": [
+      "잭스",
+      "우르곳"
+    ],
+    "matchupStats": {},
+    "note": "26.23 탑 4~5티어권. 탱커 후픽 전용",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "나르": {
+    "id": "Gnar",
+    "aliases": [
+      "나르",
+      "메가나르"
+    ],
+    "damageType": "AD",
+    "rangeType": "원거리",
+    "roleTags": [
+      "브루저",
+      "탱커"
+    ],
+    "difficulty": "어려움",
+    "timing": "중반",
+    "playstyleTags": [
+      "#한타",
+      "#사이드"
+    ],
+    "tier": "2티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": "buff",
+      "label": "26.23 Q 계수 버프",
+      "resetHistory": false
+    },
+    "hard": [
+      "제이스"
+    ],
+    "counter": [
+      "이렐리아",
+      "올라프",
+      "말파이트",
+      "야스오",
+      "아칼리",
+      "블라디미르"
+    ],
+    "matchupStats": {
+      "암베사": {
+        "wr": 37.5,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "미니 나르 상태에서 암베사 연속 돌진에 취약하므로 E(폴짝)를 아끼고 분노를 관리하세요."
+      },
+      "제이스": {
+        "wr": 44.8,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "제이스 해머 Q 진입 타이밍에 E로 거리를 벌리고 메가 나르 타이밍에 반격하세요."
+      }
+    },
+    "note": "26.23 Q 버프. 지표상 암베사(62.5%)·제이스(55.2%)가 최강 카운터",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "나서스": {
+    "id": "Nasus",
+    "aliases": [
+      "나서스",
+      "개",
+      "스택"
+    ],
+    "damageType": "AD",
+    "rangeType": "근접",
+    "roleTags": [
+      "브루저",
+      "탱커"
+    ],
+    "difficulty": "쉬움",
+    "timing": "후반",
+    "playstyleTags": [
+      "#사이드"
+    ],
+    "tier": "3티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "크산테",
+      "럼블",
+      "올라프"
+    ],
+    "counter": [
+      "일라오이",
+      "가렌",
+      "아트록스"
+    ],
+    "matchupStats": {},
+    "note": "초반 라인 프리징·다이브 압박이 강한 픽에 취약",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "다리우스": {
+    "id": "Darius",
+    "aliases": [
+      "다리",
+      "다리우스"
+    ],
+    "damageType": "AD",
+    "rangeType": "근접",
+    "roleTags": [
+      "브루저"
+    ],
+    "difficulty": "보통",
+    "timing": "초반",
+    "playstyleTags": [
+      "#라인전",
+      "#유동적"
+    ],
+    "tier": "1티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": "buff",
+      "label": "최근 Q 쿨 버프 여파",
+      "resetHistory": false
+    },
+    "hard": [
+      "케넨",
+      "베인"
+    ],
+    "counter": [
+      "요릭",
+      "럼블",
+      "제이스"
+    ],
+    "matchupStats": {
+      "베인": {
+        "wr": null,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 3,
+        "tip": "부쉬를 활용해 선고(E) 각을 보고, 유체화 없이는 무리한 추격을 피하세요."
+      }
+    },
+    "note": "26.23 상위권(5위). 최근 Q 쿨타임 버프 여파로 근접 브루저 대다수 압도",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "라이즈": {
+    "id": "Ryze",
+    "aliases": [
+      "라이즈",
+      "빡빡이"
+    ],
+    "damageType": "AP",
+    "rangeType": "원거리",
+    "roleTags": [
+      "메이지"
+    ],
+    "difficulty": "보통",
+    "timing": "후반",
+    "playstyleTags": [
+      "#사이드",
+      "#로밍"
+    ],
+    "tier": "4티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "이렐리아"
+    ],
+    "counter": [
+      "야스오",
+      "요릭"
+    ],
+    "matchupStats": {},
+    "note": "사거리 내 순간 돌진·지속 추격형 브루저에 취약",
+    "laneExtra": {},
+    "rosterType": "joker"
+  },
+  "럼블": {
+    "id": "Rumble",
+    "aliases": [
+      "럼블",
+      "고철"
+    ],
+    "damageType": "AP",
+    "rangeType": "근접",
+    "roleTags": [
+      "메이지",
+      "브루저"
+    ],
+    "difficulty": "보통",
+    "timing": "중반",
+    "playstyleTags": [
+      "#라인전",
+      "#한타"
+    ],
+    "tier": "2티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [],
+    "counter": [
+      "요릭",
+      "요네",
+      "라이즈"
+    ],
+    "matchupStats": {
+      "제이스": {
+        "wr": 43.1,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "포킹을 W 보호막으로 막고 열 관리 50 이상에서 E 둔화 후 진입하세요."
+      },
+      "요네": {
+        "wr": 46.9,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "요네 E 영혼 해방 진입 때 화염방사기(Q)를 켜고 과열 평타로 맞딜하세요."
+      },
+      "아트록스": {
+        "wr": 47.1,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "아트록스 Q1~2 끝자락을 피하면서 근접 과열 딜교를 노리세요."
+      },
+      "이렐리아": {
+        "wr": null,
+        "delta2": null,
+        "gd15": -1642,
+        "games": null,
+        "patches": 1,
+        "tip": "라인을 밀면 이렐리아 추격에 죽으므로 포탑 앞 프리징을 유지하세요."
+      }
+    },
+    "note": "라인전 순수 7:3은 적으나 26.23 지표상 제이스(56.9%), 요네(53.1%), 아트록스(52.9%) 우위. 15분 골드는 이렐리아(+1,642G)·암베사·다리우스 강세",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "레넥톤": {
+    "id": "Renekton",
+    "aliases": [
+      "레넥",
+      "악어"
+    ],
+    "damageType": "AD",
+    "rangeType": "근접",
+    "roleTags": [
+      "브루저"
+    ],
+    "difficulty": "쉬움",
+    "timing": "초반",
+    "playstyleTags": [
+      "#라인전",
+      "#유동적"
+    ],
+    "tier": "1티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": "meta_up",
+      "label": "26.23 12계단 급상승",
+      "resetHistory": false
+    },
+    "hard": [
+      "럼블",
+      "제이스",
+      "바루스",
+      "오로라"
+    ],
+    "counter": [
+      "일라오이",
+      "나서스",
+      "케넨",
+      "베인"
+    ],
+    "matchupStats": {},
+    "note": "26.23 12계단 급상승(10위). 브루저·탱커 메타 수혜",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "렝가": {
+    "id": "Rengar",
+    "aliases": [
+      "렝가",
+      "고양이"
+    ],
+    "damageType": "AD",
+    "rangeType": "근접",
+    "roleTags": [
+      "암살자",
+      "브루저"
+    ],
+    "difficulty": "어려움",
+    "timing": "초반",
+    "playstyleTags": [
+      "#라인전",
+      "#사이드"
+    ],
+    "tier": "4티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "다리우스",
+      "워윅",
+      "트런들"
+    ],
+    "counter": [
+      "뽀삐"
+    ],
+    "matchupStats": {},
+    "note": "부쉬 장악을 정면 맞다이·이동 차단으로 깨는 픽에 극약",
+    "laneExtra": {},
+    "rosterType": "joker"
+  },
+  "리븐": {
+    "id": "Riven",
+    "aliases": [
+      "리븐"
+    ],
+    "damageType": "AD",
+    "rangeType": "근접",
+    "roleTags": [
+      "스커미셔",
+      "브루저"
+    ],
+    "difficulty": "어려움",
+    "timing": "중반",
+    "playstyleTags": [
+      "#유동적",
+      "#사이드"
+    ],
+    "tier": "2티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "레넥톤",
+      "뽀삐",
+      "볼리베어",
+      "케넨",
+      "퀸"
+    ],
+    "counter": [
+      "트린다미어",
+      "가렌",
+      "나서스",
+      "우르곳",
+      "제이스"
+    ],
+    "matchupStats": {
+      "뽀삐": {
+        "wr": null,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 3,
+        "tip": "뽀삐 W(굳건한 태세)가 빠지기 전에는 Q3타·E 진입을 자제하고 벽각을 피하세요."
+      },
+      "레넥톤": {
+        "wr": null,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 3,
+        "tip": "분노 50 이상 레넥톤의 강화 W는 리븐 E 보호막을 부수므로 1~2렙 외엔 짧은 딜교만 하세요."
+      }
+    },
+    "note": "뽀삐(W 돌진 차단)·레넥톤·볼리베어 상대로 주도권 상실",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "리산드라": {
+    "id": "Lissandra",
+    "aliases": [
+      "리산",
+      "얼음마녀"
+    ],
+    "damageType": "AP",
+    "rangeType": "원거리",
+    "roleTags": [
+      "메이지"
+    ],
+    "difficulty": "보통",
+    "timing": "중반",
+    "playstyleTags": [
+      "#한타",
+      "#로밍"
+    ],
+    "tier": "2티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": "meta_up",
+      "label": "26.23 고승률 조커픽",
+      "resetHistory": false
+    },
+    "hard": [
+      "볼리베어",
+      "아칼리",
+      "세트"
+    ],
+    "counter": [
+      "그웬",
+      "케일",
+      "올라프"
+    ],
+    "matchupStats": {},
+    "note": "26.23 고승률 조커픽(20위). 유지력·강제 진입 브루저나 후반 스케일링 픽에 취약",
+    "laneExtra": {},
+    "rosterType": "joker"
+  },
+  "마오카이": {
+    "id": "Maokai",
+    "aliases": [
+      "마오",
+      "나무"
+    ],
+    "damageType": "AP",
+    "rangeType": "근접",
+    "roleTags": [
+      "탱커"
+    ],
+    "difficulty": "쉬움",
+    "timing": "중반",
+    "playstyleTags": [
+      "#한타"
+    ],
+    "tier": "4티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "그웬",
+      "럼블",
+      "일라오이",
+      "피오라"
+    ],
+    "counter": [
+      "레넥톤",
+      "모데카이저"
+    ],
+    "matchupStats": {},
+    "note": "체력 비례 피해·고정 피해 브루저 상대로 라인전 붕괴",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "말파이트": {
+    "id": "Malphite",
+    "aliases": [
+      "말파",
+      "돌덩이"
+    ],
+    "damageType": "AP",
+    "rangeType": "근접",
+    "roleTags": [
+      "탱커"
+    ],
+    "difficulty": "쉬움",
+    "timing": "중반",
+    "playstyleTags": [
+      "#한타"
+    ],
+    "tier": "1티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": "meta_up",
+      "label": "26.23 3위 꿀챔",
+      "resetHistory": false
+    },
+    "hard": [
+      "사일러스",
+      "사이온",
+      "모데카이저",
+      "럼블",
+      "그라가스",
+      "문도 박사"
+    ],
+    "counter": [
+      "그웬",
+      "나서스"
+    ],
+    "matchupStats": {
+      "사일러스": {
+        "wr": null,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 3,
+        "tip": "사일러스가 말파 궁을 뺏으면 한타 가치가 역전되므로 선픽 금지, 밴 필수 상성입니다."
+      }
+    },
+    "note": "26.23 3위 꿀챔. AP 지속딜·체급 탱커 후픽에 극도로 취약",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "모데카이저": {
+    "id": "Mordekaiser",
+    "aliases": [
+      "모데",
+      "깡통"
+    ],
+    "damageType": "AP",
+    "rangeType": "근접",
+    "roleTags": [
+      "브루저"
+    ],
+    "difficulty": "쉬움",
+    "timing": "중반",
+    "playstyleTags": [
+      "#라인전",
+      "#유동적"
+    ],
+    "tier": "1티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": "meta_up",
+      "label": "26.23 21계단 급상승",
+      "resetHistory": false
+    },
+    "hard": [
+      "올라프",
+      "워윅",
+      "트린다미어",
+      "피오라"
+    ],
+    "counter": [
+      "크산테",
+      "볼리베어",
+      "제이스"
+    ],
+    "matchupStats": {
+      "아칼리": {
+        "wr": 36.1,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "아칼리 장막(W)이 깔리면 궁극기를 써도 안에서 시간을 끌리므로 W가 빠진 뒤 R을 쓰세요."
+      },
+      "갱플랭크": {
+        "wr": 40.9,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "갱플 귤(W)이 모데 궁을 바로 해제하므로 귤이 빠진 걸 확인하거나 1:1 킬각을 무리하지 마세요."
+      },
+      "올라프": {
+        "wr": 41.1,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "올라프 R은 모데 궁극기를 무효화합니다. 존야나 파수꾼의 갑옷으로 6렙 이후를 버티세요."
+      }
+    },
+    "note": "26.23 21계단 급상승(13위). 지표상 아칼리(63.9%), 갱플랭크(59.1%), 올라프(58.9%) 및 하이머딩거 라인전 강세",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "문도 박사": {
+    "id": "DrMundo",
+    "aliases": [
+      "문도",
+      "문도박사"
+    ],
+    "damageType": "혼합",
+    "rangeType": "근접",
+    "roleTags": [
+      "탱커",
+      "브루저"
+    ],
+    "difficulty": "쉬움",
+    "timing": "후반",
+    "playstyleTags": [
+      "#사이드",
+      "#한타"
+    ],
+    "tier": "3티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "아트록스",
+      "그웬",
+      "피오라",
+      "요릭"
+    ],
+    "counter": [
+      "요네",
+      "이렐리아",
+      "올라프",
+      "일라오이"
+    ],
+    "matchupStats": {
+      "크산테": {
+        "wr": 42.5,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "패시브 CC 면역이 빠진 상태에서 크산테 W-R 벽 넘김 각을 주지 마세요."
+      }
+    },
+    "note": "26.23 지표상 크산테(57.5%) 상대로도 고전",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "바루스": {
+    "id": "Varus",
+    "aliases": [
+      "바루스",
+      "탑바루스"
+    ],
+    "damageType": "혼합",
+    "rangeType": "원거리",
+    "roleTags": [
+      "원딜"
+    ],
+    "difficulty": "보통",
+    "timing": "초반",
+    "playstyleTags": [
+      "#라인전",
+      "#한타"
+    ],
+    "tier": "3티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": "nerf",
+      "label": "최근 W 너프 여파",
+      "resetHistory": false
+    },
+    "hard": [
+      "잭스",
+      "올라프",
+      "야스오"
+    ],
+    "counter": [
+      "이렐리아"
+    ],
+    "matchupStats": {},
+    "note": "최근 W 너프 여파로 탱커 분쇄력 하락. 돌진·저지불가에 취약",
+    "laneExtra": {},
+    "rosterType": "joker"
+  },
+  "베인": {
+    "id": "Vayne",
+    "aliases": [
+      "베인",
+      "탑베인"
+    ],
+    "damageType": "AD",
+    "rangeType": "원거리",
+    "roleTags": [
+      "원딜",
+      "스커미셔"
+    ],
+    "difficulty": "어려움",
+    "timing": "후반",
+    "playstyleTags": [
+      "#라인전",
+      "#사이드"
+    ],
+    "tier": "3티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "말파이트",
+      "티모"
+    ],
+    "counter": [
+      "나서스",
+      "블라디미르"
+    ],
+    "matchupStats": {
+      "말파이트": {
+        "wr": null,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 3,
+        "tip": "말파이트 Q 견제와 6렙 궁 킬각에 극약. 마법 저항력과 흡혈 낫을 빠르게 섞어야 버팁니다."
+      }
+    },
+    "note": "타겟팅·실명·공속 감소 스킬에 무력화",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "볼리베어": {
+    "id": "Volibear",
+    "aliases": [
+      "볼베",
+      "곰"
+    ],
+    "damageType": "혼합",
+    "rangeType": "근접",
+    "roleTags": [
+      "브루저",
+      "탱커"
+    ],
+    "difficulty": "쉬움",
+    "timing": "초반",
+    "playstyleTags": [
+      "#라인전",
+      "#유동적"
+    ],
+    "tier": "2티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "잭스",
+      "제이스"
+    ],
+    "counter": [
+      "아칼리",
+      "케넨",
+      "나르",
+      "티모"
+    ],
+    "matchupStats": {
+      "잭스": {
+        "wr": null,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 3,
+        "tip": "잭스 반격(E)에 볼베 Q 스턴과 W가 모두 막힙니다. E가 빠진 뒤에 Q로 추격하세요."
+      }
+    },
+    "note": "평타 차단(잭스 E)·거리 유지형 원거리 포킹에 약함",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "블라디미르": {
+    "id": "Vladimir",
+    "aliases": [
+      "블라디",
+      "모기"
+    ],
+    "damageType": "AP",
+    "rangeType": "원거리",
+    "roleTags": [
+      "메이지"
+    ],
+    "difficulty": "보통",
+    "timing": "후반",
+    "playstyleTags": [
+      "#한타",
+      "#사이드"
+    ],
+    "tier": "3티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "요릭",
+      "럼블"
+    ],
+    "counter": [
+      "이렐리아",
+      "나서스",
+      "암베사",
+      "라이즈"
+    ],
+    "matchupStats": {},
+    "note": "초반 웨이브 장악력·강한 돌진기 보유 픽에 압박받음",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "뽀삐": {
+    "id": "Poppy",
+    "aliases": [
+      "뽀삐"
+    ],
+    "damageType": "AD",
+    "rangeType": "근접",
+    "roleTags": [
+      "탱커"
+    ],
+    "difficulty": "보통",
+    "timing": "중반",
+    "playstyleTags": [
+      "#한타",
+      "#유동적"
+    ],
+    "tier": "1티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": "meta_up",
+      "label": "26.23 9위(승률 53.7%)",
+      "resetHistory": false
+    },
+    "hard": [
+      "갱플랭크",
+      "럼블",
+      "워윅",
+      "올라프"
+    ],
+    "counter": [
+      "다리우스",
+      "가렌",
+      "케넨",
+      "블라디미르"
+    ],
+    "matchupStats": {},
+    "note": "26.23 9위(승률 53.7%). 돌진기 카운터 후픽으로 최상급",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "사이온": {
+    "id": "Sion",
+    "aliases": [
+      "사이온"
+    ],
+    "damageType": "AD",
+    "rangeType": "근접",
+    "roleTags": [
+      "탱커"
+    ],
+    "difficulty": "보통",
+    "timing": "후반",
+    "playstyleTags": [
+      "#한타",
+      "#사이드"
+    ],
+    "tier": "1티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": "meta_up",
+      "label": "26.23 11위 꿀챔",
+      "resetHistory": false
+    },
+    "hard": [
+      "야스오"
+    ],
+    "counter": [
+      "일라오이",
+      "그웬",
+      "초가스",
+      "자헨",
+      "요네",
+      "아트록스"
+    ],
+    "matchupStats": {},
+    "note": "26.23 11위 꿀챔. 체급·궁 버프와 벼락폭풍검 너프 수혜. Q 차징을 끊거나 체력 비례 딜러에게 약함",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "사일러스": {
+    "id": "Sylas",
+    "aliases": [
+      "사일",
+      "사일러스"
+    ],
+    "damageType": "AP",
+    "rangeType": "근접",
+    "roleTags": [
+      "브루저",
+      "암살자"
+    ],
+    "difficulty": "어려움",
+    "timing": "중반",
+    "playstyleTags": [
+      "#한타",
+      "#유동적"
+    ],
+    "tier": "3티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "다리우스",
+      "워윅",
+      "볼리베어"
+    ],
+    "counter": [
+      "일라오이",
+      "세트",
+      "판테온",
+      "뽀삐",
+      "제이스"
+    ],
+    "matchupStats": {},
+    "note": "초반 1:1 체급이 강한 정통 탑 브루저 상대로 라인전 열세",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "세트": {
+    "id": "Sett",
+    "aliases": [
+      "세트",
+      "주먹"
+    ],
+    "damageType": "AD",
+    "rangeType": "근접",
+    "roleTags": [
+      "브루저"
+    ],
+    "difficulty": "쉬움",
+    "timing": "초반",
+    "playstyleTags": [
+      "#라인전",
+      "#한타"
+    ],
+    "tier": "2티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "볼리베어",
+      "레넥톤"
+    ],
+    "counter": [
+      "모데카이저",
+      "아트록스",
+      "제이스",
+      "티모",
+      "베인"
+    ],
+    "matchupStats": {
+      "판테온": {
+        "wr": 37.4,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "판테온 E가 세트 W 강펀치를 통째로 막으므로, E가 빠진 걸 확인한 뒤 W를 쓰세요."
+      }
+    },
+    "note": "26.23 지표상 판테온(62.6%)도 W 보호막·스턴 교전 구도로 매우 강력",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "쉔": {
+    "id": "Shen",
+    "aliases": [
+      "쉔"
+    ],
+    "damageType": "혼합",
+    "rangeType": "근접",
+    "roleTags": [
+      "탱커"
+    ],
+    "difficulty": "보통",
+    "timing": "초반",
+    "playstyleTags": [
+      "#로밍",
+      "#한타"
+    ],
+    "tier": "2티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "요릭",
+      "모데카이저",
+      "나르"
+    ],
+    "counter": [
+      "아트록스",
+      "가렌",
+      "다리우스",
+      "럼블",
+      "제이스",
+      "라이즈"
+    ],
+    "matchupStats": {
+      "요릭": {
+        "wr": null,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 3,
+        "tip": "궁극기 로밍 한 번에 1~2차 포탑이 통째로 날아가므로 웨이브를 끝까지 민 뒤에만 합류하세요."
+      }
+    },
+    "note": "궁극기 로밍 시 포탑 채굴 속도가 압도적인 픽(요릭 등)에 치명적",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "스카너": {
+    "id": "Skarner",
+    "aliases": [
+      "스카너",
+      "전갈"
+    ],
+    "damageType": "AD",
+    "rangeType": "근접",
+    "roleTags": [
+      "탱커"
+    ],
+    "difficulty": "보통",
+    "timing": "중반",
+    "playstyleTags": [
+      "#한타"
+    ],
+    "tier": "4티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "모데카이저",
+      "럼블"
+    ],
+    "counter": [
+      "그웬",
+      "피오라",
+      "일라오이"
+    ],
+    "matchupStats": {},
+    "note": "정통 안티탱커 3종으로 보완",
+    "laneExtra": {},
+    "rosterType": "joker"
+  },
+  "신 짜오": {
+    "id": "XinZhao",
+    "aliases": [
+      "신짜오",
+      "짜오"
+    ],
+    "damageType": "AD",
+    "rangeType": "근접",
+    "roleTags": [
+      "브루저"
+    ],
+    "difficulty": "쉬움",
+    "timing": "초반",
+    "playstyleTags": [
+      "#라인전",
+      "#유동적"
+    ],
+    "tier": "4티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "볼리베어",
+      "잭스",
+      "세트"
+    ],
+    "counter": [
+      "워윅"
+    ],
+    "matchupStats": {},
+    "note": "탑 채용 시 순수 맞다이 체급이 더 높은 브루저에 밀림",
+    "laneExtra": {},
+    "rosterType": "joker"
+  },
+  "신지드": {
+    "id": "Singed",
+    "aliases": [
+      "신지드",
+      "방귀"
+    ],
+    "damageType": "AP",
+    "rangeType": "근접",
+    "roleTags": [
+      "브루저",
+      "탱커"
+    ],
+    "difficulty": "보통",
+    "timing": "중반",
+    "playstyleTags": [
+      "#한타",
+      "#로밍"
+    ],
+    "tier": "2티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": "meta_up",
+      "label": "26.23 잭스 카운터 부상",
+      "resetHistory": false
+    },
+    "hard": [
+      "다리우스",
+      "럼블",
+      "갱플랭크",
+      "베인"
+    ],
+    "counter": [
+      "제이스",
+      "케넨",
+      "라이즈"
+    ],
+    "matchupStats": {},
+    "note": "26.23 잭스 하드 카운터(66.7%)로 지표 상승. 원거리 카이팅·둔화 픽에 취약",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "아칼리": {
+    "id": "Akali",
+    "aliases": [
+      "아칼리"
+    ],
+    "damageType": "AP",
+    "rangeType": "근접",
+    "roleTags": [
+      "암살자"
+    ],
+    "difficulty": "어려움",
+    "timing": "중반",
+    "playstyleTags": [
+      "#유동적",
+      "#사이드"
+    ],
+    "tier": "3티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "판테온"
+    ],
+    "counter": [
+      "사이온"
+    ],
+    "matchupStats": {},
+    "note": "장막(W) 내 확정 CC·광역기 보유 및 체급 탱커에 까다로움",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "아트록스": {
+    "id": "Aatrox",
+    "aliases": [
+      "아트",
+      "아트록스"
+    ],
+    "damageType": "AD",
+    "rangeType": "근접",
+    "roleTags": [
+      "브루저"
+    ],
+    "difficulty": "보통",
+    "timing": "중반",
+    "playstyleTags": [
+      "#한타",
+      "#유동적"
+    ],
+    "tier": "2티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "요릭"
+    ],
+    "counter": [
+      "이렐리아",
+      "그웬",
+      "제이스"
+    ],
+    "matchupStats": {
+      "갱플랭크": {
+        "wr": 39.5,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "갱플 귤(W)이 아트록스 W 사슬을 끊으므로 W 대신 Q1-E 포킹으로 피를 깎으세요."
+      },
+      "레넥톤": {
+        "wr": 41.7,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "레넥톤 E 진입 시 Q1을 미리 깔고 뒤로 E를 써서 Q2 끝자락을 맞추는 거리 조절이 핵심입니다."
+      },
+      "카밀": {
+        "wr": 43.4,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "카밀 궁극기가 아트록스 Q3타를 씹으므로 6렙 이후 맞딜은 쿨을 보고 들어가세요."
+      },
+      "하이머딩거": {
+        "wr": null,
+        "delta2": null,
+        "gd15": -1004,
+        "games": null,
+        "patches": 1,
+        "tip": "포탑을 Q로 지우며 6렙 전까지 무리하지 말고 1코어 타이밍을 노리세요."
+      }
+    },
+    "note": "26.23 지표상 갱플랭크(60.5%), 레넥톤(58.3%), 카밀(56.6%), 하이머딩거(15분 +1,004G)가 매우 강력",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "암베사": {
+    "id": "Ambessa",
+    "aliases": [
+      "암베사"
+    ],
+    "damageType": "AD",
+    "rangeType": "근접",
+    "roleTags": [
+      "브루저",
+      "스커미셔"
+    ],
+    "difficulty": "어려움",
+    "timing": "중반",
+    "playstyleTags": [
+      "#사이드",
+      "#한타"
+    ],
+    "tier": "2티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "레넥톤",
+      "카시오페아"
+    ],
+    "counter": [
+      "이렐리아",
+      "요릭",
+      "워윅",
+      "제이스",
+      "아트록스",
+      "자헨"
+    ],
+    "matchupStats": {
+      "아트록스": {
+        "wr": 41.2,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "스킬 후 돌진으로 아트록스 Q 끝자락 안쪽으로 파고들면 딜교 이득을 볼 수 있습니다."
+      },
+      "레넥톤": {
+        "wr": 41.3,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "강화 W로 보호막(W)이 깨지므로 레넥톤 분노 50 미만일 때만 짧게 딜교하세요."
+      },
+      "자헨": {
+        "wr": 42.4,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "장기전으로 가면 밀리므로 스킬 사이클을 돌린 뒤 빠르게 빠져나오세요."
+      },
+      "이렐리아": {
+        "wr": null,
+        "delta2": null,
+        "gd15": -1324,
+        "games": null,
+        "patches": 1,
+        "tip": "이렐리아 4스택 타이밍에는 맞딜을 피하고 W 보호막으로 핵심 딜만 받아내세요."
+      }
+    },
+    "note": "26.23 지표 최강 카운터는 아트록스(58.8%)·레넥톤(58.7%)·자헨(57.6%), 라인전은 이렐리아(+1,324G)",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "야스오": {
+    "id": "Yasuo",
+    "aliases": [
+      "야스오",
+      "야소",
+      "과학"
+    ],
+    "damageType": "AD",
+    "rangeType": "근접",
+    "roleTags": [
+      "스커미셔"
+    ],
+    "difficulty": "어려움",
+    "timing": "중반",
+    "playstyleTags": [
+      "#사이드",
+      "#유동적"
+    ],
+    "tier": "3티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "잭스",
+      "레넥톤"
+    ],
+    "counter": [
+      "볼리베어",
+      "쉔"
+    ],
+    "matchupStats": {},
+    "note": "근접 확정 CC 및 평타 무효화 픽에 취약",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "애니비아": {
+    "id": "Anivia",
+    "aliases": [
+      "애니비아",
+      "빙닭"
+    ],
+    "damageType": "AP",
+    "rangeType": "원거리",
+    "roleTags": [
+      "메이지"
+    ],
+    "difficulty": "보통",
+    "timing": "중반",
+    "playstyleTags": [
+      "#한타"
+    ],
+    "tier": "3티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": "조커픽",
+      "resetHistory": false
+    },
+    "hard": [
+      "클레드",
+      "요릭",
+      "암베사"
+    ],
+    "counter": [
+      "아트록스",
+      "아칼리",
+      "카밀",
+      "피오라"
+    ],
+    "matchupStats": {},
+    "note": "26.23 고승률 조커픽(36위). 벽 넘기·궁 끊기·기동성이 뛰어난 브루저에 취약",
+    "laneExtra": {},
+    "rosterType": "joker"
+  },
+  "오공": {
+    "id": "MonkeyKing",
+    "aliases": [
+      "오공",
+      "원숭이"
+    ],
+    "damageType": "AD",
+    "rangeType": "근접",
+    "roleTags": [
+      "브루저"
+    ],
+    "difficulty": "보통",
+    "timing": "중반",
+    "playstyleTags": [
+      "#한타",
+      "#유동적"
+    ],
+    "tier": "4티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "모데카이저"
+    ],
+    "counter": [
+      "볼리베어",
+      "잭스",
+      "말파이트",
+      "럼블",
+      "일라오이"
+    ],
+    "matchupStats": {},
+    "note": "AP 브루저(모데·럼블) 및 맞다이 우위 픽에 약함",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "오로라": {
+    "id": "Aurora",
+    "aliases": [
+      "오로라",
+      "토끼"
+    ],
+    "damageType": "AP",
+    "rangeType": "원거리",
+    "roleTags": [
+      "메이지",
+      "암살자"
+    ],
+    "difficulty": "보통",
+    "timing": "중반",
+    "playstyleTags": [
+      "#한타",
+      "#라인전"
+    ],
+    "tier": "4티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "이렐리아",
+      "케넨",
+      "카르마"
+    ],
+    "counter": [
+      "제이스",
+      "아칼리",
+      "요네"
+    ],
+    "matchupStats": {},
+    "note": "26.23 지표상 돌진·라인전 우위 픽(이렐리아 등)과 더 긴 견제 사거리에 취약",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "오른": {
+    "id": "Ornn",
+    "aliases": [
+      "오른",
+      "대장장이"
+    ],
+    "damageType": "혼합",
+    "rangeType": "근접",
+    "roleTags": [
+      "탱커"
+    ],
+    "difficulty": "보통",
+    "timing": "후반",
+    "playstyleTags": [
+      "#한타"
+    ],
+    "tier": "1티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": "meta_up",
+      "label": "26.23 24계단 급상승",
+      "resetHistory": false
+    },
+    "hard": [
+      "일라오이",
+      "워윅",
+      "피오라"
+    ],
+    "counter": [
+      "다리우스",
+      "뽀삐",
+      "이렐리아",
+      "요네"
+    ],
+    "matchupStats": {
+      "요네": {
+        "wr": 39.6,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "요네 Q3타 에어본을 오른 W(저지불가)로 씹어야 반격 각이 나옵니다."
+      },
+      "올라프": {
+        "wr": 40.2,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "올라프 R에 모든 CC가 무력화되므로 6렙 이후엔 타워 앞 파밍 위주로 운영하세요."
+      }
+    },
+    "note": "26.23 24계단 급상승(18위). 지표상 요네(60.4%), 올라프(59.8%)가 매우 강력",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "올라프": {
+    "id": "Olaf",
+    "aliases": [
+      "올라프"
+    ],
+    "damageType": "AD",
+    "rangeType": "근접",
+    "roleTags": [
+      "브루저"
+    ],
+    "difficulty": "쉬움",
+    "timing": "초반",
+    "playstyleTags": [
+      "#라인전",
+      "#사이드"
+    ],
+    "tier": "1티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "아칼리"
+    ],
+    "counter": [
+      "크산테",
+      "잭스",
+      "피오라"
+    ],
+    "matchupStats": {
+      "아칼리": {
+        "wr": null,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 3,
+        "tip": "장막(W)이 켜지면 궁극기 지속 시간이 끊기므로 장막이 빠진 뒤 궁+유체화를 켜세요."
+      }
+    },
+    "note": "26.23 상위권(6위). 궁극기 지속 시간을 장막(아칼리)·회피/이동기로 흘리는 픽에 약함",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "요네": {
+    "id": "Yone",
+    "aliases": [
+      "요네"
+    ],
+    "damageType": "혼합",
+    "rangeType": "근접",
+    "roleTags": [
+      "스커미셔"
+    ],
+    "difficulty": "보통",
+    "timing": "후반",
+    "playstyleTags": [
+      "#사이드",
+      "#한타"
+    ],
+    "tier": "2티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "이렐리아",
+      "잭스",
+      "아칼리"
+    ],
+    "counter": [
+      "레넥톤"
+    ],
+    "matchupStats": {},
+    "note": "초반 라인전 압박이 극심한 돌진형 브루저·암살자에 취약",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "요릭": {
+    "id": "Yorick",
+    "aliases": [
+      "요릭",
+      "삽"
+    ],
+    "damageType": "AD",
+    "rangeType": "근접",
+    "roleTags": [
+      "브루저"
+    ],
+    "difficulty": "쉬움",
+    "timing": "중반",
+    "playstyleTags": [
+      "#사이드"
+    ],
+    "tier": "2티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "이렐리아",
+      "요네"
+    ],
+    "counter": [
+      "그웬",
+      "잭스"
+    ],
+    "matchupStats": {
+      "모데카이저": {
+        "wr": 40.7,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "모데 궁극기에 끌려가면 마녀와 분리되므로, W(벽)를 아꼈다가 궁 안에서 시간 끄는 용도로 쓰세요."
+      },
+      "이렐리아": {
+        "wr": null,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 3,
+        "tip": "구울이 이렐리아 Q 스택 먹이가 되므로 6렙 전 무리한 E 소환을 자제하고 덤불 조끼를 고려하세요."
+      }
+    },
+    "note": "26.23 지표상 모데카이저(59.3%)도 궁극기로 안개 마녀를 분리해 강력한 카운터로 작용",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "우디르": {
+    "id": "Udyr",
+    "aliases": [
+      "우디르",
+      "우딜"
+    ],
+    "damageType": "혼합",
+    "rangeType": "근접",
+    "roleTags": [
+      "탱커",
+      "브루저"
+    ],
+    "difficulty": "보통",
+    "timing": "중반",
+    "playstyleTags": [
+      "#유동적",
+      "#사이드"
+    ],
+    "tier": "4티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "제이스",
+      "바루스"
+    ],
+    "counter": [
+      "다리우스",
+      "그웬",
+      "나르"
+    ],
+    "matchupStats": {},
+    "note": "뚜벅이 특성상 거리 조절·카이팅이 뛰어난 원거리 픽에 극약",
+    "laneExtra": {},
+    "rosterType": "joker"
+  },
+  "우르곳": {
+    "id": "Urgot",
+    "aliases": [
+      "우르곳",
+      "게"
+    ],
+    "damageType": "AD",
+    "rangeType": "원거리",
+    "roleTags": [
+      "브루저"
+    ],
+    "difficulty": "쉬움",
+    "timing": "중반",
+    "playstyleTags": [
+      "#유동적",
+      "#사이드"
+    ],
+    "tier": "2티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": "meta_up",
+      "label": "26.23 잭스 카운터 부각",
+      "resetHistory": false
+    },
+    "hard": [
+      "올라프"
+    ],
+    "counter": [
+      "요릭",
+      "이렐리아"
+    ],
+    "matchupStats": {},
+    "note": "26.23 잭스 카운터(64.3%)로 부각. 궁(R) 처형을 저지불가로 씹는 올라프에 취약",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "워윅": {
+    "id": "Warwick",
+    "aliases": [
+      "워윅",
+      "늑대"
+    ],
+    "damageType": "혼합",
+    "rangeType": "근접",
+    "roleTags": [
+      "브루저"
+    ],
+    "difficulty": "쉬움",
+    "timing": "초반",
+    "playstyleTags": [
+      "#라인전",
+      "#사이드"
+    ],
+    "tier": "2티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "케넨",
+      "베인"
+    ],
+    "counter": [
+      "볼리베어",
+      "잭스",
+      "바루스"
+    ],
+    "matchupStats": {},
+    "note": "원거리 카이팅·치감 및 근접 맞다이 최상위권(볼베·잭스)에 약함",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "이렐리아": {
+    "id": "Irelia",
+    "aliases": [
+      "이렐",
+      "이렐리아"
+    ],
+    "damageType": "AD",
+    "rangeType": "근접",
+    "roleTags": [
+      "브루저",
+      "스커미셔"
+    ],
+    "difficulty": "어려움",
+    "timing": "중반",
+    "playstyleTags": [
+      "#라인전",
+      "#사이드"
+    ],
+    "tier": "1티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": "meta_up",
+      "label": "26.23 2위 꿀챔",
+      "resetHistory": false
+    },
+    "hard": [
+      "볼리베어",
+      "잭스",
+      "워윅",
+      "세트",
+      "트린다미어"
+    ],
+    "counter": [
+      "레넥톤",
+      "말파이트"
+    ],
+    "matchupStats": {
+      "자헨": {
+        "wr": 39.5,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "초반 정면 맞다이가 밀리므로 4스택과 몰왕 타이밍을 맞춰 교전하세요."
+      },
+      "볼리베어": {
+        "wr": 40.4,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "볼베 W 표식이 찍히면 절대 장기전을 하지 말고 미니언 Q로 빠져나오세요."
+      },
+      "레넥톤": {
+        "wr": 44.7,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "레넥톤 강화 W 스턴을 이렐리아 W(피해 감소)로 받아내는 타이밍이 핵심입니다."
+      }
+    },
+    "note": "26.23 2위 꿀챔. 지표상 자헨(60.5%), 볼리베어(59.6%), 레넥톤(55.3%)이 최상위 카운터",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "일라오이": {
+    "id": "Illaoi",
+    "aliases": [
+      "일라",
+      "문어",
+      "촉수"
+    ],
+    "damageType": "AD",
+    "rangeType": "근접",
+    "roleTags": [
+      "브루저"
+    ],
+    "difficulty": "쉬움",
+    "timing": "중반",
+    "playstyleTags": [
+      "#라인전",
+      "#사이드"
+    ],
+    "tier": "3티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "요릭",
+      "케넨",
+      "카시오페아"
+    ],
+    "counter": [
+      "제이스",
+      "티모",
+      "라이즈",
+      "베인"
+    ],
+    "matchupStats": {
+      "요릭": {
+        "wr": null,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 3,
+        "tip": "요릭 구울이 일라오이 E(영혼의 시험)를 막아주므로 구울이 없을 때만 E를 던지세요."
+      }
+    },
+    "note": "E(영혼의 시험)를 소환수로 막는 요릭과 원거리 지속딜 픽에 무력",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "자크": {
+    "id": "Zac",
+    "aliases": [
+      "자크",
+      "젤리"
+    ],
+    "damageType": "AP",
+    "rangeType": "근접",
+    "roleTags": [
+      "탱커"
+    ],
+    "difficulty": "보통",
+    "timing": "중반",
+    "playstyleTags": [
+      "#한타"
+    ],
+    "tier": "3티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "모데카이저",
+      "볼리베어",
+      "일라오이"
+    ],
+    "counter": [
+      "다리우스",
+      "럼블",
+      "크산테",
+      "베인"
+    ],
+    "matchupStats": {},
+    "note": "젤리 회수 방해·지속전 체급 우위 픽에 취약",
+    "laneExtra": {},
+    "rosterType": "joker"
+  },
+  "자헨": {
+    "id": "Zaahen",
+    "aliases": [
+      "자헨"
+    ],
+    "damageType": "AD",
+    "rangeType": "근접",
+    "roleTags": [
+      "브루저"
+    ],
+    "difficulty": "보통",
+    "timing": "중반",
+    "playstyleTags": [
+      "#유동적",
+      "#라인전"
+    ],
+    "tier": "1티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": "meta_up",
+      "label": "26.23 14위 꿀챔(벼폭검 너프 수혜)",
+      "resetHistory": false
+    },
+    "hard": [
+      "잭스",
+      "볼리베어",
+      "티모",
+      "베인"
+    ],
+    "counter": [
+      "말파이트",
+      "워윅",
+      "올라프",
+      "제이스"
+    ],
+    "matchupStats": {
+      "티모": {
+        "wr": 34.1,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "실명(Q)에 딜이 끊기므로 선 2렙이나 정글 갱킹 없이는 무리한 진입을 피하세요."
+      }
+    },
+    "note": "26.23 14위 꿀챔(26.22 Q 버프+벼폭검 너프 수혜). 지표상 티모(65.9%) 압도적 하드카운터. 팔이 길거나 평타 차단 픽에 약함",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "잭스": {
+    "id": "Jax",
+    "aliases": [
+      "잭스"
+    ],
+    "damageType": "혼합",
+    "rangeType": "근접",
+    "roleTags": [
+      "스커미셔",
+      "브루저"
+    ],
+    "difficulty": "보통",
+    "timing": "후반",
+    "playstyleTags": [
+      "#사이드",
+      "#유동적"
+    ],
+    "tier": "1티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "가렌",
+      "뽀삐",
+      "일라오이",
+      "케넨"
+    ],
+    "counter": [
+      "말파이트",
+      "판테온",
+      "아칼리",
+      "제이스",
+      "블라디미르"
+    ],
+    "matchupStats": {
+      "신지드": {
+        "wr": 33.3,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "접착제(W) 위에서 Q 도약이 막히므로 신지드 뒤를 쫓지 말고 라인 파밍에 집중하세요."
+      },
+      "우르곳": {
+        "wr": 35.7,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "반격(E) 타이밍에 우르곳 E(경멸)로 넘겨지지 않게 거리 조절을 유지하세요."
+      },
+      "갱플랭크": {
+        "wr": 37.0,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "반격(E)으로 갱플 Q를 막을 수 있지만 화약통은 못 막으니 통을 먼저 지우세요."
+      },
+      "가렌": {
+        "wr": 41.9,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "반격(E)으로 가렌 Q는 막지만 심판(E)은 못 막습니다. 가렌 E가 돌 때는 Q로 빠져나오세요."
+      },
+      "말파이트": {
+        "wr": 45.5,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "말파이트 E 공속 감소가 치명적이므로 착취·짧은 W 딜교 위주로 버티세요."
+      },
+      "하이머딩거": {
+        "wr": null,
+        "delta2": null,
+        "gd15": -1907,
+        "games": null,
+        "patches": 1,
+        "tip": "초반 포탑 압박이 극심하므로 도란 방패+재바 세팅으로 CS 손실만 최소화하세요."
+      }
+    },
+    "note": "26.23 상위권(4위). 지표상 신지드(66.7%), 우르곳(64.3%), 갱플랭크(63.0%), 가렌(58.1%), 말파이트(54.5%), 하이머딩거(15분 +1,907G) 강세",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "제드": {
+    "id": "Zed",
+    "aliases": [
+      "제드",
+      "탑제드"
+    ],
+    "damageType": "AD",
+    "rangeType": "근접",
+    "roleTags": [
+      "암살자"
+    ],
+    "difficulty": "어려움",
+    "timing": "중반",
+    "playstyleTags": [
+      "#사이드",
+      "#유동적"
+    ],
+    "tier": "3티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": "nerf",
+      "label": "26.23 벼락폭풍검 너프 직격탄",
+      "resetHistory": false
+    },
+    "hard": [
+      "말파이트",
+      "가렌",
+      "초가스"
+    ],
+    "counter": [
+      "이렐리아",
+      "리산드라",
+      "아칼리",
+      "레넥톤"
+    ],
+    "matchupStats": {},
+    "note": "26.23 벼락폭풍검 너프 직격탄(39위). 방어력 탱커·체급 브루저 상대로 킬각 차단",
+    "laneExtra": {},
+    "rosterType": "joker"
+  },
+  "제이스": {
+    "id": "Jayce",
+    "aliases": [
+      "제이스"
+    ],
+    "damageType": "AD",
+    "rangeType": "원거리",
+    "roleTags": [
+      "브루저",
+      "딜러"
+    ],
+    "difficulty": "어려움",
+    "timing": "초반",
+    "playstyleTags": [
+      "#라인전",
+      "#사이드"
+    ],
+    "tier": "2티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "요릭",
+      "이렐리아"
+    ],
+    "counter": [
+      "카밀",
+      "말파이트",
+      "사이온"
+    ],
+    "matchupStats": {
+      "카밀": {
+        "wr": 36.4,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "카밀 E(갈고리) 돌진을 해머 E(천둥 강타)로 밀쳐내는 반응 속도가 생명입니다."
+      },
+      "갱플랭크": {
+        "wr": 39.7,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "초반 평타 사거리로 화약통을 먼저 깨면서 주도권을 잡아야 합니다."
+      },
+      "사이온": {
+        "wr": 41.2,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "초반 킬각을 못 내면 방어력 1코어 이후 뚫기 어려워지므로 초반 압박이 필수입니다."
+      },
+      "말파이트": {
+        "wr": 44.0,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "6렙 전까지 말파이트 패시브 보호막을 계속 깨두고 6렙 궁 킬각을 조심하세요."
+      },
+      "이렐리아": {
+        "wr": null,
+        "delta2": null,
+        "gd15": -830,
+        "games": null,
+        "patches": 1,
+        "tip": "라인을 밀면 쫓겨 죽으므로 웨이브를 당겨서 포탑 앞을 유지하세요."
+      }
+    },
+    "note": "26.23 지표상 카밀(63.6%), 갱플랭크(60.3%), 사이온(58.8%), 말파이트(56.0%)가 매우 강하며 15분 골드는 이렐리아(+830G) 최강",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "초가스": {
+    "id": "Chogath",
+    "aliases": [
+      "초가스",
+      "초가"
+    ],
+    "damageType": "AP",
+    "rangeType": "근접",
+    "roleTags": [
+      "탱커"
+    ],
+    "difficulty": "쉬움",
+    "timing": "후반",
+    "playstyleTags": [
+      "#한타"
+    ],
+    "tier": "3티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "모데카이저",
+      "올라프",
+      "베인"
+    ],
+    "counter": [
+      "그웬",
+      "피오라",
+      "아트록스"
+    ],
+    "matchupStats": {},
+    "note": "체력 비례 피해 브루저에 취약",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "카밀": {
+    "id": "Camille",
+    "aliases": [
+      "카밀"
+    ],
+    "damageType": "AD",
+    "rangeType": "근접",
+    "roleTags": [
+      "스커미셔",
+      "브루저"
+    ],
+    "difficulty": "어려움",
+    "timing": "후반",
+    "playstyleTags": [
+      "#사이드",
+      "#유동적"
+    ],
+    "tier": "1티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "모데카이저",
+      "잭스",
+      "레넥톤",
+      "볼리베어",
+      "티모"
+    ],
+    "counter": [
+      "다리우스",
+      "워윅",
+      "제이스"
+    ],
+    "matchupStats": {
+      "잭스": {
+        "wr": null,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 3,
+        "tip": "카밀 Q2타 고정 피해가 잭스 반격(E)에 막힙니다. 잭스 E가 돌 때 E(갈고리)로 빠지세요."
+      }
+    },
+    "note": "26.23 상위권(7위). 평타 차단(잭스·티모)과 초반 정면 맞다이 강자에 약함",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "카시오페아": {
+    "id": "Cassiopeia",
+    "aliases": [
+      "카시",
+      "뱀"
+    ],
+    "damageType": "AP",
+    "rangeType": "원거리",
+    "roleTags": [
+      "메이지"
+    ],
+    "difficulty": "어려움",
+    "timing": "후반",
+    "playstyleTags": [
+      "#한타",
+      "#라인전"
+    ],
+    "tier": "3티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "올라프"
+    ],
+    "counter": [
+      "이렐리아",
+      "제이스",
+      "요릭"
+    ],
+    "matchupStats": {},
+    "note": "독 장판(W) 위에서도 CC 면제로 돌진하는 올라프가 천적",
+    "laneExtra": {},
+    "rosterType": "joker"
+  },
+  "케넨": {
+    "id": "Kennen",
+    "aliases": [
+      "케넨",
+      "피카츄"
+    ],
+    "damageType": "AP",
+    "rangeType": "원거리",
+    "roleTags": [
+      "메이지"
+    ],
+    "difficulty": "보통",
+    "timing": "중반",
+    "playstyleTags": [
+      "#한타",
+      "#라인전"
+    ],
+    "tier": "2티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "나서스",
+      "요릭",
+      "제이스"
+    ],
+    "counter": [
+      "이렐리아"
+    ],
+    "matchupStats": {},
+    "note": "26.23 천상계 피오라 카운터로 자주 기용. 유지력·라인 푸시 압박(요릭·나서스)과 맞포킹(제이스)에 약함",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "케일": {
+    "id": "Kayle",
+    "aliases": [
+      "케일",
+      "천사"
+    ],
+    "damageType": "혼합",
+    "rangeType": "원거리",
+    "roleTags": [
+      "스커미셔",
+      "딜러"
+    ],
+    "difficulty": "보통",
+    "timing": "후반",
+    "playstyleTags": [
+      "#한타",
+      "#사이드"
+    ],
+    "tier": "2티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": "buff",
+      "label": "최근 Q·R 쿨 버프",
+      "resetHistory": false
+    },
+    "hard": [
+      "이렐리아",
+      "잭스",
+      "나서스",
+      "럼블",
+      "제이스",
+      "티모"
+    ],
+    "counter": [
+      "라이즈"
+    ],
+    "matchupStats": {},
+    "note": "최근 Q·R 쿨타임 버프 후 후반 승률 최상위권. 초반 다이브·추격형 픽에 취약",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "퀸": {
+    "id": "Quinn",
+    "aliases": [
+      "퀸",
+      "새"
+    ],
+    "damageType": "AD",
+    "rangeType": "원거리",
+    "roleTags": [
+      "원딜",
+      "암살자"
+    ],
+    "difficulty": "보통",
+    "timing": "초반",
+    "playstyleTags": [
+      "#로밍",
+      "#라인전"
+    ],
+    "tier": "2티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "말파이트",
+      "럼블",
+      "이렐리아"
+    ],
+    "counter": [
+      "요릭",
+      "사이온",
+      "티모"
+    ],
+    "matchupStats": {
+      "이렐리아": {
+        "wr": 32.3,
+        "delta2": null,
+        "gd15": -1932,
+        "games": null,
+        "patches": 1,
+        "tip": "퀸 E(공중제비)를 써도 이렐리아 Q로 바로 따라붙습니다. 6렙 전 타워 앞 파밍 후 로밍으로 푸세요."
+      },
+      "티모": {
+        "wr": 36.7,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "실명(Q)이 빠지기 전엔 정면 평타 딜교를 피하고 시야 확보 후 로밍을 노리세요."
+      },
+      "다리우스": {
+        "wr": 41.0,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "다리우스 E(선고)로 퀸 E가 끊기면 즉사합니다. E를 선진입용으로 절대 쓰지 마세요."
+      }
+    },
+    "note": "26.23 지표상 이렐리아(67.7%, 15분 +1,932G), 티모(63.3%), 다리우스(59.0%)가 최강 카운터",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "크산테": {
+    "id": "KSante",
+    "aliases": [
+      "크산",
+      "산테"
+    ],
+    "damageType": "AD",
+    "rangeType": "근접",
+    "roleTags": [
+      "탱커",
+      "브루저"
+    ],
+    "difficulty": "어려움",
+    "timing": "중반",
+    "playstyleTags": [
+      "#한타",
+      "#유동적"
+    ],
+    "tier": "2티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": "buff",
+      "label": "26.23 W 버프",
+      "resetHistory": false
+    },
+    "hard": [
+      "암베사",
+      "가렌"
+    ],
+    "counter": [
+      "뽀삐",
+      "일라오이",
+      "요릭",
+      "나르",
+      "베인",
+      "갱플랭크"
+    ],
+    "matchupStats": {
+      "암베사": {
+        "wr": 38.1,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "암베사의 기동성 때문에 Q3·W 적중이 어렵습니다. 포탑 쪽 벽각을 노려 반격하세요."
+      },
+      "가렌": {
+        "wr": 38.2,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "가렌 침묵(Q)과 궁극기 고정 피해에 총공세(R) 상태가 매우 취약합니다. 반피 이하로 R을 쓰지 마세요."
+      },
+      "갱플랭크": {
+        "wr": 41.1,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "갱플 귤(W)이 크산테 R을 풀 수 있으므로 귤이 빠진 타이밍을 노리세요."
+      },
+      "럼블": {
+        "wr": 45.1,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "초반 마방 1코어(케이닉 루컨 등) 전까지 과열 딜교를 피하세요."
+      },
+      "나르": {
+        "wr": null,
+        "delta2": null,
+        "gd15": -563,
+        "games": null,
+        "patches": 1,
+        "tip": "도란 방패+재바로 버티며 6렙 이후 벽각을 노리세요."
+      }
+    },
+    "note": "26.23 W 버프. 지표상 암베사(61.9%), 가렌(61.8%), 갱플랭크(58.9%), 럼블(54.9%) 및 나르(15분 +563G)가 매우 강함",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "클레드": {
+    "id": "Kled",
+    "aliases": [
+      "클레드",
+      "스칼"
+    ],
+    "damageType": "AD",
+    "rangeType": "근접",
+    "roleTags": [
+      "브루저"
+    ],
+    "difficulty": "보통",
+    "timing": "초반",
+    "playstyleTags": [
+      "#라인전",
+      "#로밍"
+    ],
+    "tier": "3티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "피오라",
+      "바루스"
+    ],
+    "counter": [
+      "볼리베어",
+      "잭스",
+      "말파이트",
+      "뽀삐",
+      "가렌",
+      "케넨"
+    ],
+    "matchupStats": {
+      "피오라": {
+        "wr": null,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 3,
+        "tip": "클레드 Q 밧줄 당겨지는 타이밍이 피오라 응수(W) 확정 기절 각이므로 선픽을 피하세요."
+      }
+    },
+    "note": "Q 밧줄 응수(피오라) 및 재탑승 차단·처형 픽에 취약",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "탐 켄치": {
+    "id": "TahmKench",
+    "aliases": [
+      "탐켄치",
+      "켄치",
+      "메기"
+    ],
+    "damageType": "AP",
+    "rangeType": "근접",
+    "roleTags": [
+      "탱커"
+    ],
+    "difficulty": "쉬움",
+    "timing": "초반",
+    "playstyleTags": [
+      "#라인전",
+      "#한타"
+    ],
+    "tier": "3티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "요릭"
+    ],
+    "counter": [
+      "일라오이",
+      "베인"
+    ],
+    "matchupStats": {},
+    "note": "소환수로 Q(혀 채찍) 각을 원천 차단하는 요릭이 극상성",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "트런들": {
+    "id": "Trundle",
+    "aliases": [
+      "트런들",
+      "트롤"
+    ],
+    "damageType": "AD",
+    "rangeType": "근접",
+    "roleTags": [
+      "브루저"
+    ],
+    "difficulty": "쉬움",
+    "timing": "초반",
+    "playstyleTags": [
+      "#사이드",
+      "#라인전"
+    ],
+    "tier": "3티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "볼리베어",
+      "잭스",
+      "나르"
+    ],
+    "counter": [
+      "아칼리"
+    ],
+    "matchupStats": {},
+    "note": "26.23 피오라 라인전 카운터(+1,197G). 평타 차단(잭스)과 카이팅(나르)에 취약",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "트린다미어": {
+    "id": "Tryndamere",
+    "aliases": [
+      "트린",
+      "트린다"
+    ],
+    "damageType": "AD",
+    "rangeType": "근접",
+    "roleTags": [
+      "스커미셔"
+    ],
+    "difficulty": "쉬움",
+    "timing": "중반",
+    "playstyleTags": [
+      "#사이드"
+    ],
+    "tier": "2티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "볼리베어",
+      "퀸",
+      "베인"
+    ],
+    "counter": [
+      "말파이트",
+      "크산테",
+      "워윅"
+    ],
+    "matchupStats": {
+      "티모": {
+        "wr": 37.1,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "티모 실명(Q) 지속 시간 동안 딜이 0이 되므로 Q가 빠진 걸 확인하고 E+유체화로 진입하세요."
+      }
+    },
+    "note": "26.23 지표상 티모(62.9%)도 실명으로 트린다미어 상대로 압도적 우위",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "티모": {
+    "id": "Teemo",
+    "aliases": [
+      "티모",
+      "버섯"
+    ],
+    "damageType": "AP",
+    "rangeType": "원거리",
+    "roleTags": [
+      "원딜",
+      "메이지"
+    ],
+    "difficulty": "쉬움",
+    "timing": "초반",
+    "playstyleTags": [
+      "#라인전",
+      "#사이드"
+    ],
+    "tier": "2티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "올라프",
+      "라이즈",
+      "카시오페아"
+    ],
+    "counter": [
+      "사이온",
+      "나서스"
+    ],
+    "matchupStats": {
+      "모데카이저": {
+        "wr": 40.5,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "6렙 이후 모데 궁극기 안에서는 버섯이 지워지므로 E 끌림 각을 절대 주지 마세요."
+      },
+      "사이온": {
+        "wr": 43.0,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "사이온 E 둔화 후 Q 차징에 맞으면 킬각이 나오므로 W 이속으로 옆으로 피하세요."
+      },
+      "말파이트": {
+        "wr": 45.3,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "말파이트 Q 포킹과 6렙 원콤을 버티기 위해 초반 마방·체력 아이템을 섞으세요."
+      },
+      "이렐리아": {
+        "wr": null,
+        "delta2": null,
+        "gd15": -954,
+        "games": null,
+        "patches": 1,
+        "tip": "실명(Q)을 이렐리아가 Q로 붙은 직후에 아껴 써야 맞딜을 버팁니다."
+      }
+    },
+    "note": "26.23 지표상 모데카이저(59.5%), 사이온(57.0%), 말파이트(54.7%), 이렐리아(15분 +954G)가 강세",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "판테온": {
+    "id": "Pantheon",
+    "aliases": [
+      "판테",
+      "빵테"
+    ],
+    "damageType": "AD",
+    "rangeType": "근접",
+    "roleTags": [
+      "브루저",
+      "암살자"
+    ],
+    "difficulty": "쉬움",
+    "timing": "초반",
+    "playstyleTags": [
+      "#라인전",
+      "#로밍"
+    ],
+    "tier": "1티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "말파이트",
+      "올라프"
+    ],
+    "counter": [
+      "크산테",
+      "요릭"
+    ],
+    "matchupStats": {
+      "피오라": {
+        "wr": 40.6,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "판테온 W 스턴이 피오라 응수(W)에 막히면 역기절 당하므로 Q 포킹 위주로 깎아두세요."
+      }
+    },
+    "note": "26.23 상위권(12위). 지표상 피오라(59.4%)도 W 응수 구도로 판테온에게 강함",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "피오라": {
+    "id": "Fiora",
+    "aliases": [
+      "피오라"
+    ],
+    "damageType": "AD",
+    "rangeType": "근접",
+    "roleTags": [
+      "스커미셔"
+    ],
+    "difficulty": "어려움",
+    "timing": "후반",
+    "playstyleTags": [
+      "#사이드"
+    ],
+    "tier": "1티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "퀸",
+      "베인",
+      "바루스"
+    ],
+    "counter": [
+      "말파이트",
+      "세트",
+      "제이스"
+    ],
+    "matchupStats": {
+      "아트록스": {
+        "wr": 43.0,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "아트록스 Q3타나 W 사슬 끊김 타이밍에 응수(W)를 맞추는 심리전이 핵심입니다."
+      },
+      "가렌": {
+        "wr": 43.6,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "가렌 Q 침묵 모션을 응수(W)로 막으면 딜교가 크게 유리해집니다."
+      },
+      "레넥톤": {
+        "wr": 46.7,
+        "delta2": null,
+        "gd15": null,
+        "games": null,
+        "patches": 1,
+        "tip": "레넥톤 강화 W 스턴을 응수(W)로 반사하는 타이밍 싸움입니다."
+      },
+      "트런들": {
+        "wr": null,
+        "delta2": null,
+        "gd15": -1197,
+        "games": null,
+        "patches": 1,
+        "tip": "초반 정면 맞다이는 밀리므로 Q 급소 견제로 치고 빠지며 1코어 이후를 보세요."
+      }
+    },
+    "note": "26.23 상위권(8위). 지표상 아트록스(57.0%), 가렌(56.4%), 레넥톤(53.3%), 트런들(15분 +1,197G) 및 천상계 케넨이 강세",
+    "laneExtra": {},
+    "rosterType": "main"
+  },
+  "하이머딩거": {
+    "id": "Heimerdinger",
+    "aliases": [
+      "딩거",
+      "하딩",
+      "하이머"
+    ],
+    "damageType": "AP",
+    "rangeType": "원거리",
+    "roleTags": [
+      "메이지"
+    ],
+    "difficulty": "보통",
+    "timing": "초반",
+    "playstyleTags": [
+      "#라인전",
+      "#사이드"
+    ],
+    "tier": "4티어",
+    "stats": {
+      "wr": null,
+      "pr": null,
+      "br": null,
+      "games": null
+    },
+    "patchFlag": {
+      "status": null,
+      "label": null,
+      "resetHistory": false
+    },
+    "hard": [
+      "야스오"
+    ],
+    "counter": [
+      "갱플랭크",
+      "나서스",
+      "라이즈"
+    ],
+    "matchupStats": {},
+    "note": "포탑을 장막·스택·원거리 스킬로 손쉽게 지우는 픽에 약함",
+    "laneExtra": {},
+    "rosterType": "joker"
+  }
+}
+};
 
-    /* Cards / Panels */
-    .panel {
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      overflow: hidden;
-    }
+(function bindAndValidateTopData() {
+  const topBundle = window.BANPICK_DATA.top;
+  const rawChampions = topBundle.champions;
+  const externalMap = topBundle.externalChampions || {};
 
-    /* Mode Switcher */
-    .mode-bar {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
-      padding: 10px 12px;
-      background: var(--bg-elevated);
-      border-bottom: 1px solid var(--border);
-    }
-    .mode-btn {
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      color: var(--text-sub);
-      padding: 9px 8px;
-      border-radius: 8px;
-      cursor: pointer;
-      text-align: center;
-      transition: all 0.15s;
-    }
-    .mode-btn:hover { background: var(--bg-hover); color: var(--text-main); }
-    .mode-btn.active {
-      background: var(--gold-dim);
-      border-color: var(--gold-border);
-      color: var(--gold);
-    }
-    .mode-btn .m-title { font-size: 13px; font-weight: 700; display: block; }
-    .mode-btn .m-desc { font-size: 11px; color: var(--text-muted); display: block; margin-top: 2px; }
-    .mode-btn.active .m-desc { color: #e2c97a; }
+  window.PATCH_VERSION_TOP = topBundle.meta.patch;
 
-    /* Filters */
-    .filter-bar {
-      padding: 10px 12px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .filter-row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-    .search-input {
-      flex: 1;
-      min-width: 160px;
-      background: var(--bg-base);
-      color: var(--text-main);
-      border: 1px solid var(--border-strong);
-      border-radius: 8px;
-      padding: 7px 11px;
-      font-size: 13px;
-      outline: none;
-    }
-    .search-input:focus { border-color: var(--gold); }
-    .filter-select {
-      background: var(--bg-base);
-      color: var(--text-main);
-      border: 1px solid var(--border-strong);
-      border-radius: 7px;
-      padding: 6px 8px;
-      font-size: 12px;
-      outline: none;
-      cursor: pointer;
-    }
-    .toggle-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      background: var(--bg-base);
-      border: 1px solid var(--border-strong);
-      color: var(--text-sub);
-      border-radius: 7px;
-      padding: 5px 9px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      user-select: none;
-    }
-    .toggle-pill.on-emerald {
-      background: var(--emerald-dim);
-      border-color: rgba(16, 185, 129, 0.5);
-      color: var(--emerald);
-    }
-    .toggle-pill.on-violet {
-      background: var(--violet-dim);
-      border-color: rgba(167, 139, 250, 0.5);
-      color: var(--violet);
-    }
-    .toggle-pill.on-gold {
-      background: var(--gold-dim);
-      border-color: var(--gold-border);
-      color: var(--gold);
-    }
+  const idMap = {};
+  Object.keys(rawChampions).forEach((name) => {
+    idMap[name] = rawChampions[name].id;
+  });
+  Object.keys(externalMap).forEach((name) => {
+    idMap[name] = externalMap[name].id;
+  });
+  window.CHAMPION_ID_MAP_TOP = idMap;
 
-    .list-meta {
-      padding: 7px 12px;
-      font-size: 11px;
-      color: var(--text-muted);
-      background: rgba(0, 0, 0, 0.16);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
+  const normalizedObj = {};
+  const normalizedArr = [];
+  const warnings = [];
 
-    /* Tier Table Scroll Container (X + Y scroll safe for mobile!) */
-    .table-scroll {
-      max-height: 70vh;
-      overflow-y: auto;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    thead th {
-      position: sticky;
-      top: 0;
-      z-index: 5;
-      background: var(--bg-elevated);
-      color: var(--text-sub);
-      font-size: 11px;
-      font-weight: 700;
-      text-align: left;
-      padding: 8px 10px;
-      border-bottom: 1px solid var(--border);
-      white-space: nowrap;
-    }
-    tbody tr {
-      border-bottom: 1px solid rgba(44, 44, 56, 0.65);
-      cursor: pointer;
-      transition: background 0.1s;
-    }
-    tbody tr:hover { background: var(--bg-hover); }
-    tbody tr.selected { background: rgba(212, 175, 55, 0.11); }
-    tbody tr.in-pool td:first-child { box-shadow: inset 3px 0 0 var(--gold); }
-    tbody tr.is-joker td:first-child { box-shadow: inset 3px 0 0 var(--violet); }
-    tbody tr.in-pool.is-joker td:first-child { box-shadow: inset 3px 0 0 var(--gold); }
-    tbody td {
-      padding: 8px 10px;
-      font-size: 13px;
-      vertical-align: middle;
-    }
+  Object.keys(rawChampions).forEach((name) => {
+    const c = rawChampions[name];
 
-    .rank-cell {
-      width: 34px;
-      color: var(--text-muted);
-      font-weight: 700;
-      font-variant-numeric: tabular-nums;
-      text-align: center;
-    }
-    .star-btn {
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      font-size: 16px;
-      cursor: pointer;
-      padding: 2px 4px;
-      line-height: 1;
-    }
-    .star-btn.active { color: var(--gold); }
-    .star-btn:hover { transform: scale(1.15); }
-
-    .champ-cell {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      min-width: 155px;
-    }
-    .avatar {
-      width: 34px;
-      height: 34px;
-      border-radius: 8px;
-      background: var(--bg-elevated);
-      border: 1px solid var(--border-strong);
-      flex-shrink: 0;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--text-sub);
-      overflow: hidden;
-      position: relative;
-    }
-    .avatar img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-    .avatar-fallback {
-      width: 100%;
-      height: 100%;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      color: var(--text-sub);
-    }
-    .avatar-chip { width: 20px; height: 20px; border-radius: 50%; font-size: 9px; border: none; }
-    .avatar-sm { width: 24px; height: 24px; border-radius: 6px; font-size: 10px; }
-    .avatar-lg { width: 52px; height: 52px; border-radius: 12px; font-size: 18px; }
-
-    .champ-name-wrap { display: flex; flex-direction: column; gap: 2px; }
-    .champ-name-line {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      flex-wrap: wrap;
-    }
-    .champ-name { font-weight: 700; font-size: 13.5px; color: var(--text-main); }
-    .champ-sub { font-size: 11px; color: var(--text-muted); }
-
-    /* Badges */
-    .badge {
-      display: inline-block;
-      font-size: 10.5px;
-      font-weight: 700;
-      padding: 1px 6px;
-      border-radius: 5px;
-      white-space: nowrap;
-    }
-    .b-op { background: var(--gold-dim); color: var(--gold); border: 1px solid var(--gold-border); }
-    .b-t1 { background: rgba(16, 185, 129, 0.16); color: #34D399; border: 1px solid rgba(16, 185, 129, 0.35); }
-    .b-t2 { background: rgba(56, 189, 248, 0.14); color: #7DD3FC; border: 1px solid rgba(56, 189, 248, 0.3); }
-    .b-t3 { background: rgba(161, 161, 179, 0.14); color: #D4D4DD; border: 1px solid rgba(161, 161, 179, 0.25); }
-    .b-t4 { background: rgba(110, 110, 130, 0.16); color: #9CA3AF; border: 1px solid rgba(110, 110, 130, 0.28); }
-    .b-joker { background: var(--violet-dim); color: var(--violet); border: 1px solid rgba(167, 139, 250, 0.45); }
-    .b-buff { background: var(--emerald-dim); color: var(--emerald); }
-    .b-nerf { background: var(--rose-dim); color: var(--rose); }
-    .b-warn { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(245, 158, 11, 0.4); }
-    .b-easy { background: rgba(16, 185, 129, 0.13); color: #6EE7B7; }
-    .b-mid { background: rgba(245, 158, 11, 0.13); color: #FCD34D; }
-    .b-hard { background: rgba(244, 63, 94, 0.13); color: #FDA4AF; }
-    .b-tag { background: var(--bg-elevated); color: var(--text-sub); border: 1px solid var(--border); }
-
-    /* Mini 3-axis bars */
-    .tri-bars {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-      min-width: 112px;
-    }
-    .bar-line {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      font-size: 10.5px;
-      color: var(--text-sub);
-    }
-    .bar-label { width: 24px; color: var(--text-muted); }
-    .bar-track {
-      flex: 1;
-      height: 5px;
-      background: var(--bg-base);
-      border-radius: 99px;
-      overflow: hidden;
-    }
-    .bar-fill { height: 100%; border-radius: 99px; }
-    .bar-num { width: 28px; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
-
-    .score-big {
-      font-size: 14px;
-      font-weight: 800;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .mini-icons {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      flex-wrap: wrap;
-    }
-    .mini-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      background: var(--bg-base);
-      border: 1px solid var(--border);
-      padding: 2px 6px 2px 2px;
-      border-radius: 6px;
-      font-size: 11px;
-      color: var(--text-sub);
-      white-space: nowrap;
-    }
-    .mini-chip.hard-threat { border-color: rgba(244, 63, 94, 0.45); color: #FDA4AF; }
-    .mini-chip.snipe-op { border-color: var(--gold-border); color: var(--gold); }
-    .mini-chip.snipe-t1 { border-color: rgba(16, 185, 129, 0.45); color: #6EE7B7; }
-
-    /* Right Inspector Panel */
-    .inspector {
-      position: sticky;
-      top: 66px;
-      max-height: calc(100vh - 82px);
-      overflow-y: auto;
-      padding: 16px;
-      scroll-margin-top: 72px;
-    }
-    .mobile-back-bar {
-      display: none;
-      margin-bottom: 10px;
-    }
-    @media (max-width: 1024px) {
-      .inspector { position: static; max-height: none; }
-      .mobile-back-bar { display: flex; justify-content: flex-end; }
-    }
-    @media (max-width: 680px) {
-      .container { padding: 10px 10px 36px; }
-      .mode-btn { padding: 8px 4px; }
-      .mode-btn .m-title { font-size: 12px; }
-      .mode-btn .m-desc { font-size: 10px; }
-      tbody td, thead th { padding: 7px 6px; font-size: 12px; }
-      .champ-cell { min-width: 135px; gap: 7px; }
-      .avatar { width: 30px; height: 30px; }
-      .tri-bars { min-width: 96px; }
-    }
-
-    .insp-head {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 12px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--border);
-      flex-wrap: wrap;
-    }
-    .insp-title-block { display: flex; gap: 12px; align-items: center; }
-    .insp-name { font-size: 19px; font-weight: 800; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-    .insp-pills { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; }
-
-    .insp-section {
-      margin-top: 14px;
-      padding-top: 12px;
-      border-top: 1px solid rgba(44, 44, 56, 0.65);
-    }
-    .insp-section:first-of-type { border-top: none; padding-top: 0; }
-    .sec-title {
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--text-sub);
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 6px;
-    }
-
-    .score-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-    }
-    .score-card {
-      background: var(--bg-base);
-      border: 1px solid var(--border);
-      border-radius: 9px;
-      padding: 9px 10px;
-      text-align: center;
-    }
-    .score-card .sc-lbl { font-size: 11px; color: var(--text-muted); }
-    .score-card .sc-val { font-size: 18px; font-weight: 800; margin-top: 2px; font-variant-numeric: tabular-nums; }
-    .score-card .sc-sub { font-size: 10.5px; color: var(--text-sub); margin-top: 2px; }
-
-    .pool-rec-box {
-      background: var(--bg-base);
-      border: 1px solid var(--border-strong);
-      border-radius: 9px;
-      padding: 10px 12px;
-      font-size: 12.5px;
-    }
-    .pool-rec-box.ok { border-color: rgba(16, 185, 129, 0.45); background: rgba(16, 185, 129, 0.06); }
-    .pool-rec-box.danger { border-color: rgba(244, 63, 94, 0.45); background: rgba(244, 63, 94, 0.06); }
-
-    .matchup-list {
-      display: flex;
-      flex-direction: column;
-      gap: 7px;
-    }
-    .matchup-card {
-      background: var(--bg-base);
-      border: 1px solid var(--border);
-      border-radius: 9px;
-      padding: 8px 10px;
-      cursor: pointer;
-      transition: border-color 0.12s;
-    }
-    .matchup-card:hover { border-color: var(--border-strong); }
-    .matchup-card.is-mine { border-color: var(--gold-border); background: rgba(212, 175, 55, 0.07); }
-    .matchup-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .matchup-left { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
-    .matchup-tip {
-      margin-top: 6px;
-      padding: 6px 8px;
-      border-radius: 6px;
-      background: rgba(255, 255, 255, 0.03);
-      border-left: 2px solid var(--gold);
-      font-size: 11.5px;
-      color: #d7d7e2;
-      line-height: 1.45;
-    }
-    .matchup-stat-pill {
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--rose);
-      font-variant-numeric: tabular-nums;
-    }
-
-    .note-box {
-      background: var(--bg-base);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 9px 11px;
-      font-size: 12.5px;
-      color: var(--text-sub);
-    }
-
-    .memo-input {
-      width: 100%;
-      min-height: 64px;
-      background: var(--bg-base);
-      color: var(--text-main);
-      border: 1px solid var(--border-strong);
-      border-radius: 8px;
-      padding: 8px 10px;
-      font-size: 12.5px;
-      font-family: inherit;
-      resize: vertical;
-      outline: none;
-    }
-    .memo-input:focus { border-color: var(--gold); }
-    .memo-saved { font-size: 11px; color: var(--emerald); }
-
-    .error-banner {
-      background: var(--rose-dim);
-      border: 1px solid rgba(244, 63, 94, 0.5);
-      color: #fecdd3;
-      padding: 14px 16px;
-      border-radius: 10px;
-      margin-bottom: 14px;
-      font-size: 13px;
-    }
-    .toast {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--bg-elevated);
-      color: var(--gold);
-      border: 1px solid var(--gold-border);
-      padding: 8px 16px;
-      border-radius: 999px;
-      font-size: 12.5px;
-      font-weight: 700;
-      z-index: 100;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s;
-    }
-    .toast.show { opacity: 1; }
-  </style>
-</head>
-<body>
-  <header>
-    <div class="header-inner">
-      <div class="brand">
-        <span class="brand-logo">BANPICK</span>
-        <span id="patchPill" class="patch-pill">로딩 중...</span>
-        <span id="collectingPill" class="badge b-warn" style="display:none;">⏳ 패치 직후 표본 수집 중</span>
-      </div>
-      <div class="lane-tabs">
-        <button class="lane-tab active" type="button">🛡️ 탑</button>
-        <button class="lane-tab" type="button" disabled title="탑 기능 검증 완료 후 확장 예정">⚡ 미드 (준비 중)</button>
-        <button class="lane-tab" type="button" disabled title="탑 기능 검증 완료 후 확장 예정">🏹 바텀 (준비 중)</button>
-      </div>
-    </div>
-  </header>
-
-  <main class="container">
-    <div id="errorBanner" class="error-banner" style="display:none;"></div>
-
-    <!-- My Champ Pool Bar -->
-    <section class="pool-bar" aria-label="내 챔프폭">
-      <div class="pool-top">
-        <div>
-          <div class="pool-title">
-            <span>★ 내 탑 챔프폭</span>
-            <span id="poolDiag" class="pool-diag"></span>
-          </div>
-        </div>
-        <div class="pool-actions">
-          <button id="btnSamplePool" class="btn btn-gold" type="button">✨ 예시 체험 (모데·가렌·말파)</button>
-          <button id="btnCopyLink" class="btn" type="button">🔗 링크 복사</button>
-          <button id="btnClearPool" class="btn" type="button">초기화</button>
-        </div>
-      </div>
-      <div id="poolChips" class="pool-chips"></div>
-    </section>
-
-    <!-- Main 2-Column Workspace -->
-    <div class="workspace">
-      <!-- Left: 3-Mode Tier List -->
-      <section id="tierPanel" class="panel">
-        <div class="mode-bar" role="tablist">
-          <button class="mode-btn active" data-mode="meta" type="button">
-            <span class="m-title">🏆 종합 메타</span>
-            <span class="m-desc">체급·패치·범용성 기준</span>
-          </button>
-          <button class="mode-btn" data-mode="blind" type="button">
-            <span class="m-title">🛡️ 선픽 안정성</span>
-            <span class="m-desc">1픽 안전·천적 최소화</span>
-          </button>
-          <button class="mode-btn" data-mode="counter" type="button">
-            <span class="m-title">🗡️ 후픽 조커</span>
-            <span class="m-desc">현 메타 OP·1티어 저격력</span>
-          </button>
-        </div>
-
-        <div class="filter-bar">
-          <div class="filter-row">
-            <input id="searchInput" class="search-input" type="text" placeholder="챔피언 이름 · 초성(ㄱㄹ) · 별명(크산, 딩거, 빵테)..." autocomplete="off" />
-            <button id="btnBeginnerFilter" class="toggle-pill" type="button">🟢 초보 친화 (어려움 제외)</button>
-            <button id="btnJokerToggle" class="toggle-pill on-violet" type="button">🎭 조커 픽 포함</button>
-            <button id="btnPoolOnly" class="toggle-pill" type="button">★ 내 챔프폭만</button>
-          </div>
-          <div class="filter-row">
-            <select id="selDamage" class="filter-select" aria-label="공격 타입 필터">
-              <option value="ALL">공격: 전체</option>
-              <option value="AD">공격: AD</option>
-              <option value="AP">공격: AP</option>
-              <option value="혼합">공격: 혼합</option>
-            </select>
-            <select id="selRange" class="filter-select" aria-label="사거리 필터">
-              <option value="ALL">사거리: 전체</option>
-              <option value="근접">사거리: 근접</option>
-              <option value="원거리">사거리: 원거리</option>
-            </select>
-            <select id="selTiming" class="filter-select" aria-label="강한 타이밍 필터">
-              <option value="ALL">타이밍: 전체</option>
-              <option value="초반">타이밍: 초반</option>
-              <option value="중반">타이밍: 중반</option>
-              <option value="후반">타이밍: 후반</option>
-            </select>
-            <button id="btnResetFilters" class="btn" type="button" style="margin-left:auto;">필터 초기화</button>
-          </div>
-        </div>
-
-        <div class="list-meta">
-          <span id="listCountText">계산 중...</span>
-          <span id="formulaHint"></span>
-        </div>
-
-        <div id="tableScroll" class="table-scroll">
-          <table>
-            <thead id="tierHead"></thead>
-            <tbody id="tierBody"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- Right: Selected Champion Detail & Matchup Inspector -->
-      <aside id="inspector" class="panel inspector">
-        <div id="inspectorContent"></div>
-      </aside>
-    </div>
-  </main>
-
-  <div id="toast" class="toast"></div>
-
-  <!-- Top Lane Data v2.2 -->
-  <script src="data_top.js"></script>
-
-  <script>
-    /* =========================================================================
-     * 1. PURE CALCULATION ENGINE (window.BANPICK_ENGINE)
-     *    UI/HTML과 완전히 분리된 순수 계산 모듈 (승률 50% + 라인전 50% · 버티면 역전 제외)
-     * ========================================================================= */
-    window.BANPICK_ENGINE = (function () {
-      const TIER_BASE = { "OP": 95, "1티어": 83, "2티어": 69, "3티어": 55, "4티어": 41, "5티어": 28 };
-      const TIER_ORDER = { "OP": 0, "1티어": 1, "2티어": 2, "3티어": 3, "4티어": 4, "5티어": 5 };
-      const ENEMY_THREAT_WEIGHT = { "OP": 1.35, "1티어": 1.20, "2티어": 1.0, "3티어": 0.8, "4티어": 0.65, "5티어": 0.5 };
-      const SNIPE_WEIGHT = {
-        "OP": [18, 10],
-        "1티어": [13, 7],
-        "2티어": [8, 4],
-        "3티어": [4, 2],
-        "4티어": [2, 1],
-        "5티어": [1, 0.5]
-      };
-
-      const CHOSUNG = ["ㄱ","ㄲ","ㄴ","ㄷ","ㄸ","ㄹ","ㅁ","ㅂ","ㅃ","ㅅ","ㅆ","ㅇ","ㅈ","ㅉ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"];
-      function getChosung(str) {
-        let res = "";
-        for (let i = 0; i < str.length; i++) {
-          const code = str.charCodeAt(i) - 0xAC00;
-          if (code >= 0 && code <= 11171) {
-            res += CHOSUNG[Math.floor(code / 588)];
-          } else {
-            res += str[i];
-          }
+    ["hard", "counter"].forEach((key) => {
+      (c[key] || []).forEach((target) => {
+        if (!rawChampions[target] && !externalMap[target]) {
+          warnings.push(`[data_top.js] "${name}"의 ${key} 항목에 미등록 챔피언 "${target}" 발견`);
         }
-        return res;
-      }
+      });
+    });
 
-      function normalizeSearch(str) {
-        return String(str || "").toLowerCase().replace(/\s+/g, "");
-      }
-
-      function scoreToGrade(score) {
-        if (score >= 76) return "S";
-        if (score >= 63) return "A";
-        if (score >= 50) return "B";
-        if (score >= 36) return "C";
-        return "D";
-      }
-
-      function scoreToUnifiedTier(score, fallbackTier) {
-        if (fallbackTier) return fallbackTier;
-        if (score >= 90) return "OP";
-        if (score >= 78) return "1티어";
-        if (score >= 64) return "2티어";
-        if (score >= 50) return "3티어";
-        if (score >= 36) return "4티어";
-        return "5티어";
-      }
-
-      /**
-       * 50% 승률(Win Delta) + 50% 라인전(첫 포탑·채굴·솔킬·CS/골드 격차) 카운터 판정기
-       * - '버티면 역전'(라인전 대패 후 후반 한타 역전)은 하드카운터에서 제외
-       * - 향후 Riot API가 matchupStats 수치를 채워 넣으면 자동으로 정밀 판정 수행
-       */
-      function evaluateMatchup5050(mStat, counterScoring) {
-        if (!mStat) return null;
-        const cfg = Object.assign({
-          winRateWeight: 0.5,
-          laningWeight: 0.5,
-          excludeComebackCounter: true,
-          laningHardFloor: -0.35
-        }, counterScoring || {});
-
-        // Enemy perspective (positive = enemy dominates this champion)
-        let winNorm = null;
-        if (mStat.delta2 != null) {
-          winNorm = Math.max(-1, Math.min(1, (-mStat.delta2) / 10));
-        } else if (mStat.wr != null) {
-          winNorm = Math.max(-1, Math.min(1, (50 - mStat.wr) / 12));
-        }
-
-        const laneParts = [];
-        if (mStat.gd15 != null) laneParts.push(Math.max(-1, Math.min(1, (-mStat.gd15) / 1200)));
-        if (mStat.firstTower != null) laneParts.push(Math.max(-1, Math.min(1, (50 - mStat.firstTower) / 25)));
-        if (mStat.plates != null) laneParts.push(Math.max(-1, Math.min(1, (-mStat.plates) / 1.8)));
-        if (mStat.soloKill != null) laneParts.push(Math.max(-1, Math.min(1, (-mStat.soloKill) / 0.8)));
-        if (mStat.csAdv != null) laneParts.push(Math.max(-1, Math.min(1, (-mStat.csAdv) / 22)));
-
-        const laningNorm = laneParts.length
-          ? laneParts.reduce((a, b) => a + b, 0) / laneParts.length
-          : null;
-
-        if (winNorm === null && laningNorm === null) return null;
-
-        // If only laning data exists (no win-rate verification), mark as laning-pressure only
-        if (winNorm === null && laningNorm !== null) {
-          return {
-            composite: +(laningNorm * 50).toFixed(1),
-            winNorm: null,
-            laningNorm: +laningNorm.toFixed(2),
-            isLanePressureOnly: true,
-            isComebackExcluded: false
-          };
-        }
-
-        // Exclude "버티면 역전" (enemy loses laning hard despite winning late game)
-        const isComebackExcluded = Boolean(
-          cfg.excludeComebackCounter && laningNorm !== null && laningNorm < cfg.laningHardFloor
-        );
-
-        const composite = laningNorm !== null
-          ? (winNorm * cfg.winRateWeight + laningNorm * cfg.laningWeight) * 100
-          : winNorm * 100;
-
-        return {
-          composite: +composite.toFixed(1),
-          winNorm: +winNorm.toFixed(2),
-          laningNorm: laningNorm !== null ? +laningNorm.toFixed(2) : null,
-          isLanePressureOnly: false,
-          isComebackExcluded
-        };
-      }
-
-      function computeTopAnalytics(topBundle) {
-        const meta = topBundle.meta || {};
-        const raw = topBundle.champions || {};
-        const external = topBundle.externalChampions || {};
-        const names = Object.keys(raw);
-        const priorGames = (meta.rosterCutline && meta.rosterCutline.bayesianPriorGames) || 200;
-        const avgWr = meta.tierAvgWinRate || 51.8;
-        const counterScoring = meta.counterScoring || {
-          winRateWeight: 0.5,
-          laningWeight: 0.5,
-          excludeComebackCounter: true,
-          laningHardFloor: -0.35
-        };
-
-        // Build reverse matchup map: who does champion X counter?
-        const reverseHard = {};
-        const reverseSoft = {};
-        names.forEach((n) => {
-          reverseHard[n] = [];
-          reverseSoft[n] = [];
-        });
-
-        names.forEach((enemy) => {
-          const c = raw[enemy];
-          (c.hard || []).forEach((h) => {
-            if (reverseHard[h]) reverseHard[h].push(enemy);
-          });
-          (c.counter || []).forEach((s) => {
-            if (reverseSoft[s]) reverseSoft[s].push(enemy);
-          });
-        });
-
-        const items = names.map((name) => {
-          const c = raw[name];
-          const rosterType = c.rosterType || "main";
-
-          // Filter out any API-verified "버티면 역전" from hard counter penalty if laning stats exist
-          const effectiveHard = (c.hard || []).filter((h) => {
-            const evalRes = evaluateMatchup5050(c.matchupStats && c.matchupStats[h], counterScoring);
-            return !(evalRes && evalRes.isComebackExcluded);
-          });
-
-          // 1) Blind Pick Stability (0~100)
-          let hardPenalty = 0;
-          const threatDetails = [];
-          effectiveHard.forEach((h) => {
-            const t = raw[h] ? raw[h].tier : "3티어";
-            hardPenalty += 11.0 * (ENEMY_THREAT_WEIGHT[t] || 0.8);
-            threatDetails.push({ name: h, tier: t, type: "hard" });
-          });
-
-          let softPenalty = 0;
-          (c.counter || []).forEach((s) => {
-            const t = raw[s] ? raw[s].tier : "3티어";
-            softPenalty += 3.8 * (ENEMY_THREAT_WEIGHT[t] || 0.8);
-          });
-
-          const tierResilience = ((TIER_BASE[c.tier] || 55) - 65) * 0.28;
-          const jokerBlindPenalty = rosterType === "joker" ? -7.0 : 0.0;
-          const blindScore = Math.max(12, Math.min(99, +(95 - hardPenalty - softPenalty + tierResilience + jokerBlindPenalty).toFixed(1)));
-
-          threatDetails.sort((a, b) => (TIER_ORDER[a.tier] ?? 9) - (TIER_ORDER[b.tier] ?? 9));
-
-          // 2) Counter-Pick Joker Value (0~100) — NO joker penalty!
-          let snipeRaw = 0;
-          const snipedHard = reverseHard[name] || [];
-          const snipedSoft = reverseSoft[name] || [];
-          const metaTargets = [];
-
-          snipedHard.forEach((target) => {
-            const t = raw[target].tier;
-            snipeRaw += (SNIPE_WEIGHT[t] || [4, 2])[0];
-            if (t === "OP" || t === "1티어") {
-              metaTargets.push({ name: target, tier: t, type: "hard" });
-            }
-          });
-          snipedSoft.forEach((target) => {
-            const t = raw[target].tier;
-            snipeRaw += (SNIPE_WEIGHT[t] || [4, 2])[1];
-            if (t === "OP" || t === "1티어") {
-              metaTargets.push({ name: target, tier: t, type: "soft" });
-            }
-          });
-          metaTargets.sort((a, b) => {
-            if (a.type !== b.type) return a.type === "hard" ? -1 : 1;
-            return (TIER_ORDER[a.tier] ?? 9) - (TIER_ORDER[b.tier] ?? 9);
-          });
-
-          const counterScore = Math.min(99, +(15 + 84 * (1 - Math.exp(-snipeRaw / 75.0))).toFixed(1));
-
-          // 3) Comprehensive Meta Score (0~100)
-          const stats = c.stats || {};
-          let metaScore;
-          let smoothedWr = null;
-          let usedApiStats = false;
-
-          if (stats.wr != null && stats.games) {
-            usedApiStats = true;
-            smoothedWr = +(((stats.wr * stats.games) + (avgWr * priorGames)) / (stats.games + priorGames)).toFixed(2);
-            const winDelta = smoothedWr - avgWr;
-            const pr = stats.pr || 1.0;
-            const br = stats.br || 0.0;
-            metaScore = Math.max(15, Math.min(99, +(65 + winDelta * 7.5 + Math.min(12, pr * 0.9) + Math.min(8, br * 0.35)).toFixed(1)));
-          } else {
-            const base = TIER_BASE[c.tier] || 55;
-            const pfStatus = c.patchFlag && c.patchFlag.status;
-            const patchAdj = (pfStatus === "meta_up" || pfStatus === "buff") ? 2.5 : (pfStatus === "nerf" ? -2.5 : 0);
-            const utilityAdj = ((blindScore - 60) * 0.08) + ((counterScore - 55) * 0.08);
-            const jokerMetaAdj = rosterType === "joker" ? -3.0 : 0.0;
-            metaScore = Math.max(15, Math.min(99, +(base + patchAdj + utilityAdj + jokerMetaAdj).toFixed(1)));
-          }
-
-          const unifiedTier = scoreToUnifiedTier(metaScore, usedApiStats ? null : c.tier);
-
-          // Space-insensitive search haystack (name + chosung + English ID + aliases)
-          const rawTokens = [
-            name,
-            getChosung(name),
-            c.id || "",
-            ...(c.aliases || []),
-            ...(c.aliases || []).map((a) => getChosung(a))
-          ];
-          const searchTokens = rawTokens.map((t) => normalizeSearch(t)).join(" ");
-
-          return {
-            name,
-            id: c.id,
-            rosterType,
-            tier: unifiedTier,
-            damageType: c.damageType,
-            rangeType: c.rangeType,
-            roleTags: c.roleTags || [],
-            difficulty: c.difficulty,
-            timing: c.timing,
-            playstyleTags: c.playstyleTags || [],
-            patchFlag: c.patchFlag || { status: null, label: null },
-            hard: effectiveHard,
-            counter: c.counter || [],
-            matchupStats: c.matchupStats || {},
-            note: c.note || "",
-            stats,
-            smoothedWr,
-            usedApiStats,
-            metaScore,
-            blindScore,
-            blindGrade: scoreToGrade(blindScore),
-            counterScore,
-            counterGrade: scoreToGrade(counterScore),
-            worstThreats: threatDetails.slice(0, 3),
-            snipedHard,
-            snipedSoft,
-            metaTargets,
-            searchTokens
-          };
-        });
-
-        const byName = {};
-        items.forEach((it) => { byName[it.name] = it; });
-
-        return { meta, items, byName, external, counterScoring };
-      }
-
-      function diagnosePool(pool, byName, items) {
-        if (!pool.length) return null;
-        const poolSet = new Set(pool);
-        const topMeta = items.filter((it) => it.tier === "OP" || it.tier === "1티어");
-        let coveredCount = 0;
-        topMeta.forEach((enemy) => {
-          const hasCounter = enemy.hard.some((c) => poolSet.has(c)) || enemy.counter.some((c) => poolSet.has(c));
-          if (hasCounter) coveredCount++;
-        });
-        const hasAP = pool.some((n) => byName[n] && (byName[n].damageType === "AP" || byName[n].damageType === "혼합"));
-        const hasRangeAnswer = pool.some((n) => {
-          const it = byName[n];
-          if (!it) return false;
-          if (it.rangeType === "원거리") return true;
-          return it.snipedHard.some((t) => byName[t] && byName[t].rangeType === "원거리");
-        });
-        return {
-          count: pool.length,
-          topMetaTotal: topMeta.length,
-          coveredCount,
-          coveragePct: topMeta.length ? Math.round((coveredCount / topMeta.length) * 100) : 0,
-          hasAP,
-          hasRangeAnswer
-        };
-      }
-
-      return {
-        computeTopAnalytics,
-        evaluateMatchup5050,
-        diagnosePool,
-        getChosung,
-        normalizeSearch
-      };
-    })();
-
-    /* =========================================================================
-     * 2. APP STATE, PERSISTENCE & DDRAGON 24H CACHE
-     * ========================================================================= */
-    const STORAGE_KEYS = {
-      POOL: "banpick_pool_top_v1",
-      MEMOS: "banpick_memos_top_v1",
-      DDRAGON_VER: "banpick_ddragon_ver",
-      DDRAGON_TS: "banpick_ddragon_ts"
+    const entry = {
+      name: name,
+      id: c.id,
+      en: c.id,
+      rosterType: c.rosterType || "main",
+      aliases: c.aliases || [],
+      damageType: c.damageType,
+      rangeType: c.rangeType,
+      roleTags: c.roleTags || [],
+      difficulty: c.difficulty,
+      timing: c.timing,
+      playstyleTags: c.playstyleTags || [],
+      tier: c.tier,
+      stats: c.stats || { wr: null, pr: null, br: null, games: null },
+      patchFlag: c.patchFlag || { status: null, label: null, resetHistory: false },
+      hard: c.hard || [],
+      soft: c.counter || [],
+      counter: c.counter || [],
+      counters: c.counter || [],
+      matchupStats: c.matchupStats || {},
+      note: c.note || "",
+      memo: c.note || "",
+      laneExtra: c.laneExtra || {}
     };
-    const LEGACY_POOL_KEYS = ["lol_my_pool_top", "myPool_top", "banpick_top_pool"];
-    const LEGACY_MEMO_KEYS = ["lol_my_memos_top", "myMemos_top", "banpick_top_memos"];
-    const DDRAGON_FALLBACK = "15.22.1";
-    const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
-    const state = {
-      ddragonVer: DDRAGON_FALLBACK,
-      mode: "meta",
-      search: "",
-      beginnerOnly: false,
-      includeJoker: true,
-      poolOnly: false,
-      damageFilter: "ALL",
-      rangeFilter: "ALL",
-      timingFilter: "ALL",
-      pool: [],
-      memos: {},
-      selected: null
-    };
-
-    let ANALYTICS = null;
-
-    function escapeHtml(str) {
-      return String(str == null ? "" : str)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
-    }
-
-    function safeCssEscape(str) {
-      if (window.CSS && typeof window.CSS.escape === "function") {
-        return window.CSS.escape(str);
-      }
-      return String(str).replace(/["\\]/g, "\\$&");
-    }
-
-    function showToast(msg) {
-      const el = document.getElementById("toast");
-      el.textContent = msg;
-      el.classList.add("show");
-      clearTimeout(showToast._t);
-      showToast._t = setTimeout(() => el.classList.remove("show"), 1900);
-    }
-
-    function loadPersistedState() {
-      // Load memos (with graceful legacy check)
-      try {
-        let m = localStorage.getItem(STORAGE_KEYS.MEMOS);
-        if (!m) {
-          for (const k of LEGACY_MEMO_KEYS) {
-            const legacy = localStorage.getItem(k);
-            if (legacy) { m = legacy; break; }
-          }
-        }
-        if (m) state.memos = JSON.parse(m) || {};
-      } catch (_) {}
-
-      // Check URL ?pool=... first
-      const params = new URLSearchParams(window.location.search);
-      const urlPool = params.get("pool");
-      if (urlPool) {
-        const parsed = urlPool.split(",").map((s) => s.trim()).filter((n) => ANALYTICS.byName[n]);
-        if (parsed.length) {
-          state.pool = Array.from(new Set(parsed));
-          savePool();
-          showToast(`공유 링크에서 챔프폭 ${state.pool.length}개를 불러왔습니다.`);
-          return;
-        }
-      }
-
-      // Otherwise load localStorage (empty array [] by default!)
-      try {
-        let raw = localStorage.getItem(STORAGE_KEYS.POOL);
-        if (!raw) {
-          for (const k of LEGACY_POOL_KEYS) {
-            const legacy = localStorage.getItem(k);
-            if (legacy) { raw = legacy; break; }
-          }
-        }
-        if (raw) {
-          const arr = JSON.parse(raw);
-          if (Array.isArray(arr)) {
-            state.pool = arr.filter((n) => ANALYTICS.byName[n]);
-          }
-        }
-      } catch (_) {}
-    }
-
-    function savePool() {
-      try {
-        localStorage.setItem(STORAGE_KEYS.POOL, JSON.stringify(state.pool));
-      } catch (_) {}
-    }
-
-    function saveMemos() {
-      try {
-        localStorage.setItem(STORAGE_KEYS.MEMOS, JSON.stringify(state.memos));
-      } catch (_) {}
-    }
-
-    // Read cached DDragon version SYNCHRONOUSLY before first render (Bug #1 fix)
-    function loadCachedDDragonVersion() {
-      try {
-        const cachedVer = localStorage.getItem(STORAGE_KEYS.DDRAGON_VER);
-        const cachedTs = Number(localStorage.getItem(STORAGE_KEYS.DDRAGON_TS) || 0);
-        if (cachedVer) {
-          state.ddragonVer = cachedVer;
-          return (Date.now() - cachedTs) < CACHE_TTL_MS;
-        }
-      } catch (_) {}
-      return false;
-    }
-
-    async function fetchLatestDDragonVersion() {
-      try {
-        const res = await fetch("https://ddragon.leagueoflegends.com/api/versions.json");
-        if (!res.ok) return;
-        const versions = await res.json();
-        if (Array.isArray(versions) && versions[0]) {
-          const prev = state.ddragonVer;
-          state.ddragonVer = versions[0];
-          try {
-            localStorage.setItem(STORAGE_KEYS.DDRAGON_VER, versions[0]);
-            localStorage.setItem(STORAGE_KEYS.DDRAGON_TS, String(Date.now()));
-          } catch (_) {}
-          if (prev !== versions[0]) {
-            refreshVisibleAvatars();
-          }
-        }
-      } catch (_) {
-        // Keep fallback or cached version
-      }
-    }
-
-    function getChampionId(name) {
-      if (window.CHAMPION_ID_MAP_TOP && window.CHAMPION_ID_MAP_TOP[name]) {
-        return window.CHAMPION_ID_MAP_TOP[name];
-      }
-      if (ANALYTICS && ANALYTICS.byName[name]) return ANALYTICS.byName[name].id;
-      if (ANALYTICS && ANALYTICS.external[name]) return ANALYTICS.external[name].id;
-      return null;
-    }
-
-    // Non-destructive avatar HTML so failed images recover cleanly when DDragon updates (Bug #1 fix)
-    function avatarHtml(name, sizeClass = "") {
-      const id = getChampionId(name);
-      const initial = escapeHtml(name ? name.slice(0, 1) : "?");
-      const safeName = escapeHtml(name);
-      if (!id) {
-        return `<span class="avatar ${sizeClass}"><span class="avatar-fallback" style="display:inline-flex;">${initial}</span></span>`;
-      }
-      const url = `https://ddragon.leagueoflegends.com/cdn/${state.ddragonVer}/img/champion/${id}.png`;
-      return `<span class="avatar ${sizeClass}" data-champ-id="${escapeHtml(id)}"><img src="${url}" alt="${safeName}" loading="lazy" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='inline-flex';" /><span class="avatar-fallback" style="display:none;">${initial}</span></span>`;
-    }
-
-    function refreshVisibleAvatars() {
-      document.querySelectorAll("[data-champ-id]").forEach((wrap) => {
-        const id = wrap.getAttribute("data-champ-id");
-        const img = wrap.querySelector("img");
-        const fb = wrap.querySelector(".avatar-fallback");
-        if (img && id) {
-          img.style.display = "";
-          if (fb) fb.style.display = "none";
-          img.src = `https://ddragon.leagueoflegends.com/cdn/${state.ddragonVer}/img/champion/${id}.png`;
-        }
-      });
-    }
-
-    /* =========================================================================
-     * 3. RENDERERS (Scroll-Safe & Surgical Updates)
-     * ========================================================================= */
-    function tierBadgeHtml(tier) {
-      const cls =
-        tier === "OP" ? "b-op" :
-        tier === "1티어" ? "b-t1" :
-        tier === "2티어" ? "b-t2" :
-        tier === "3티어" ? "b-t3" : "b-t4";
-      return `<span class="badge ${cls}">${escapeHtml(tier)}</span>`;
-    }
-
-    function diffBadgeHtml(diff) {
-      const cls = diff === "쉬움" ? "b-easy" : diff === "보통" ? "b-mid" : "b-hard";
-      return `<span class="badge ${cls}">${escapeHtml(diff)}</span>`;
-    }
-
-    function gradeBadgeHtml(grade, mode) {
-      const color =
-        grade === "S" ? (mode === "blind" ? "var(--emerald)" : "var(--gold)") :
-        grade === "A" ? "var(--sky)" :
-        grade === "B" ? "#d4d4dd" :
-        grade === "C" ? "var(--amber)" : "var(--rose)";
-      return `<span style="color:${color};font-weight:800;">${escapeHtml(grade)}등급</span>`;
-    }
-
-    function patchBadgeHtml(pf) {
-      if (!pf || !pf.label) return "";
-      const cls = pf.status === "nerf" ? "b-nerf" : (pf.status === "buff" || pf.status === "meta_up" ? "b-buff" : "b-warn");
-      const icon = pf.status === "nerf" ? "▼ " : (pf.status === "buff" || pf.status === "meta_up" ? "▲ " : "");
-      return `<span class="badge ${cls}">${icon}${escapeHtml(pf.label)}</span>`;
-    }
-
-    function getFilteredSortedList() {
-      const q = window.BANPICK_ENGINE.normalizeSearch(state.search);
-      const poolSet = new Set(state.pool);
-
-      const filtered = ANALYTICS.items.filter((it) => {
-        if (!state.includeJoker && it.rosterType === "joker") return false;
-        if (state.beginnerOnly && it.difficulty === "어려움") return false;
-        if (state.poolOnly && !poolSet.has(it.name)) return false;
-        if (state.damageFilter !== "ALL" && it.damageType !== state.damageFilter) return false;
-        if (state.rangeFilter !== "ALL" && it.rangeType !== state.rangeFilter) return false;
-        if (state.timingFilter !== "ALL" && it.timing !== state.timingFilter) return false;
-        if (q && !it.searchTokens.includes(q)) return false;
-        return true;
-      });
-
-      filtered.sort((a, b) => {
-        if (state.mode === "blind") {
-          return b.blindScore - a.blindScore || b.metaScore - a.metaScore;
-        }
-        if (state.mode === "counter") {
-          return b.counterScore - a.counterScore || b.metaScore - a.metaScore;
-        }
-        return b.metaScore - a.metaScore || b.blindScore - a.blindScore;
-      });
-
-      return filtered;
-    }
-
-    function renderPoolBar() {
-      const chipsEl = document.getElementById("poolChips");
-      const diagEl = document.getElementById("poolDiag");
-
-      if (!state.pool.length) {
-        chipsEl.innerHTML = `<span class="pool-empty">등록된 챔프가 없습니다. 아래 티어표에서 <strong>☆ 별표</strong>를 눌러 주력 챔프를 추가하거나 <strong>예시 체험</strong>을 눌러보세요.</span>`;
-        diagEl.textContent = "";
-        return;
-      }
-
-      const diag = window.BANPICK_ENGINE.diagnosePool(state.pool, ANALYTICS.byName, ANALYTICS.items);
-      const warns = [];
-      if (!diag.hasAP) warns.push("AP 없음");
-      if (!diag.hasRangeAnswer) warns.push("원거리 대응 약함");
-      diagEl.innerHTML =
-        `<span>${diag.count}개 등록 · 상위 티어(OP·1T) 대응률 <strong style="color:${diag.coveragePct >= 70 ? 'var(--emerald)' : 'var(--amber)'}">${diag.coveragePct}%</strong> (${diag.coveredCount}/${diag.topMetaTotal})</span>` +
-        (warns.length ? ` · <span style="color:var(--rose);">⚠ ${warns.join(", ")}</span>` : ` · <span style="color:var(--emerald);">균형 양호</span>`);
-
-      chipsEl.innerHTML = state.pool.map((name) => {
-        const safeName = escapeHtml(name);
-        return `
-          <span class="pool-chip" data-select="${safeName}">
-            ${avatarHtml(name, "avatar-chip")}
-            <span>${safeName}</span>
-            <span class="remove-x" data-remove="${safeName}" title="챔프폭에서 제거">×</span>
-          </span>
-        `;
-      }).join("");
-    }
-
-    function renderTierTable(preserveScroll = true) {
-      const scrollBox = document.getElementById("tableScroll");
-      const prevScrollTop = preserveScroll ? scrollBox.scrollTop : 0;
-
-      const list = getFilteredSortedList();
-      const poolSet = new Set(state.pool);
-      const thead = document.getElementById("tierHead");
-      const tbody = document.getElementById("tierBody");
-
-      if (state.mode === "meta") {
-        thead.innerHTML = `
-          <tr>
-            <th style="text-align:center;">#</th>
-            <th style="width:32px;text-align:center;">★</th>
-            <th>챔피언</th>
-            <th>특성 (입문·타이밍·속성)</th>
-            <th>3축 점수 (메타·선픽·후픽)</th>
-          </tr>
-        `;
-        document.getElementById("formulaHint").textContent = "종합 메타 = 티어 체급 + 패치 변동 + 선/후픽 유틸 (조커 표본 보정)";
-      } else if (state.mode === "blind") {
-        thead.innerHTML = `
-          <tr>
-            <th style="text-align:center;">#</th>
-            <th style="width:32px;text-align:center;">★</th>
-            <th>챔피언</th>
-            <th>선픽 안정성</th>
-            <th>하드카운터 수 &amp; 최악의 천적</th>
-          </tr>
-        `;
-        document.getElementById("formulaHint").textContent = "선픽 안정성 = 승률 50%·라인전 50% 카운터 기준(버티면 역전 제외) 천적 감점 + 체급";
-      } else {
-        thead.innerHTML = `
-          <tr>
-            <th style="text-align:center;">#</th>
-            <th style="width:32px;text-align:center;">★</th>
-            <th>챔피언</th>
-            <th>후픽 저격력</th>
-            <th>저격 가능한 현 메타 OP·1티어</th>
-          </tr>
-        `;
-        document.getElementById("formulaHint").textContent = "후픽 조커 = 승률 50%·라인전 50% 기준 현 메타 OP·1티어 저격력 (조커 페널티 없음)";
-      }
-
-      const jokerCount = list.filter((x) => x.rosterType === "joker").length;
-      document.getElementById("listCountText").textContent =
-        `표시 중: ${list.length}종 (메인 ${list.length - jokerCount} · 조커 ${jokerCount})`;
-
-      if (!list.length) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:28px;color:var(--text-muted);">조건에 맞는 챔피언이 없습니다. 필터를 초기화해 보세요.</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = list.map((it, idx) => {
-        const isPool = poolSet.has(it.name);
-        const isSel = state.selected === it.name;
-        const isJoker = it.rosterType === "joker";
-        const safeName = escapeHtml(it.name);
-
-        let poolSignal = "";
-        if (state.pool.length && !isPool) {
-          const canHard = it.hard.some((c) => poolSet.has(c));
-          const canSoft = it.counter.some((c) => poolSet.has(c));
-          if (canHard) {
-            poolSignal = `<span class="badge b-buff" title="내 챔프폭에 하드카운터 보유">내 픽 압도</span>`;
-          } else if (canSoft) {
-            poolSignal = `<span class="badge b-t2" title="내 챔프폭에 일반 카운터 보유">내 픽 우세</span>`;
-          } else if (it.tier === "OP" || it.tier === "1티어") {
-            poolSignal = `<span class="badge b-nerf" title="내 챔프폭으로 카운터 불가">미대응</span>`;
-          }
-        }
-
-        const champCell = `
-          <div class="champ-cell">
-            ${avatarHtml(it.name)}
-            <div class="champ-name-wrap">
-              <div class="champ-name-line">
-                <span class="champ-name">${safeName}</span>
-                ${tierBadgeHtml(it.tier)}
-                ${isJoker ? `<span class="badge b-joker">조커</span>` : ""}
-                ${poolSignal}
-              </div>
-              <div class="champ-sub">
-                ${escapeHtml(it.playstyleTags.join(" "))}
-                ${it.patchFlag && it.patchFlag.label ? ` · <span style="color:${it.patchFlag.status === 'nerf' ? 'var(--rose)' : 'var(--emerald)'}">${escapeHtml(it.patchFlag.label)}</span>` : ""}
-              </div>
-            </div>
-          </div>
-        `;
-
-        let col4 = "";
-        let col5 = "";
-
-        if (state.mode === "meta") {
-          col4 = `
-            <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">
-              ${diffBadgeHtml(it.difficulty)}
-              <span class="badge b-tag">${escapeHtml(it.timing)}</span>
-              <span class="badge b-tag">${escapeHtml(it.damageType)}·${escapeHtml(it.rangeType)}</span>
-            </div>
-          `;
-          col5 = `
-            <div class="tri-bars">
-              <div class="bar-line">
-                <span class="bar-label">메타</span>
-                <div class="bar-track"><div class="bar-fill" style="width:${it.metaScore}%;background:var(--gold);"></div></div>
-                <span class="bar-num" style="color:var(--gold);">${it.metaScore}</span>
-              </div>
-              <div class="bar-line">
-                <span class="bar-label">선픽</span>
-                <div class="bar-track"><div class="bar-fill" style="width:${it.blindScore}%;background:var(--emerald);"></div></div>
-                <span class="bar-num">${it.blindScore}</span>
-              </div>
-              <div class="bar-line">
-                <span class="bar-label">후픽</span>
-                <div class="bar-track"><div class="bar-fill" style="width:${it.counterScore}%;background:var(--amber);"></div></div>
-                <span class="bar-num">${it.counterScore}</span>
-              </div>
-            </div>
-          `;
-        } else if (state.mode === "blind") {
-          col4 = `
-            <div>
-              <span class="score-big" style="color:${it.blindScore >= 70 ? 'var(--emerald)' : it.blindScore >= 50 ? 'var(--text-main)' : 'var(--rose)'}">${it.blindScore}점</span>
-              <div style="font-size:11px;margin-top:2px;">${gradeBadgeHtml(it.blindGrade, "blind")} · 하드 ${it.hard.length} / 일반 ${it.counter.length}</div>
-            </div>
-          `;
-          col5 = it.worstThreats.length
-            ? `<div class="mini-icons">${it.worstThreats.map((t) => `<span class="mini-chip hard-threat">${avatarHtml(t.name, "avatar-sm")} ${escapeHtml(t.name)}</span>`).join("")}</div>`
-            : `<span class="badge b-buff">하드카운터 없음 (최상급 선픽)</span>`;
-        } else {
-          col4 = `
-            <div>
-              <span class="score-big" style="color:${it.counterScore >= 72 ? 'var(--gold)' : it.counterScore >= 55 ? 'var(--amber)' : 'var(--text-sub)'}">${it.counterScore}점</span>
-              <div style="font-size:11px;margin-top:2px;">${gradeBadgeHtml(it.counterGrade, "counter")} · 하드저격 ${it.snipedHard.length} / 일반 ${it.snipedSoft.length}</div>
-            </div>
-          `;
-          const topSnipes = it.metaTargets.slice(0, 4);
-          col5 = topSnipes.length
-            ? `<div class="mini-icons">${topSnipes.map((t) => `<span class="mini-chip ${t.tier === 'OP' ? 'snipe-op' : 'snipe-t1'}">${avatarHtml(t.name, "avatar-sm")} ${escapeHtml(t.name)}${t.type === 'hard' ? '!' : ''}</span>`).join("")}${it.metaTargets.length > 4 ? `<span style="font-size:11px;color:var(--text-muted);">+${it.metaTargets.length - 4}</span>` : ""}</div>`
-            : `<span style="font-size:11.5px;color:var(--text-muted);">OP·1티어 저격 없음 (총 ${it.snipedHard.length + it.snipedSoft.length}종 대응)</span>`;
-        }
-
-        const trCls = [
-          isSel ? "selected" : "",
-          isPool ? "in-pool" : "",
-          isJoker ? "is-joker" : ""
-        ].filter(Boolean).join(" ");
-
-        return `
-          <tr class="${trCls}" data-row="${safeName}">
-            <td class="rank-cell">${idx + 1}</td>
-            <td style="text-align:center;">
-              <button class="star-btn ${isPool ? "active" : ""}" data-star="${safeName}" type="button" title="내 챔프폭 토글">${isPool ? "★" : "☆"}</button>
-            </td>
-            <td>${champCell}</td>
-            <td>${col4}</td>
-            <td>${col5}</td>
-          </tr>
-        `;
-      }).join("");
-
-      if (preserveScroll) {
-        scrollBox.scrollTop = prevScrollTop;
-      }
-    }
-
-    function renderInspector() {
-      const box = document.getElementById("inspectorContent");
-      const name = state.selected;
-      const it = name && ANALYTICS.byName[name];
-      if (!it) {
-        box.innerHTML = `<div style="padding:24px;text-align:center;color:var(--text-muted);">좌측 티어표에서 챔피언을 선택하면 3축 점수, 카운터, 매치업 1줄 공략이 표시됩니다.</div>`;
-        return;
-      }
-
-      const poolSet = new Set(state.pool);
-      const isPool = poolSet.has(it.name);
-      const safeName = escapeHtml(it.name);
-
-      // My Pool Recommendations vs this champion
-      let poolRecHtml = "";
-      if (!state.pool.length) {
-        poolRecHtml = `<div class="pool-rec-box">내 챔프폭을 등록하면 <strong>${safeName}</strong> 상대로 내가 꺼낼 수 있는 최적 후픽을 바로 알려줍니다.</div>`;
-      } else {
-        const myHard = it.hard.filter((c) => poolSet.has(c));
-        const mySoft = it.counter.filter((c) => poolSet.has(c));
-        if (myHard.length || mySoft.length) {
-          const itemsHtml = [
-            ...myHard.map((c) => `<span class="badge b-op" style="cursor:pointer;" data-jump="${escapeHtml(c)}">★ ${escapeHtml(c)} (7:3 하드)</span>`),
-            ...mySoft.map((c) => `<span class="badge b-t1" style="cursor:pointer;" data-jump="${escapeHtml(c)}">★ ${escapeHtml(c)} (6:4 우세)</span>`)
-          ].join(" ");
-          poolRecHtml = `
-            <div class="pool-rec-box ok">
-              <div style="font-weight:700;color:var(--emerald);margin-bottom:6px;">내 챔프폭 추천 후픽</div>
-              <div style="display:flex;gap:6px;flex-wrap:wrap;">${itemsHtml}</div>
-            </div>
-          `;
-        } else {
-          poolRecHtml = `
-            <div class="pool-rec-box danger">
-              <div style="font-weight:700;color:var(--rose);">⚠ 내 챔프폭에 ${safeName} 카운터 없음</div>
-              <div style="font-size:12px;color:var(--text-sub);margin-top:3px;">상대가 선픽하면 라인전이 빡빡할 수 있습니다. 아래 전체 카운터 중 쉬운 픽을 연습하거나 필밴을 고려하세요.</div>
-            </div>
-          `;
-        }
-      }
-
-      function renderCounterCards(list, labelType) {
-        if (!list.length) {
-          return `<div style="font-size:12px;color:var(--text-muted);padding:4px 0;">등록된 ${labelType === "hard" ? "하드카운터" : "일반 카운터"} 없음</div>`;
-        }
-        return `<div class="matchup-list">${list.map((cName) => {
-          const cObj = ANALYTICS.byName[cName] || ANALYTICS.external[cName];
-          const isExternal = !ANALYTICS.byName[cName];
-          const isMine = poolSet.has(cName);
-          const mStat = it.matchupStats && it.matchupStats[cName];
-          const cDiff = cObj ? cObj.difficulty : null;
-          const warnHard = state.beginnerOnly && cDiff === "어려움";
-          const safeCName = escapeHtml(cName);
-
-          const statPieces = [];
-          if (mStat && mStat.wr != null) {
-            const enemyWr = +(100 - mStat.wr).toFixed(1);
-            statPieces.push(`${safeCName} 승률 ${enemyWr}%`);
-          }
-          if (mStat && mStat.gd15 != null) {
-            const enemyGd = -mStat.gd15;
-            statPieces.push(`15분 ${enemyGd > 0 ? "+" : ""}${enemyGd}G`);
-          }
-          if (mStat && mStat.plates != null) {
-            const enemyPlates = +(-mStat.plates).toFixed(1);
-            statPieces.push(`채굴 ${enemyPlates > 0 ? "+" : ""}${enemyPlates}`);
-          }
-
-          return `
-            <div class="matchup-card ${isMine ? "is-mine" : ""}" ${!isExternal ? `data-jump="${safeCName}"` : ""}>
-              <div class="matchup-top">
-                <div class="matchup-left">
-                  ${avatarHtml(cName, "avatar-sm")}
-                  <strong style="font-size:13px;">${safeCName}</strong>
-                  ${isMine ? `<span class="badge b-op">내 챔프</span>` : ""}
-                  ${isExternal ? `<span class="badge b-joker">외부 조커</span>` : (cObj ? tierBadgeHtml(cObj.tier) : "")}
-                  ${cDiff ? diffBadgeHtml(cDiff) : ""}
-                  ${warnHard ? `<span class="badge b-warn">⚠ 숙련도 필요</span>` : ""}
-                </div>
-                ${statPieces.length ? `<span class="matchup-stat-pill">${statPieces.join(" · ")}</span>` : ""}
-              </div>
-              ${mStat && mStat.tip ? `<div class="matchup-tip">💡 ${escapeHtml(mStat.tip)}</div>` : ""}
-            </div>
-          `;
-        }).join("")}</div>`;
-      }
-
-      // Remaining GD15-only laning pressure warnings (no win-rate verification, kept distinct so zero contradiction!)
-      const listedSet = new Set([...it.hard, ...it.counter]);
-      const lanePressureKeys = Object.keys(it.matchupStats || {}).filter((k) => !listedSet.has(k));
-      const lanePressureHtml = lanePressureKeys.length ? `
-        <div class="insp-section">
-          <div class="sec-title"><span>🔥 라인전 압박 주의 (15분 골드 격차 · 승률 미검증)</span></div>
-          ${renderCounterCards(lanePressureKeys, "lane")}
-        </div>
-      ` : "";
-
-      const reverseHtml = (it.snipedHard.length || it.snipedSoft.length) ? `
-        <div style="display:flex;gap:5px;flex-wrap:wrap;">
-          ${it.snipedHard.map((t) => `<span class="mini-chip ${ANALYTICS.byName[t].tier === 'OP' ? 'snipe-op' : 'snipe-t1'}" style="cursor:pointer;" data-jump="${escapeHtml(t)}">${avatarHtml(t, "avatar-sm")} ${escapeHtml(t)} (7:3)</span>`).join("")}
-          ${it.snipedSoft.map((t) => `<span class="mini-chip" style="cursor:pointer;" data-jump="${escapeHtml(t)}">${avatarHtml(t, "avatar-sm")} ${escapeHtml(t)} (6:4)</span>`).join("")}
-        </div>
-      ` : `<div style="font-size:12px;color:var(--text-muted);">역상성 데이터 없음</div>`;
-
-      const currentMemo = state.memos[it.name] || "";
-
-      box.innerHTML = `
-        <div class="mobile-back-bar">
-          <button id="btnMobileBackToList" class="btn" type="button">▲ 티어표로 돌아가기</button>
-        </div>
-
-        <div class="insp-head">
-          <div class="insp-title-block">
-            ${avatarHtml(it.name, "avatar-lg")}
-            <div>
-              <div class="insp-name">
-                <span>${safeName}</span>
-                ${tierBadgeHtml(it.tier)}
-                ${it.rosterType === "joker" ? `<span class="badge b-joker">조커</span>` : ""}
-              </div>
-              <div class="insp-pills">
-                ${diffBadgeHtml(it.difficulty)}
-                <span class="badge b-tag">타이밍: ${escapeHtml(it.timing)}</span>
-                <span class="badge b-tag">${escapeHtml(it.damageType)} · ${escapeHtml(it.rangeType)}</span>
-                ${it.playstyleTags.map((t) => `<span class="badge b-tag">${escapeHtml(t)}</span>`).join("")}
-                ${patchBadgeHtml(it.patchFlag)}
-              </div>
-            </div>
-          </div>
-          <button id="inspStarBtn" class="btn ${isPool ? "btn-gold" : ""}" type="button" data-star="${safeName}">
-            ${isPool ? "★ 내 챔프폭" : "☆ 챔프폭 추가"}
-          </button>
-        </div>
-
-        <div class="insp-section">
-          <div class="sec-title"><span>3종 티어 엔진 산출 점수</span></div>
-          <div class="score-grid">
-            <div class="score-card">
-              <div class="sc-lbl">🏆 종합 메타</div>
-              <div class="sc-val" style="color:var(--gold);">${it.metaScore}</div>
-              <div class="sc-sub">${escapeHtml(it.tier)}${it.rosterType === "joker" ? " (조커)" : ""}</div>
-            </div>
-            <div class="score-card">
-              <div class="sc-lbl">🛡️ 선픽 안정성</div>
-              <div class="sc-val" style="color:var(--emerald);">${it.blindScore}</div>
-              <div class="sc-sub">${escapeHtml(it.blindGrade)}등급 (하드 ${it.hard.length})</div>
-            </div>
-            <div class="score-card">
-              <div class="sc-lbl">🗡️ 후픽 조커</div>
-              <div class="sc-val" style="color:var(--amber);">${it.counterScore}</div>
-              <div class="sc-sub">${escapeHtml(it.counterGrade)}등급 (1T저격 ${it.metaTargets.length})</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="insp-section">
-          <div class="sec-title"><span>내 챔프폭 대응 진단</span></div>
-          ${poolRecHtml}
-        </div>
-
-        <div class="insp-section">
-          <div class="sec-title">
-            <span style="color:var(--rose);">하드카운터 (7:3+) · ${it.hard.length}종</span>
-            <span style="font-size:11px;color:var(--text-muted);">클릭 시 이동</span>
-          </div>
-          ${renderCounterCards(it.hard, "hard")}
-        </div>
-
-        <div class="insp-section">
-          <div class="sec-title">
-            <span style="color:var(--amber);">일반 카운터 (6:4+) · ${it.counter.length}종</span>
-          </div>
-          ${renderCounterCards(it.counter, "soft")}
-        </div>
-
-        ${lanePressureHtml}
-
-        <div class="insp-section">
-          <div class="sec-title"><span>🗡️ ${safeName} 픽으로 저격 가능한 상대 (${it.snipedHard.length + it.snipedSoft.length}종)</span></div>
-          ${reverseHtml}
-        </div>
-
-        <div class="insp-section">
-          <div class="sec-title"><span>📌 패치 요약 &amp; 핵심 비고</span></div>
-          <div class="note-box">${escapeHtml(it.note || "등록된 요약 없음")}</div>
-        </div>
-
-        <div class="insp-section">
-          <div class="sec-title">
-            <span>📝 내 개인 메모 (브라우저 자동 저장)</span>
-            <span id="memoSaved" class="memo-saved"></span>
-          </div>
-          <textarea id="memoTextarea" class="memo-input" placeholder="${safeName} 상대할 때 기억할 룬·아이템·라인전 팁을 적어두세요..."></textarea>
-        </div>
-      `;
-
-      // Safe DOM value assignment (prevents & / HTML entity corruption & XSS)
-      const memoEl = document.getElementById("memoTextarea");
-      if (memoEl) {
-        memoEl.value = currentMemo;
-        memoEl.addEventListener("input", (e) => {
-          const val = e.target.value;
-          if (val.trim()) {
-            state.memos[it.name] = val;
-          } else {
-            delete state.memos[it.name];
-          }
-          saveMemos();
-          const savedEl = document.getElementById("memoSaved");
-          if (savedEl) {
-            savedEl.textContent = "자동 저장됨";
-            clearTimeout(renderInspector._mt);
-            renderInspector._mt = setTimeout(() => {
-              if (savedEl) savedEl.textContent = "";
-            }, 1200);
-          }
-        });
-      }
-
-      const backBtn = document.getElementById("btnMobileBackToList");
-      if (backBtn) {
-        backBtn.addEventListener("click", () => {
-          const panel = document.getElementById("tierPanel");
-          if (panel) panel.scrollIntoView({ behavior: "smooth", block: "start" });
-        });
-      }
-    }
-
-    function togglePoolChamp(name) {
-      if (!ANALYTICS.byName[name]) return;
-      const idx = state.pool.indexOf(name);
-      if (idx >= 0) {
-        state.pool.splice(idx, 1);
-        showToast(`${name} — 내 챔프폭에서 제거`);
-      } else {
-        state.pool.push(name);
-        showToast(`${name} — 내 챔프폭에 추가`);
-      }
-      savePool();
-      renderPoolBar();
-      renderTierTable(true);
-      renderInspector();
-    }
-
-    function selectChampion(name, scrollInspectorTop = false, scrollMobileIntoView = false) {
-      if (!ANALYTICS.byName[name]) return;
-      state.selected = name;
-      document.querySelectorAll("#tierBody tr.selected").forEach((tr) => tr.classList.remove("selected"));
-      const targetRow = document.querySelector(`#tierBody tr[data-row="${safeCssEscape(name)}"]`);
-      if (targetRow) targetRow.classList.add("selected");
-      renderInspector();
-      const insp = document.getElementById("inspector");
-      if (insp) {
-        if (scrollInspectorTop) insp.scrollTop = 0;
-        if (scrollMobileIntoView && window.innerWidth <= 1024) {
-          insp.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
-      }
-    }
-
-    /* =========================================================================
-     * 4. EVENT BINDING & BOOTSTRAP
-     * ========================================================================= */
-    function bindEvents() {
-      document.querySelectorAll(".mode-btn").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          state.mode = btn.getAttribute("data-mode");
-          document.querySelectorAll(".mode-btn").forEach((b) => b.classList.toggle("active", b === btn));
-          renderTierTable(false);
-        });
-      });
-
-      document.getElementById("searchInput").addEventListener("input", (e) => {
-        state.search = e.target.value;
-        renderTierTable(false);
-      });
-
-      document.getElementById("btnBeginnerFilter").addEventListener("click", (e) => {
-        state.beginnerOnly = !state.beginnerOnly;
-        e.currentTarget.classList.toggle("on-emerald", state.beginnerOnly);
-        renderTierTable(false);
-        renderInspector();
-      });
-
-      document.getElementById("btnJokerToggle").addEventListener("click", (e) => {
-        state.includeJoker = !state.includeJoker;
-        e.currentTarget.classList.toggle("on-violet", state.includeJoker);
-        renderTierTable(false);
-      });
-
-      document.getElementById("btnPoolOnly").addEventListener("click", (e) => {
-        state.poolOnly = !state.poolOnly;
-        e.currentTarget.classList.toggle("on-gold", state.poolOnly);
-        renderTierTable(false);
-      });
-
-      document.getElementById("selDamage").addEventListener("change", (e) => {
-        state.damageFilter = e.target.value;
-        renderTierTable(false);
-      });
-      document.getElementById("selRange").addEventListener("change", (e) => {
-        state.rangeFilter = e.target.value;
-        renderTierTable(false);
-      });
-      document.getElementById("selTiming").addEventListener("change", (e) => {
-        state.timingFilter = e.target.value;
-        renderTierTable(false);
-      });
-
-      document.getElementById("btnResetFilters").addEventListener("click", () => {
-        state.search = "";
-        state.beginnerOnly = false;
-        state.includeJoker = true;
-        state.poolOnly = false;
-        state.damageFilter = "ALL";
-        state.rangeFilter = "ALL";
-        state.timingFilter = "ALL";
-        document.getElementById("searchInput").value = "";
-        document.getElementById("btnBeginnerFilter").classList.remove("on-emerald");
-        document.getElementById("btnJokerToggle").classList.add("on-violet");
-        document.getElementById("btnPoolOnly").classList.remove("on-gold");
-        document.getElementById("selDamage").value = "ALL";
-        document.getElementById("selRange").value = "ALL";
-        document.getElementById("selTiming").value = "ALL";
-        renderTierTable(false);
-        renderInspector();
-      });
-
-      document.getElementById("btnSamplePool").addEventListener("click", () => {
-        state.pool = ["모데카이저", "가렌", "말파이트"].filter((n) => ANALYTICS.byName[n]);
-        savePool();
-        renderPoolBar();
-        renderTierTable(true);
-        renderInspector();
-        showToast("예시 챔프폭(모데·가렌·말파)을 적용했습니다.");
-      });
-
-      document.getElementById("btnClearPool").addEventListener("click", () => {
-        state.pool = [];
-        savePool();
-        renderPoolBar();
-        renderTierTable(true);
-        renderInspector();
-        showToast("챔프폭을 비웠습니다.");
-      });
-
-      // Safe URL copy for both GitHub Pages & local file:// testing
-      document.getElementById("btnCopyLink").addEventListener("click", async () => {
-        const base = window.location.href.split("?")[0].split("#")[0];
-        const url = state.pool.length ? `${base}?pool=${encodeURIComponent(state.pool.join(","))}` : base;
-        try {
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            await navigator.clipboard.writeText(url);
-            showToast("내 챔프폭 링크가 복사되었습니다.");
-          } else {
-            prompt("아래 링크를 복사하세요:", url);
-          }
-        } catch (_) {
-          prompt("아래 링크를 복사하세요:", url);
-        }
-      });
-
-      document.getElementById("poolChips").addEventListener("click", (e) => {
-        const rm = e.target.closest("[data-remove]");
-        if (rm) {
-          e.stopPropagation();
-          togglePoolChamp(rm.getAttribute("data-remove"));
-          return;
-        }
-        const chip = e.target.closest("[data-select]");
-        if (chip) {
-          selectChampion(chip.getAttribute("data-select"), true, true);
-        }
-      });
-
-      document.getElementById("tierBody").addEventListener("click", (e) => {
-        const star = e.target.closest("[data-star]");
-        if (star) {
-          e.stopPropagation();
-          togglePoolChamp(star.getAttribute("data-star"));
-          return;
-        }
-        const row = e.target.closest("tr[data-row]");
-        if (row) {
-          selectChampion(row.getAttribute("data-row"), true, true);
-        }
-      });
-
-      document.getElementById("inspector").addEventListener("click", (e) => {
-        const star = e.target.closest("[data-star]");
-        if (star) {
-          togglePoolChamp(star.getAttribute("data-star"));
-          return;
-        }
-        const jump = e.target.closest("[data-jump]");
-        if (jump) {
-          const target = jump.getAttribute("data-jump");
-          if (ANALYTICS.byName[target]) {
-            selectChampion(target, true, false);
-          }
-        }
-      });
-    }
-
-    function bootstrap() {
-      const topBundle = window.BANPICK_DATA && window.BANPICK_DATA.top;
-      if (!topBundle || !topBundle.champions) {
-        const err = document.getElementById("errorBanner");
-        err.style.display = "block";
-        err.innerHTML = "<strong>data_top.js 파일을 불러오지 못했습니다.</strong> 같은 폴더(깃허브 저장소 최상위)에 <code>data_top.js</code>가 있는지 확인한 뒤, 웹 주소에서 <code>Ctrl + Shift + R</code>로 새로고침해 주세요.";
-        return;
-      }
-
-      // 1) Read cached DDragon version BEFORE first render!
-      const isCacheFresh = loadCachedDDragonVersion();
-
-      ANALYTICS = window.BANPICK_ENGINE.computeTopAnalytics(topBundle);
-      window.BANPICK_ANALYTICS_TOP = ANALYTICS;
-
-      const m = ANALYTICS.meta;
-      document.getElementById("patchPill").textContent =
-        `패치 ${m.patch || "26.23"} · 탑 ${ANALYTICS.items.length}종 (v${m.schemaVersion || "2.2"})`;
-      if (m.isCollecting) {
-        document.getElementById("collectingPill").style.display = "inline-block";
-      }
-
-      loadPersistedState();
-      const initialList = getFilteredSortedList();
-      state.selected = initialList.length ? initialList[0].name : null;
-
-      bindEvents();
-      renderPoolBar();
-      renderTierTable(false);
-      renderInspector();
-
-      // 2) Refresh latest DDragon version in background if cache expired
-      if (!isCacheFresh) {
-        fetchLatestDDragonVersion();
-      }
-    }
-
-    document.addEventListener("DOMContentLoaded", bootstrap);
-  </script>
-</body>
-</html>
+    normalizedObj[name] = entry;
+    normalizedArr.push(entry);
+  });
+
+  if (warnings.length > 0 && typeof console !== "undefined") {
+    console.warn("BANPICK 데이터 검증 경고:", warnings);
+  }
+
+  window.DATA_TOP = normalizedObj;
+  window.TOP_DATA = normalizedObj;
+  window.LOL_TOP_DATA = normalizedObj;
+  window.TOP_CHAMPIONS = normalizedArr;
+})();
