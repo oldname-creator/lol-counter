@@ -1,16 +1,15 @@
 /**
- * BANPICK - LoL 26.23 패치 탑 라인 통합 데이터 (data_top.js v2.1)
+ * BANPICK - LoL 26.23 패치 탑 라인 통합 데이터 (data_top.js v2.3.0)
  * - 총 65종 탑 챔피언 (메인 53종 + 조커 12종) + 목록 외 조커 픽(1종) 안전 매핑
- * - 스키마 v2.1: rosterType(main/joker), 공격타입(damageType), 사거리(rangeType), 입문난이도(difficulty),
- *   강한타이밍(timing), 운영태그(playstyleTags), 패치변동(patchFlag), 매치업수치·팁(matchupStats)
- * - 하위 호환 어댑터 및 오타 자동 검증 내장
+ * - 스키마 v2.3.0 (티켓 1): 2축 분리 카운터(승률·라인전 분리, 🔥라인전 압도 / ⏳중후반 역전 / ⚠초반 압박 주의),
+ *   OP 단순 승률 과승격 정리(갱플랭크 등), 3패치 표본 적응형 집계 규격 & API 라인전 지표 슬롯 포함
  */
 
 window.BANPICK_DATA = window.BANPICK_DATA || {};
 
 window.BANPICK_DATA.top = {
   meta: {
-  "schemaVersion": "2.1",
+  "schemaVersion": "2.3.0",
   "lane": "top",
   "patch": "26.23",
   "tierScope": "EMERALD_PLUS",
@@ -26,12 +25,41 @@ window.BANPICK_DATA.top = {
     0.15
   ],
   "isCollecting": false,
-  "updatedAt": "2026-11-25",
+  "updatedAt": "2026-11-26",
   "rosterCutline": {
     "mainMinPickRate": 0.5,
     "jokerMinPickRate": 0.15,
     "newOrReworkMinPickRate": 1.0,
     "bayesianPriorGames": 200
+  },
+  "dataVersion": "2.3.0",
+  "counterModel": {
+    "type": "two_axis_separated",
+    "aggregation": "sample_adaptive_3patch",
+    "patchWindow": [
+      "26.23",
+      "26.22",
+      "26.21"
+    ],
+    "defaultPatchWeights": [
+      0.55,
+      0.3,
+      0.15
+    ],
+    "highSampleThreshold": 1000,
+    "highSampleCurrentWeight": 0.8,
+    "laningMetrics": [
+      "firstTower",
+      "plates",
+      "soloKill",
+      "csAdv",
+      "gd15"
+    ],
+    "archetypes": {
+      "lane_dominate": "🔥 라인전 압도",
+      "late_turnaround": "⏳ 중후반 역전",
+      "lane_trap": "⚠ 초반 압박 주의"
+    }
   }
 },
   externalChampions: {
@@ -108,7 +136,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 3,
-        "tip": "카밀 패시브 보호막이 빠진 뒤 Q-E로 딜교하고, E(갈고리) 각을 주지 마세요."
+        "tip": "카밀 패시브 보호막이 빠진 뒤 Q-E로 딜교하고, E(갈고리) 각을 주지 마세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "late_turnaround"
       },
       "모데카이저": {
         "wr": null,
@@ -116,7 +149,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 3,
-        "tip": "6렙 이후 모데 궁극기 안에서는 정면 맞다이가 밀리므로 짧은 Q-E 후 W로 빠지세요."
+        "tip": "6렙 이후 모데 궁극기 안에서는 정면 맞다이가 밀리므로 짧은 Q-E 후 W로 빠지세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       }
     },
     "note": "26.23 크산테·잭스·피오라 후픽 카운터로 가치가 높음",
@@ -155,7 +193,6 @@ window.BANPICK_DATA.top = {
       "resetHistory": false
     },
     "hard": [
-      "크산테",
       "요릭",
       "럼블",
       "블라디미르"
@@ -163,8 +200,8 @@ window.BANPICK_DATA.top = {
     "counter": [
       "이렐리아",
       "그웬",
-      "제이스",
-      "라이즈"
+      "라이즈",
+      "사이온"
     ],
     "matchupStats": {
       "사이온": {
@@ -173,7 +210,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "사이온 Q 차징을 화약통이나 패시브 이속으로 피하고, 귤(W)은 궁극기 에어본 해제에 아끼세요."
+        "tip": "사이온 Q 차징을 화약통이나 패시브 이속으로 피하고, 귤(W)은 궁극기 에어본 해제에 아끼세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "late_turnaround"
       },
       "이렐리아": {
         "wr": 47.5,
@@ -181,7 +223,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "이렐리아 Q로 화약통을 지우기 쉬우므로 발밑에 통을 미리 깔아두고 4스택 타이밍을 피하세요."
+        "tip": "이렐리아 Q로 화약통을 지우기 쉬우므로 발밑에 통을 미리 깔아두고 4스택 타이밍을 피하세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       }
     },
     "note": "26.23 탑 1위(OP). 지표상 사이온(55.4%)·이렐리아(52.5%) 승률 우위. 반면 제이스·아트록스·잭스 상대로는 갱플 지표 우세",
@@ -233,7 +280,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 3,
-        "tip": "요릭 구울에 배치기(E)가 막히므로 벽(W)에 갇혔을 때만 탈출용으로 아끼세요."
+        "tip": "요릭 구울에 배치기(E)가 막히므로 벽(W)에 갇혔을 때만 탈출용으로 아끼세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       }
     },
     "note": "선픽 안정성이 높아 하드 카운터가 적은 편",
@@ -317,7 +369,8 @@ window.BANPICK_DATA.top = {
       "resetHistory": false
     },
     "hard": [
-      "제이스"
+      "제이스",
+      "암베사"
     ],
     "counter": [
       "이렐리아",
@@ -334,7 +387,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "미니 나르 상태에서 암베사 연속 돌진에 취약하므로 E(폴짝)를 아끼고 분노를 관리하세요."
+        "tip": "미니 나르 상태에서 암베사 연속 돌진에 취약하므로 E(폴짝)를 아끼고 분노를 관리하세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       },
       "제이스": {
         "wr": 44.8,
@@ -342,7 +400,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "제이스 해머 Q 진입 타이밍에 E로 거리를 벌리고 메가 나르 타이밍에 반격하세요."
+        "tip": "제이스 해머 Q 진입 타이밍에 E로 거리를 벌리고 메가 나르 타이밍에 반격하세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       }
     },
     "note": "26.23 Q 버프. 지표상 암베사(62.5%)·제이스(55.2%)가 최강 카운터",
@@ -439,7 +502,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 3,
-        "tip": "부쉬를 활용해 선고(E) 각을 보고, 유체화 없이는 무리한 추격을 피하세요."
+        "tip": "부쉬를 활용해 선고(E) 각을 보고, 유체화 없이는 무리한 추격을 피하세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       }
     },
     "note": "26.23 상위권(5위). 최근 Q 쿨타임 버프 여파로 근접 브루저 대다수 압도",
@@ -521,7 +589,9 @@ window.BANPICK_DATA.top = {
     "counter": [
       "요릭",
       "요네",
-      "라이즈"
+      "라이즈",
+      "제이스",
+      "아트록스"
     ],
     "matchupStats": {
       "제이스": {
@@ -530,7 +600,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "포킹을 W 보호막으로 막고 열 관리 50 이상에서 E 둔화 후 진입하세요."
+        "tip": "포킹을 W 보호막으로 막고 열 관리 50 이상에서 E 둔화 후 진입하세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       },
       "요네": {
         "wr": 46.9,
@@ -538,7 +613,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "요네 E 영혼 해방 진입 때 화염방사기(Q)를 켜고 과열 평타로 맞딜하세요."
+        "tip": "요네 E 영혼 해방 진입 때 화염방사기(Q)를 켜고 과열 평타로 맞딜하세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "late_turnaround"
       },
       "아트록스": {
         "wr": 47.1,
@@ -546,7 +626,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "아트록스 Q1~2 끝자락을 피하면서 근접 과열 딜교를 노리세요."
+        "tip": "아트록스 Q1~2 끝자락을 피하면서 근접 과열 딜교를 노리세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "late_turnaround"
       },
       "이렐리아": {
         "wr": null,
@@ -554,7 +639,12 @@ window.BANPICK_DATA.top = {
         "gd15": -1642,
         "games": null,
         "patches": 1,
-        "tip": "라인을 밀면 이렐리아 추격에 죽으므로 포탑 앞 프리징을 유지하세요."
+        "tip": "라인을 밀면 이렐리아 추격에 죽으므로 포탑 앞 프리징을 유지하세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_trap"
       }
     },
     "note": "라인전 순수 7:3은 적으나 26.23 지표상 제이스(56.9%), 요네(53.1%), 아트록스(52.9%) 우위. 15분 골드는 이렐리아(+1,642G)·암베사·다리우스 강세",
@@ -700,7 +790,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 3,
-        "tip": "뽀삐 W(굳건한 태세)가 빠지기 전에는 Q3타·E 진입을 자제하고 벽각을 피하세요."
+        "tip": "뽀삐 W(굳건한 태세)가 빠지기 전에는 Q3타·E 진입을 자제하고 벽각을 피하세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       },
       "레넥톤": {
         "wr": null,
@@ -708,7 +803,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 3,
-        "tip": "분노 50 이상 레넥톤의 강화 W는 리븐 E 보호막을 부수므로 1~2렙 외엔 짧은 딜교만 하세요."
+        "tip": "분노 50 이상 레넥톤의 강화 W는 리븐 E 보호막을 부수므로 1~2렙 외엔 짧은 딜교만 하세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       }
     },
     "note": "뽀삐(W 돌진 차단)·레넥톤·볼리베어 상대로 주도권 상실",
@@ -849,7 +949,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 3,
-        "tip": "사일러스가 말파 궁을 뺏으면 한타 가치가 역전되므로 선픽 금지, 밴 필수 상성입니다."
+        "tip": "사일러스가 말파 궁을 뺏으면 한타 가치가 역전되므로 선픽 금지, 밴 필수 상성입니다.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       }
     },
     "note": "26.23 3위 꿀챔. AP 지속딜·체급 탱커 후픽에 극도로 취약",
@@ -889,12 +994,14 @@ window.BANPICK_DATA.top = {
       "올라프",
       "워윅",
       "트린다미어",
-      "피오라"
+      "피오라",
+      "아칼리"
     ],
     "counter": [
       "크산테",
       "볼리베어",
-      "제이스"
+      "제이스",
+      "갱플랭크"
     ],
     "matchupStats": {
       "아칼리": {
@@ -903,7 +1010,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "아칼리 장막(W)이 깔리면 궁극기를 써도 안에서 시간을 끌리므로 W가 빠진 뒤 R을 쓰세요."
+        "tip": "아칼리 장막(W)이 깔리면 궁극기를 써도 안에서 시간을 끌리므로 W가 빠진 뒤 R을 쓰세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       },
       "갱플랭크": {
         "wr": 40.9,
@@ -911,7 +1023,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "갱플 귤(W)이 모데 궁을 바로 해제하므로 귤이 빠진 걸 확인하거나 1:1 킬각을 무리하지 마세요."
+        "tip": "갱플 귤(W)이 모데 궁을 바로 해제하므로 귤이 빠진 걸 확인하거나 1:1 킬각을 무리하지 마세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "late_turnaround"
       },
       "올라프": {
         "wr": 41.1,
@@ -919,7 +1036,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "올라프 R은 모데 궁극기를 무효화합니다. 존야나 파수꾼의 갑옷으로 6렙 이후를 버티세요."
+        "tip": "올라프 R은 모데 궁극기를 무효화합니다. 존야나 파수꾼의 갑옷으로 6렙 이후를 버티세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       }
     },
     "note": "26.23 21계단 급상승(13위). 지표상 아칼리(63.9%), 갱플랭크(59.1%), 올라프(58.9%) 및 하이머딩거 라인전 강세",
@@ -966,7 +1088,8 @@ window.BANPICK_DATA.top = {
       "요네",
       "이렐리아",
       "올라프",
-      "일라오이"
+      "일라오이",
+      "크산테"
     ],
     "matchupStats": {
       "크산테": {
@@ -975,7 +1098,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "패시브 CC 면역이 빠진 상태에서 크산테 W-R 벽 넘김 각을 주지 마세요."
+        "tip": "패시브 CC 면역이 빠진 상태에서 크산테 W-R 벽 넘김 각을 주지 마세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       }
     },
     "note": "26.23 지표상 크산테(57.5%) 상대로도 고전",
@@ -1069,7 +1197,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 3,
-        "tip": "말파이트 Q 견제와 6렙 궁 킬각에 극약. 마법 저항력과 흡혈 낫을 빠르게 섞어야 버팁니다."
+        "tip": "말파이트 Q 견제와 6렙 궁 킬각에 극약. 마법 저항력과 흡혈 낫을 빠르게 섞어야 버팁니다.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "late_turnaround"
       }
     },
     "note": "타겟팅·실명·공속 감소 스킬에 무력화",
@@ -1123,7 +1256,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 3,
-        "tip": "잭스 반격(E)에 볼베 Q 스턴과 W가 모두 막힙니다. E가 빠진 뒤에 Q로 추격하세요."
+        "tip": "잭스 반격(E)에 볼베 Q 스턴과 W가 모두 막힙니다. E가 빠진 뒤에 Q로 추격하세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "late_turnaround"
       }
     },
     "note": "평타 차단(잭스 E)·거리 유지형 원거리 포킹에 약함",
@@ -1341,7 +1479,8 @@ window.BANPICK_DATA.top = {
     },
     "hard": [
       "볼리베어",
-      "레넥톤"
+      "레넥톤",
+      "판테온"
     ],
     "counter": [
       "모데카이저",
@@ -1357,7 +1496,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "판테온 E가 세트 W 강펀치를 통째로 막으므로, E가 빠진 걸 확인한 뒤 W를 쓰세요."
+        "tip": "판테온 E가 세트 W 강펀치를 통째로 막으므로, E가 빠진 걸 확인한 뒤 W를 쓰세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       }
     },
     "note": "26.23 지표상 판테온(62.6%)도 W 보호막·스턴 교전 구도로 매우 강력",
@@ -1412,7 +1556,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 3,
-        "tip": "궁극기 로밍 한 번에 1~2차 포탑이 통째로 날아가므로 웨이브를 끝까지 민 뒤에만 합류하세요."
+        "tip": "궁극기 로밍 한 번에 1~2차 포탑이 통째로 날아가므로 웨이브를 끝까지 민 뒤에만 합류하세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       }
     },
     "note": "궁극기 로밍 시 포탑 채굴 속도가 압도적인 픽(요릭 등)에 치명적",
@@ -1623,7 +1772,10 @@ window.BANPICK_DATA.top = {
     "counter": [
       "이렐리아",
       "그웬",
-      "제이스"
+      "제이스",
+      "레넥톤",
+      "카밀",
+      "갱플랭크"
     ],
     "matchupStats": {
       "갱플랭크": {
@@ -1632,7 +1784,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "갱플 귤(W)이 아트록스 W 사슬을 끊으므로 W 대신 Q1-E 포킹으로 피를 깎으세요."
+        "tip": "갱플 귤(W)이 아트록스 W 사슬을 끊으므로 W 대신 Q1-E 포킹으로 피를 깎으세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "late_turnaround"
       },
       "레넥톤": {
         "wr": 41.7,
@@ -1640,7 +1797,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "레넥톤 E 진입 시 Q1을 미리 깔고 뒤로 E를 써서 Q2 끝자락을 맞추는 거리 조절이 핵심입니다."
+        "tip": "레넥톤 E 진입 시 Q1을 미리 깔고 뒤로 E를 써서 Q2 끝자락을 맞추는 거리 조절이 핵심입니다.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       },
       "카밀": {
         "wr": 43.4,
@@ -1648,7 +1810,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "카밀 궁극기가 아트록스 Q3타를 씹으므로 6렙 이후 맞딜은 쿨을 보고 들어가세요."
+        "tip": "카밀 궁극기가 아트록스 Q3타를 씹으므로 6렙 이후 맞딜은 쿨을 보고 들어가세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "late_turnaround"
       },
       "하이머딩거": {
         "wr": null,
@@ -1656,7 +1823,12 @@ window.BANPICK_DATA.top = {
         "gd15": -1004,
         "games": null,
         "patches": 1,
-        "tip": "포탑을 Q로 지우며 6렙 전까지 무리하지 말고 1코어 타이밍을 노리세요."
+        "tip": "포탑을 Q로 지우며 6렙 전까지 무리하지 말고 1코어 타이밍을 노리세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_trap"
       }
     },
     "note": "26.23 지표상 갱플랭크(60.5%), 레넥톤(58.3%), 카밀(56.6%), 하이머딩거(15분 +1,004G)가 매우 강력",
@@ -1711,7 +1883,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "스킬 후 돌진으로 아트록스 Q 끝자락 안쪽으로 파고들면 딜교 이득을 볼 수 있습니다."
+        "tip": "스킬 후 돌진으로 아트록스 Q 끝자락 안쪽으로 파고들면 딜교 이득을 볼 수 있습니다.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       },
       "레넥톤": {
         "wr": 41.3,
@@ -1719,7 +1896,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "강화 W로 보호막(W)이 깨지므로 레넥톤 분노 50 미만일 때만 짧게 딜교하세요."
+        "tip": "강화 W로 보호막(W)이 깨지므로 레넥톤 분노 50 미만일 때만 짧게 딜교하세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       },
       "자헨": {
         "wr": 42.4,
@@ -1727,7 +1909,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "장기전으로 가면 밀리므로 스킬 사이클을 돌린 뒤 빠르게 빠져나오세요."
+        "tip": "장기전으로 가면 밀리므로 스킬 사이클을 돌린 뒤 빠르게 빠져나오세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       },
       "이렐리아": {
         "wr": null,
@@ -1735,7 +1922,12 @@ window.BANPICK_DATA.top = {
         "gd15": -1324,
         "games": null,
         "patches": 1,
-        "tip": "이렐리아 4스택 타이밍에는 맞딜을 피하고 W 보호막으로 핵심 딜만 받아내세요."
+        "tip": "이렐리아 4스택 타이밍에는 맞딜을 피하고 W 보호막으로 핵심 딜만 받아내세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       }
     },
     "note": "26.23 지표 최강 카운터는 아트록스(58.8%)·레넥톤(58.7%)·자헨(57.6%), 라인전은 이렐리아(+1,324G)",
@@ -1955,6 +2147,7 @@ window.BANPICK_DATA.top = {
       "다리우스",
       "뽀삐",
       "이렐리아",
+      "올라프",
       "요네"
     ],
     "matchupStats": {
@@ -1964,7 +2157,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "요네 Q3타 에어본을 오른 W(저지불가)로 씹어야 반격 각이 나옵니다."
+        "tip": "요네 Q3타 에어본을 오른 W(저지불가)로 씹어야 반격 각이 나옵니다.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "late_turnaround"
       },
       "올라프": {
         "wr": 40.2,
@@ -1972,7 +2170,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "올라프 R에 모든 CC가 무력화되므로 6렙 이후엔 타워 앞 파밍 위주로 운영하세요."
+        "tip": "올라프 R에 모든 CC가 무력화되므로 6렙 이후엔 타워 앞 파밍 위주로 운영하세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       }
     },
     "note": "26.23 24계단 급상승(18위). 지표상 요네(60.4%), 올라프(59.8%)가 매우 강력",
@@ -2022,7 +2225,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 3,
-        "tip": "장막(W)이 켜지면 궁극기 지속 시간이 끊기므로 장막이 빠진 뒤 궁+유체화를 켜세요."
+        "tip": "장막(W)이 켜지면 궁극기 지속 시간이 끊기므로 장막이 빠진 뒤 궁+유체화를 켜세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       }
     },
     "note": "26.23 상위권(6위). 궁극기 지속 시간을 장막(아칼리)·회피/이동기로 흘리는 픽에 약함",
@@ -2104,7 +2312,8 @@ window.BANPICK_DATA.top = {
     ],
     "counter": [
       "그웬",
-      "잭스"
+      "잭스",
+      "모데카이저"
     ],
     "matchupStats": {
       "모데카이저": {
@@ -2113,7 +2322,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "모데 궁극기에 끌려가면 마녀와 분리되므로, W(벽)를 아꼈다가 궁 안에서 시간 끄는 용도로 쓰세요."
+        "tip": "모데 궁극기에 끌려가면 마녀와 분리되므로, W(벽)를 아꼈다가 궁 안에서 시간 끄는 용도로 쓰세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "late_turnaround"
       },
       "이렐리아": {
         "wr": null,
@@ -2121,7 +2335,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 3,
-        "tip": "구울이 이렐리아 Q 스택 먹이가 되므로 6렙 전 무리한 E 소환을 자제하고 덤불 조끼를 고려하세요."
+        "tip": "구울이 이렐리아 Q 스택 먹이가 되므로 6렙 전 무리한 E 소환을 자제하고 덤불 조끼를 고려하세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       }
     },
     "note": "26.23 지표상 모데카이저(59.3%)도 궁극기로 안개 마녀를 분리해 강력한 카운터로 작용",
@@ -2291,7 +2510,8 @@ window.BANPICK_DATA.top = {
       "잭스",
       "워윅",
       "세트",
-      "트린다미어"
+      "트린다미어",
+      "자헨"
     ],
     "counter": [
       "레넥톤",
@@ -2304,7 +2524,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "초반 정면 맞다이가 밀리므로 4스택과 몰왕 타이밍을 맞춰 교전하세요."
+        "tip": "초반 정면 맞다이가 밀리므로 4스택과 몰왕 타이밍을 맞춰 교전하세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       },
       "볼리베어": {
         "wr": 40.4,
@@ -2312,7 +2537,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "볼베 W 표식이 찍히면 절대 장기전을 하지 말고 미니언 Q로 빠져나오세요."
+        "tip": "볼베 W 표식이 찍히면 절대 장기전을 하지 말고 미니언 Q로 빠져나오세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       },
       "레넥톤": {
         "wr": 44.7,
@@ -2320,7 +2550,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "레넥톤 강화 W 스턴을 이렐리아 W(피해 감소)로 받아내는 타이밍이 핵심입니다."
+        "tip": "레넥톤 강화 W 스턴을 이렐리아 W(피해 감소)로 받아내는 타이밍이 핵심입니다.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       }
     },
     "note": "26.23 2위 꿀챔. 지표상 자헨(60.5%), 볼리베어(59.6%), 레넥톤(55.3%)이 최상위 카운터",
@@ -2375,7 +2610,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 3,
-        "tip": "요릭 구울이 일라오이 E(영혼의 시험)를 막아주므로 구울이 없을 때만 E를 던지세요."
+        "tip": "요릭 구울이 일라오이 E(영혼의 시험)를 막아주므로 구울이 없을 때만 E를 던지세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       }
     },
     "note": "E(영혼의 시험)를 소환수로 막는 요릭과 원거리 지속딜 픽에 무력",
@@ -2473,7 +2713,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "실명(Q)에 딜이 끊기므로 선 2렙이나 정글 갱킹 없이는 무리한 진입을 피하세요."
+        "tip": "실명(Q)에 딜이 끊기므로 선 2렙이나 정글 갱킹 없이는 무리한 진입을 피하세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       }
     },
     "note": "26.23 14위 꿀챔(26.22 Q 버프+벼폭검 너프 수혜). 지표상 티모(65.9%) 압도적 하드카운터. 팔이 길거나 평타 차단 픽에 약함",
@@ -2513,14 +2758,17 @@ window.BANPICK_DATA.top = {
       "가렌",
       "뽀삐",
       "일라오이",
-      "케넨"
+      "케넨",
+      "신지드",
+      "우르곳"
     ],
     "counter": [
       "말파이트",
       "판테온",
       "아칼리",
       "제이스",
-      "블라디미르"
+      "블라디미르",
+      "갱플랭크"
     ],
     "matchupStats": {
       "신지드": {
@@ -2529,7 +2777,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "접착제(W) 위에서 Q 도약이 막히므로 신지드 뒤를 쫓지 말고 라인 파밍에 집중하세요."
+        "tip": "접착제(W) 위에서 Q 도약이 막히므로 신지드 뒤를 쫓지 말고 라인 파밍에 집중하세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       },
       "우르곳": {
         "wr": 35.7,
@@ -2537,7 +2790,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "반격(E) 타이밍에 우르곳 E(경멸)로 넘겨지지 않게 거리 조절을 유지하세요."
+        "tip": "반격(E) 타이밍에 우르곳 E(경멸)로 넘겨지지 않게 거리 조절을 유지하세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       },
       "갱플랭크": {
         "wr": 37.0,
@@ -2545,7 +2803,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "반격(E)으로 갱플 Q를 막을 수 있지만 화약통은 못 막으니 통을 먼저 지우세요."
+        "tip": "반격(E)으로 갱플 Q를 막을 수 있지만 화약통은 못 막으니 통을 먼저 지우세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "late_turnaround"
       },
       "가렌": {
         "wr": 41.9,
@@ -2553,7 +2816,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "반격(E)으로 가렌 Q는 막지만 심판(E)은 못 막습니다. 가렌 E가 돌 때는 Q로 빠져나오세요."
+        "tip": "반격(E)으로 가렌 Q는 막지만 심판(E)은 못 막습니다. 가렌 E가 돌 때는 Q로 빠져나오세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       },
       "말파이트": {
         "wr": 45.5,
@@ -2561,7 +2829,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "말파이트 E 공속 감소가 치명적이므로 착취·짧은 W 딜교 위주로 버티세요."
+        "tip": "말파이트 E 공속 감소가 치명적이므로 착취·짧은 W 딜교 위주로 버티세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "late_turnaround"
       },
       "하이머딩거": {
         "wr": null,
@@ -2569,7 +2842,12 @@ window.BANPICK_DATA.top = {
         "gd15": -1907,
         "games": null,
         "patches": 1,
-        "tip": "초반 포탑 압박이 극심하므로 도란 방패+재바 세팅으로 CS 손실만 최소화하세요."
+        "tip": "초반 포탑 압박이 극심하므로 도란 방패+재바 세팅으로 CS 손실만 최소화하세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_trap"
       }
     },
     "note": "26.23 상위권(4위). 지표상 신지드(66.7%), 우르곳(64.3%), 갱플랭크(63.0%), 가렌(58.1%), 말파이트(54.5%), 하이머딩거(15분 +1,907G) 강세",
@@ -2655,9 +2933,10 @@ window.BANPICK_DATA.top = {
       "이렐리아"
     ],
     "counter": [
-      "카밀",
       "말파이트",
-      "사이온"
+      "사이온",
+      "갱플랭크",
+      "카밀"
     ],
     "matchupStats": {
       "카밀": {
@@ -2666,7 +2945,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "카밀 E(갈고리) 돌진을 해머 E(천둥 강타)로 밀쳐내는 반응 속도가 생명입니다."
+        "tip": "카밀 E(갈고리) 돌진을 해머 E(천둥 강타)로 밀쳐내는 반응 속도가 생명입니다.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "late_turnaround"
       },
       "갱플랭크": {
         "wr": 39.7,
@@ -2674,7 +2958,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "초반 평타 사거리로 화약통을 먼저 깨면서 주도권을 잡아야 합니다."
+        "tip": "초반 평타 사거리로 화약통을 먼저 깨면서 주도권을 잡아야 합니다.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "late_turnaround"
       },
       "사이온": {
         "wr": 41.2,
@@ -2682,7 +2971,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "초반 킬각을 못 내면 방어력 1코어 이후 뚫기 어려워지므로 초반 압박이 필수입니다."
+        "tip": "초반 킬각을 못 내면 방어력 1코어 이후 뚫기 어려워지므로 초반 압박이 필수입니다.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "late_turnaround"
       },
       "말파이트": {
         "wr": 44.0,
@@ -2690,7 +2984,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "6렙 전까지 말파이트 패시브 보호막을 계속 깨두고 6렙 궁 킬각을 조심하세요."
+        "tip": "6렙 전까지 말파이트 패시브 보호막을 계속 깨두고 6렙 궁 킬각을 조심하세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "late_turnaround"
       },
       "이렐리아": {
         "wr": null,
@@ -2698,7 +2997,12 @@ window.BANPICK_DATA.top = {
         "gd15": -830,
         "games": null,
         "patches": 1,
-        "tip": "라인을 밀면 쫓겨 죽으므로 웨이브를 당겨서 포탑 앞을 유지하세요."
+        "tip": "라인을 밀면 쫓겨 죽으므로 웨이브를 당겨서 포탑 앞을 유지하세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       }
     },
     "note": "26.23 지표상 카밀(63.6%), 갱플랭크(60.3%), 사이온(58.8%), 말파이트(56.0%)가 매우 강하며 15분 골드는 이렐리아(+830G) 최강",
@@ -2786,8 +3090,7 @@ window.BANPICK_DATA.top = {
     ],
     "counter": [
       "다리우스",
-      "워윅",
-      "제이스"
+      "워윅"
     ],
     "matchupStats": {
       "잭스": {
@@ -2796,7 +3099,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 3,
-        "tip": "카밀 Q2타 고정 피해가 잭스 반격(E)에 막힙니다. 잭스 E가 돌 때 E(갈고리)로 빠지세요."
+        "tip": "카밀 Q2타 고정 피해가 잭스 반격(E)에 막힙니다. 잭스 E가 돌 때 E(갈고리)로 빠지세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "late_turnaround"
       }
     },
     "note": "26.23 상위권(7위). 평타 차단(잭스·티모)과 초반 정면 맞다이 강자에 약함",
@@ -2966,12 +3274,13 @@ window.BANPICK_DATA.top = {
     "hard": [
       "말파이트",
       "럼블",
-      "이렐리아"
+      "이렐리아",
+      "티모"
     ],
     "counter": [
       "요릭",
       "사이온",
-      "티모"
+      "다리우스"
     ],
     "matchupStats": {
       "이렐리아": {
@@ -2980,7 +3289,12 @@ window.BANPICK_DATA.top = {
         "gd15": -1932,
         "games": null,
         "patches": 1,
-        "tip": "퀸 E(공중제비)를 써도 이렐리아 Q로 바로 따라붙습니다. 6렙 전 타워 앞 파밍 후 로밍으로 푸세요."
+        "tip": "퀸 E(공중제비)를 써도 이렐리아 Q로 바로 따라붙습니다. 6렙 전 타워 앞 파밍 후 로밍으로 푸세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       },
       "티모": {
         "wr": 36.7,
@@ -2988,7 +3302,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "실명(Q)이 빠지기 전엔 정면 평타 딜교를 피하고 시야 확보 후 로밍을 노리세요."
+        "tip": "실명(Q)이 빠지기 전엔 정면 평타 딜교를 피하고 시야 확보 후 로밍을 노리세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       },
       "다리우스": {
         "wr": 41.0,
@@ -2996,7 +3315,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "다리우스 E(선고)로 퀸 E가 끊기면 즉사합니다. E를 선진입용으로 절대 쓰지 마세요."
+        "tip": "다리우스 E(선고)로 퀸 E가 끊기면 즉사합니다. E를 선진입용으로 절대 쓰지 마세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       }
     },
     "note": "26.23 지표상 이렐리아(67.7%, 15분 +1,932G), 티모(63.3%), 다리우스(59.0%)가 최강 카운터",
@@ -3043,7 +3367,8 @@ window.BANPICK_DATA.top = {
       "요릭",
       "나르",
       "베인",
-      "갱플랭크"
+      "갱플랭크",
+      "럼블"
     ],
     "matchupStats": {
       "암베사": {
@@ -3052,7 +3377,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "암베사의 기동성 때문에 Q3·W 적중이 어렵습니다. 포탑 쪽 벽각을 노려 반격하세요."
+        "tip": "암베사의 기동성 때문에 Q3·W 적중이 어렵습니다. 포탑 쪽 벽각을 노려 반격하세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       },
       "가렌": {
         "wr": 38.2,
@@ -3060,7 +3390,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "가렌 침묵(Q)과 궁극기 고정 피해에 총공세(R) 상태가 매우 취약합니다. 반피 이하로 R을 쓰지 마세요."
+        "tip": "가렌 침묵(Q)과 궁극기 고정 피해에 총공세(R) 상태가 매우 취약합니다. 반피 이하로 R을 쓰지 마세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "late_turnaround"
       },
       "갱플랭크": {
         "wr": 41.1,
@@ -3068,7 +3403,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "갱플 귤(W)이 크산테 R을 풀 수 있으므로 귤이 빠진 타이밍을 노리세요."
+        "tip": "갱플 귤(W)이 크산테 R을 풀 수 있으므로 귤이 빠진 타이밍을 노리세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "late_turnaround"
       },
       "럼블": {
         "wr": 45.1,
@@ -3076,7 +3416,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "초반 마방 1코어(케이닉 루컨 등) 전까지 과열 딜교를 피하세요."
+        "tip": "초반 마방 1코어(케이닉 루컨 등) 전까지 과열 딜교를 피하세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       },
       "나르": {
         "wr": null,
@@ -3084,7 +3429,12 @@ window.BANPICK_DATA.top = {
         "gd15": -563,
         "games": null,
         "patches": 1,
-        "tip": "도란 방패+재바로 버티며 6렙 이후 벽각을 노리세요."
+        "tip": "도란 방패+재바로 버티며 6렙 이후 벽각을 노리세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       }
     },
     "note": "26.23 W 버프. 지표상 암베사(61.9%), 가렌(61.8%), 갱플랭크(58.9%), 럼블(54.9%) 및 나르(15분 +563G)가 매우 강함",
@@ -3139,7 +3489,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 3,
-        "tip": "클레드 Q 밧줄 당겨지는 타이밍이 피오라 응수(W) 확정 기절 각이므로 선픽을 피하세요."
+        "tip": "클레드 Q 밧줄 당겨지는 타이밍이 피오라 응수(W) 확정 기절 각이므로 선픽을 피하세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       }
     },
     "note": "Q 밧줄 응수(피오라) 및 재탑승 차단·처형 픽에 취약",
@@ -3261,7 +3616,8 @@ window.BANPICK_DATA.top = {
     "hard": [
       "볼리베어",
       "퀸",
-      "베인"
+      "베인",
+      "티모"
     ],
     "counter": [
       "말파이트",
@@ -3275,7 +3631,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "티모 실명(Q) 지속 시간 동안 딜이 0이 되므로 Q가 빠진 걸 확인하고 E+유체화로 진입하세요."
+        "tip": "티모 실명(Q) 지속 시간 동안 딜이 0이 되므로 Q가 빠진 걸 확인하고 E+유체화로 진입하세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       }
     },
     "note": "26.23 지표상 티모(62.9%)도 실명으로 트린다미어 상대로 압도적 우위",
@@ -3319,7 +3680,9 @@ window.BANPICK_DATA.top = {
     ],
     "counter": [
       "사이온",
-      "나서스"
+      "나서스",
+      "모데카이저",
+      "말파이트"
     ],
     "matchupStats": {
       "모데카이저": {
@@ -3328,7 +3691,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "6렙 이후 모데 궁극기 안에서는 버섯이 지워지므로 E 끌림 각을 절대 주지 마세요."
+        "tip": "6렙 이후 모데 궁극기 안에서는 버섯이 지워지므로 E 끌림 각을 절대 주지 마세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "late_turnaround"
       },
       "사이온": {
         "wr": 43.0,
@@ -3336,7 +3704,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "사이온 E 둔화 후 Q 차징에 맞으면 킬각이 나오므로 W 이속으로 옆으로 피하세요."
+        "tip": "사이온 E 둔화 후 Q 차징에 맞으면 킬각이 나오므로 W 이속으로 옆으로 피하세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "late_turnaround"
       },
       "말파이트": {
         "wr": 45.3,
@@ -3344,7 +3717,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "말파이트 Q 포킹과 6렙 원콤을 버티기 위해 초반 마방·체력 아이템을 섞으세요."
+        "tip": "말파이트 Q 포킹과 6렙 원콤을 버티기 위해 초반 마방·체력 아이템을 섞으세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "late_turnaround"
       },
       "이렐리아": {
         "wr": null,
@@ -3352,7 +3730,12 @@ window.BANPICK_DATA.top = {
         "gd15": -954,
         "games": null,
         "patches": 1,
-        "tip": "실명(Q)을 이렐리아가 Q로 붙은 직후에 아껴 써야 맞딜을 버팁니다."
+        "tip": "실명(Q)을 이렐리아가 Q로 붙은 직후에 아껴 써야 맞딜을 버팁니다.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_trap"
       }
     },
     "note": "26.23 지표상 모데카이저(59.5%), 사이온(57.0%), 말파이트(54.7%), 이렐리아(15분 +954G)가 강세",
@@ -3395,7 +3778,8 @@ window.BANPICK_DATA.top = {
     ],
     "counter": [
       "크산테",
-      "요릭"
+      "요릭",
+      "피오라"
     ],
     "matchupStats": {
       "피오라": {
@@ -3404,7 +3788,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "판테온 W 스턴이 피오라 응수(W)에 막히면 역기절 당하므로 Q 포킹 위주로 깎아두세요."
+        "tip": "판테온 W 스턴이 피오라 응수(W)에 막히면 역기절 당하므로 Q 포킹 위주로 깎아두세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "late_turnaround"
       }
     },
     "note": "26.23 상위권(12위). 지표상 피오라(59.4%)도 W 응수 구도로 판테온에게 강함",
@@ -3446,7 +3835,10 @@ window.BANPICK_DATA.top = {
     "counter": [
       "말파이트",
       "세트",
-      "제이스"
+      "제이스",
+      "아트록스",
+      "가렌",
+      "레넥톤"
     ],
     "matchupStats": {
       "아트록스": {
@@ -3455,7 +3847,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "아트록스 Q3타나 W 사슬 끊김 타이밍에 응수(W)를 맞추는 심리전이 핵심입니다."
+        "tip": "아트록스 Q3타나 W 사슬 끊김 타이밍에 응수(W)를 맞추는 심리전이 핵심입니다.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       },
       "가렌": {
         "wr": 43.6,
@@ -3463,7 +3860,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "가렌 Q 침묵 모션을 응수(W)로 막으면 딜교가 크게 유리해집니다."
+        "tip": "가렌 Q 침묵 모션을 응수(W)로 막으면 딜교가 크게 유리해집니다.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       },
       "레넥톤": {
         "wr": 46.7,
@@ -3471,7 +3873,12 @@ window.BANPICK_DATA.top = {
         "gd15": null,
         "games": null,
         "patches": 1,
-        "tip": "레넥톤 강화 W 스턴을 응수(W)로 반사하는 타이밍 싸움입니다."
+        "tip": "레넥톤 강화 W 스턴을 응수(W)로 반사하는 타이밍 싸움입니다.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_dominate"
       },
       "트런들": {
         "wr": null,
@@ -3479,7 +3886,12 @@ window.BANPICK_DATA.top = {
         "gd15": -1197,
         "games": null,
         "patches": 1,
-        "tip": "초반 정면 맞다이는 밀리므로 Q 급소 견제로 치고 빠지며 1코어 이후를 보세요."
+        "tip": "초반 정면 맞다이는 밀리므로 Q 급소 견제로 치고 빠지며 1코어 이후를 보세요.",
+        "firstTower": null,
+        "plates": null,
+        "soloKill": null,
+        "csAdv": null,
+        "archetype": "lane_trap"
       }
     },
     "note": "26.23 상위권(8위). 지표상 아트록스(57.0%), 가렌(56.4%), 레넥톤(53.3%), 트런들(15분 +1,197G) 및 천상계 케넨이 강세",
@@ -3538,6 +3950,7 @@ window.BANPICK_DATA.top = {
   const externalMap = topBundle.externalChampions || {};
 
   window.PATCH_VERSION_TOP = topBundle.meta.patch;
+  window.DATA_TOP_VERSION = topBundle.meta.dataVersion || topBundle.meta.schemaVersion;
 
   const idMap = {};
   Object.keys(rawChampions).forEach((name) => {

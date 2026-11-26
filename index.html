@@ -455,6 +455,9 @@
     .b-mid { background: rgba(245, 158, 11, 0.13); color: #FCD34D; }
     .b-hard { background: rgba(244, 63, 94, 0.13); color: #FDA4AF; }
     .b-tag { background: var(--bg-elevated); color: var(--text-sub); border: 1px solid var(--border); }
+    .b-dom { background: rgba(249, 115, 22, 0.16); color: #FDBA74; border: 1px solid rgba(249, 115, 22, 0.45); }
+    .b-turn { background: rgba(56, 189, 248, 0.15); color: #7DD3FC; border: 1px solid rgba(56, 189, 248, 0.42); }
+    .b-trap { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(245, 158, 11, 0.45); }
 
     /* Mini 3-axis bars */
     .tri-bars {
@@ -794,326 +797,13 @@
 
   <div id="toast" class="toast"></div>
 
-  <!-- Top Lane Data v2.2 -->
-  <script src="data_top.js"></script>
+  <!-- External Data & Calculation Engine (v2.3.0 cache-busted) -->
+  <script src="data_top.js?v=2.3.0"></script>
+  <script src="engine.js?v=2.3.0"></script>
 
   <script>
     /* =========================================================================
-     * 1. PURE CALCULATION ENGINE (window.BANPICK_ENGINE)
-     *    UI/HTML과 완전히 분리된 순수 계산 모듈 (승률 50% + 라인전 50% · 버티면 역전 제외)
-     * ========================================================================= */
-    window.BANPICK_ENGINE = (function () {
-      const TIER_BASE = { "OP": 95, "1티어": 83, "2티어": 69, "3티어": 55, "4티어": 41, "5티어": 28 };
-      const TIER_ORDER = { "OP": 0, "1티어": 1, "2티어": 2, "3티어": 3, "4티어": 4, "5티어": 5 };
-      const ENEMY_THREAT_WEIGHT = { "OP": 1.35, "1티어": 1.20, "2티어": 1.0, "3티어": 0.8, "4티어": 0.65, "5티어": 0.5 };
-      const SNIPE_WEIGHT = {
-        "OP": [18, 10],
-        "1티어": [13, 7],
-        "2티어": [8, 4],
-        "3티어": [4, 2],
-        "4티어": [2, 1],
-        "5티어": [1, 0.5]
-      };
-
-      const CHOSUNG = ["ㄱ","ㄲ","ㄴ","ㄷ","ㄸ","ㄹ","ㅁ","ㅂ","ㅃ","ㅅ","ㅆ","ㅇ","ㅈ","ㅉ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"];
-      function getChosung(str) {
-        let res = "";
-        for (let i = 0; i < str.length; i++) {
-          const code = str.charCodeAt(i) - 0xAC00;
-          if (code >= 0 && code <= 11171) {
-            res += CHOSUNG[Math.floor(code / 588)];
-          } else {
-            res += str[i];
-          }
-        }
-        return res;
-      }
-
-      function normalizeSearch(str) {
-        return String(str || "").toLowerCase().replace(/\s+/g, "");
-      }
-
-      function scoreToGrade(score) {
-        if (score >= 76) return "S";
-        if (score >= 63) return "A";
-        if (score >= 50) return "B";
-        if (score >= 36) return "C";
-        return "D";
-      }
-
-      function scoreToUnifiedTier(score, fallbackTier) {
-        if (fallbackTier) return fallbackTier;
-        if (score >= 90) return "OP";
-        if (score >= 78) return "1티어";
-        if (score >= 64) return "2티어";
-        if (score >= 50) return "3티어";
-        if (score >= 36) return "4티어";
-        return "5티어";
-      }
-
-      /**
-       * 50% 승률(Win Delta) + 50% 라인전(첫 포탑·채굴·솔킬·CS/골드 격차) 카운터 판정기
-       * - '버티면 역전'(라인전 대패 후 후반 한타 역전)은 하드카운터에서 제외
-       * - 향후 Riot API가 matchupStats 수치를 채워 넣으면 자동으로 정밀 판정 수행
-       */
-      function evaluateMatchup5050(mStat, counterScoring) {
-        if (!mStat) return null;
-        const cfg = Object.assign({
-          winRateWeight: 0.5,
-          laningWeight: 0.5,
-          excludeComebackCounter: true,
-          laningHardFloor: -0.35
-        }, counterScoring || {});
-
-        // Enemy perspective (positive = enemy dominates this champion)
-        let winNorm = null;
-        if (mStat.delta2 != null) {
-          winNorm = Math.max(-1, Math.min(1, (-mStat.delta2) / 10));
-        } else if (mStat.wr != null) {
-          winNorm = Math.max(-1, Math.min(1, (50 - mStat.wr) / 12));
-        }
-
-        const laneParts = [];
-        if (mStat.gd15 != null) laneParts.push(Math.max(-1, Math.min(1, (-mStat.gd15) / 1200)));
-        if (mStat.firstTower != null) laneParts.push(Math.max(-1, Math.min(1, (50 - mStat.firstTower) / 25)));
-        if (mStat.plates != null) laneParts.push(Math.max(-1, Math.min(1, (-mStat.plates) / 1.8)));
-        if (mStat.soloKill != null) laneParts.push(Math.max(-1, Math.min(1, (-mStat.soloKill) / 0.8)));
-        if (mStat.csAdv != null) laneParts.push(Math.max(-1, Math.min(1, (-mStat.csAdv) / 22)));
-
-        const laningNorm = laneParts.length
-          ? laneParts.reduce((a, b) => a + b, 0) / laneParts.length
-          : null;
-
-        if (winNorm === null && laningNorm === null) return null;
-
-        // If only laning data exists (no win-rate verification), mark as laning-pressure only
-        if (winNorm === null && laningNorm !== null) {
-          return {
-            composite: +(laningNorm * 50).toFixed(1),
-            winNorm: null,
-            laningNorm: +laningNorm.toFixed(2),
-            isLanePressureOnly: true,
-            isComebackExcluded: false
-          };
-        }
-
-        // Exclude "버티면 역전" (enemy loses laning hard despite winning late game)
-        const isComebackExcluded = Boolean(
-          cfg.excludeComebackCounter && laningNorm !== null && laningNorm < cfg.laningHardFloor
-        );
-
-        const composite = laningNorm !== null
-          ? (winNorm * cfg.winRateWeight + laningNorm * cfg.laningWeight) * 100
-          : winNorm * 100;
-
-        return {
-          composite: +composite.toFixed(1),
-          winNorm: +winNorm.toFixed(2),
-          laningNorm: laningNorm !== null ? +laningNorm.toFixed(2) : null,
-          isLanePressureOnly: false,
-          isComebackExcluded
-        };
-      }
-
-      function computeTopAnalytics(topBundle) {
-        const meta = topBundle.meta || {};
-        const raw = topBundle.champions || {};
-        const external = topBundle.externalChampions || {};
-        const names = Object.keys(raw);
-        const priorGames = (meta.rosterCutline && meta.rosterCutline.bayesianPriorGames) || 200;
-        const avgWr = meta.tierAvgWinRate || 51.8;
-        const counterScoring = meta.counterScoring || {
-          winRateWeight: 0.5,
-          laningWeight: 0.5,
-          excludeComebackCounter: true,
-          laningHardFloor: -0.35
-        };
-
-        // Build reverse matchup map: who does champion X counter?
-        const reverseHard = {};
-        const reverseSoft = {};
-        names.forEach((n) => {
-          reverseHard[n] = [];
-          reverseSoft[n] = [];
-        });
-
-        names.forEach((enemy) => {
-          const c = raw[enemy];
-          (c.hard || []).forEach((h) => {
-            if (reverseHard[h]) reverseHard[h].push(enemy);
-          });
-          (c.counter || []).forEach((s) => {
-            if (reverseSoft[s]) reverseSoft[s].push(enemy);
-          });
-        });
-
-        const items = names.map((name) => {
-          const c = raw[name];
-          const rosterType = c.rosterType || "main";
-
-          // Filter out any API-verified "버티면 역전" from hard counter penalty if laning stats exist
-          const effectiveHard = (c.hard || []).filter((h) => {
-            const evalRes = evaluateMatchup5050(c.matchupStats && c.matchupStats[h], counterScoring);
-            return !(evalRes && evalRes.isComebackExcluded);
-          });
-
-          // 1) Blind Pick Stability (0~100)
-          let hardPenalty = 0;
-          const threatDetails = [];
-          effectiveHard.forEach((h) => {
-            const t = raw[h] ? raw[h].tier : "3티어";
-            hardPenalty += 11.0 * (ENEMY_THREAT_WEIGHT[t] || 0.8);
-            threatDetails.push({ name: h, tier: t, type: "hard" });
-          });
-
-          let softPenalty = 0;
-          (c.counter || []).forEach((s) => {
-            const t = raw[s] ? raw[s].tier : "3티어";
-            softPenalty += 3.8 * (ENEMY_THREAT_WEIGHT[t] || 0.8);
-          });
-
-          const tierResilience = ((TIER_BASE[c.tier] || 55) - 65) * 0.28;
-          const jokerBlindPenalty = rosterType === "joker" ? -7.0 : 0.0;
-          const blindScore = Math.max(12, Math.min(99, +(95 - hardPenalty - softPenalty + tierResilience + jokerBlindPenalty).toFixed(1)));
-
-          threatDetails.sort((a, b) => (TIER_ORDER[a.tier] ?? 9) - (TIER_ORDER[b.tier] ?? 9));
-
-          // 2) Counter-Pick Joker Value (0~100) — NO joker penalty!
-          let snipeRaw = 0;
-          const snipedHard = reverseHard[name] || [];
-          const snipedSoft = reverseSoft[name] || [];
-          const metaTargets = [];
-
-          snipedHard.forEach((target) => {
-            const t = raw[target].tier;
-            snipeRaw += (SNIPE_WEIGHT[t] || [4, 2])[0];
-            if (t === "OP" || t === "1티어") {
-              metaTargets.push({ name: target, tier: t, type: "hard" });
-            }
-          });
-          snipedSoft.forEach((target) => {
-            const t = raw[target].tier;
-            snipeRaw += (SNIPE_WEIGHT[t] || [4, 2])[1];
-            if (t === "OP" || t === "1티어") {
-              metaTargets.push({ name: target, tier: t, type: "soft" });
-            }
-          });
-          metaTargets.sort((a, b) => {
-            if (a.type !== b.type) return a.type === "hard" ? -1 : 1;
-            return (TIER_ORDER[a.tier] ?? 9) - (TIER_ORDER[b.tier] ?? 9);
-          });
-
-          const counterScore = Math.min(99, +(15 + 84 * (1 - Math.exp(-snipeRaw / 75.0))).toFixed(1));
-
-          // 3) Comprehensive Meta Score (0~100)
-          const stats = c.stats || {};
-          let metaScore;
-          let smoothedWr = null;
-          let usedApiStats = false;
-
-          if (stats.wr != null && stats.games) {
-            usedApiStats = true;
-            smoothedWr = +(((stats.wr * stats.games) + (avgWr * priorGames)) / (stats.games + priorGames)).toFixed(2);
-            const winDelta = smoothedWr - avgWr;
-            const pr = stats.pr || 1.0;
-            const br = stats.br || 0.0;
-            metaScore = Math.max(15, Math.min(99, +(65 + winDelta * 7.5 + Math.min(12, pr * 0.9) + Math.min(8, br * 0.35)).toFixed(1)));
-          } else {
-            const base = TIER_BASE[c.tier] || 55;
-            const pfStatus = c.patchFlag && c.patchFlag.status;
-            const patchAdj = (pfStatus === "meta_up" || pfStatus === "buff") ? 2.5 : (pfStatus === "nerf" ? -2.5 : 0);
-            const utilityAdj = ((blindScore - 60) * 0.08) + ((counterScore - 55) * 0.08);
-            const jokerMetaAdj = rosterType === "joker" ? -3.0 : 0.0;
-            metaScore = Math.max(15, Math.min(99, +(base + patchAdj + utilityAdj + jokerMetaAdj).toFixed(1)));
-          }
-
-          const unifiedTier = scoreToUnifiedTier(metaScore, usedApiStats ? null : c.tier);
-
-          // Space-insensitive search haystack (name + chosung + English ID + aliases)
-          const rawTokens = [
-            name,
-            getChosung(name),
-            c.id || "",
-            ...(c.aliases || []),
-            ...(c.aliases || []).map((a) => getChosung(a))
-          ];
-          const searchTokens = rawTokens.map((t) => normalizeSearch(t)).join(" ");
-
-          return {
-            name,
-            id: c.id,
-            rosterType,
-            tier: unifiedTier,
-            damageType: c.damageType,
-            rangeType: c.rangeType,
-            roleTags: c.roleTags || [],
-            difficulty: c.difficulty,
-            timing: c.timing,
-            playstyleTags: c.playstyleTags || [],
-            patchFlag: c.patchFlag || { status: null, label: null },
-            hard: effectiveHard,
-            counter: c.counter || [],
-            matchupStats: c.matchupStats || {},
-            note: c.note || "",
-            stats,
-            smoothedWr,
-            usedApiStats,
-            metaScore,
-            blindScore,
-            blindGrade: scoreToGrade(blindScore),
-            counterScore,
-            counterGrade: scoreToGrade(counterScore),
-            worstThreats: threatDetails.slice(0, 3),
-            snipedHard,
-            snipedSoft,
-            metaTargets,
-            searchTokens
-          };
-        });
-
-        const byName = {};
-        items.forEach((it) => { byName[it.name] = it; });
-
-        return { meta, items, byName, external, counterScoring };
-      }
-
-      function diagnosePool(pool, byName, items) {
-        if (!pool.length) return null;
-        const poolSet = new Set(pool);
-        const topMeta = items.filter((it) => it.tier === "OP" || it.tier === "1티어");
-        let coveredCount = 0;
-        topMeta.forEach((enemy) => {
-          const hasCounter = enemy.hard.some((c) => poolSet.has(c)) || enemy.counter.some((c) => poolSet.has(c));
-          if (hasCounter) coveredCount++;
-        });
-        const hasAP = pool.some((n) => byName[n] && (byName[n].damageType === "AP" || byName[n].damageType === "혼합"));
-        const hasRangeAnswer = pool.some((n) => {
-          const it = byName[n];
-          if (!it) return false;
-          if (it.rangeType === "원거리") return true;
-          return it.snipedHard.some((t) => byName[t] && byName[t].rangeType === "원거리");
-        });
-        return {
-          count: pool.length,
-          topMetaTotal: topMeta.length,
-          coveredCount,
-          coveragePct: topMeta.length ? Math.round((coveredCount / topMeta.length) * 100) : 0,
-          hasAP,
-          hasRangeAnswer
-        };
-      }
-
-      return {
-        computeTopAnalytics,
-        evaluateMatchup5050,
-        diagnosePool,
-        getChosung,
-        normalizeSearch
-      };
-    })();
-
-    /* =========================================================================
-     * 2. APP STATE, PERSISTENCE & DDRAGON 24H CACHE
+     * 1. APP STATE, PERSISTENCE & DDRAGON 24H CACHE
      * ========================================================================= */
     const STORAGE_KEYS = {
       POOL: "banpick_pool_top_v1",
@@ -1412,7 +1102,7 @@
             <th>하드카운터 수 &amp; 최악의 천적</th>
           </tr>
         `;
-        document.getElementById("formulaHint").textContent = "선픽 안정성 = 승률 50%·라인전 50% 카운터 기준(버티면 역전 제외) 천적 감점 + 체급";
+        document.getElementById("formulaHint").textContent = "선픽 안정성 = 2축 분리 카운터(라인전 압도·중후반 역전 모두 반영) 천적 감점 + 체급";
       } else {
         thead.innerHTML = `
           <tr>
@@ -1423,7 +1113,7 @@
             <th>저격 가능한 현 메타 OP·1티어</th>
           </tr>
         `;
-        document.getElementById("formulaHint").textContent = "후픽 조커 = 승률 50%·라인전 50% 기준 현 메타 OP·1티어 저격력 (조커 페널티 없음)";
+        document.getElementById("formulaHint").textContent = "후픽 조커 = 2축 분리 카운터 기준 현 메타 OP·1티어 저격력 (조커 페널티 없음)";
       }
 
       const jokerCount = list.filter((x) => x.rosterType === "joker").length;
@@ -1599,6 +1289,9 @@
           const isExternal = !ANALYTICS.byName[cName];
           const isMine = poolSet.has(cName);
           const mStat = it.matchupStats && it.matchupStats[cName];
+          const ev2 = (it.matchupMeta && it.matchupMeta[cName]) || window.BANPICK_ENGINE.evaluateMatchupTwoAxis(mStat, ANALYTICS.counterModel);
+          const archCls = ev2 ? (ev2.archetype === "lane_dominate" ? "b-dom" : ev2.archetype === "late_turnaround" ? "b-turn" : "b-trap") : "";
+          const archBadgeHtml = ev2 ? `<span class="badge ${archCls}">${escapeHtml(ev2.label)}</span>` : "";
           const cDiff = cObj ? cObj.difficulty : null;
           const warnHard = state.beginnerOnly && cDiff === "어려움";
           const safeCName = escapeHtml(cName);
@@ -1626,6 +1319,7 @@
                   ${isMine ? `<span class="badge b-op">내 챔프</span>` : ""}
                   ${isExternal ? `<span class="badge b-joker">외부 조커</span>` : (cObj ? tierBadgeHtml(cObj.tier) : "")}
                   ${cDiff ? diffBadgeHtml(cDiff) : ""}
+                  ${archBadgeHtml}
                   ${warnHard ? `<span class="badge b-warn">⚠ 숙련도 필요</span>` : ""}
                 </div>
                 ${statPieces.length ? `<span class="matchup-stat-pill">${statPieces.join(" · ")}</span>` : ""}
@@ -1641,7 +1335,7 @@
       const lanePressureKeys = Object.keys(it.matchupStats || {}).filter((k) => !listedSet.has(k));
       const lanePressureHtml = lanePressureKeys.length ? `
         <div class="insp-section">
-          <div class="sec-title"><span>🔥 라인전 압박 주의 (15분 골드 격차 · 승률 미검증)</span></div>
+          <div class="sec-title"><span>⚠ 초반 압박 주의 (라인전 우세 · 게임 승률 미검증/열세)</span></div>
           ${renderCounterCards(lanePressureKeys, "lane")}
         </div>
       ` : "";
@@ -1954,12 +1648,22 @@
     }
 
     function bootstrap() {
+      const EXPECTED_ENGINE_VER = "2.3.0";
+      const err = document.getElementById("errorBanner");
       const topBundle = window.BANPICK_DATA && window.BANPICK_DATA.top;
       if (!topBundle || !topBundle.champions) {
-        const err = document.getElementById("errorBanner");
         err.style.display = "block";
-        err.innerHTML = "<strong>data_top.js 파일을 불러오지 못했습니다.</strong> 같은 폴더(깃허브 저장소 최상위)에 <code>data_top.js</code>가 있는지 확인한 뒤, 웹 주소에서 <code>Ctrl + Shift + R</code>로 새로고침해 주세요.";
+        err.innerHTML = "<strong>data_top.js 파일을 불러오지 못했습니다.</strong> 깃허브 최상위에 <code>data_top.js</code>가 있는지 확인 후 <code>Ctrl + Shift + R</code>로 새로고침해 주세요.";
         return;
+      }
+      if (!window.BANPICK_ENGINE || typeof window.BANPICK_ENGINE.computeTopAnalytics !== "function") {
+        err.style.display = "block";
+        err.innerHTML = "<strong>engine.js 파일을 불러오지 못했습니다.</strong> 깃허브 최상위에 <code>engine.js</code>를 함께 업로드했는지 확인 후 <code>Ctrl + Shift + R</code>로 새로고침해 주세요.";
+        return;
+      }
+      if (window.BANPICK_ENGINE.VERSION !== EXPECTED_ENGINE_VER) {
+        err.style.display = "block";
+        err.innerHTML = `<strong>엔진 버전 불일치 감지</strong> (현재: ${escapeHtml(window.BANPICK_ENGINE.VERSION || "구버전")} / 필요: ${EXPECTED_ENGINE_VER}). <code>Ctrl + Shift + R</code>로 캐시를 새로고침해 주세요.`;
       }
 
       // 1) Read cached DDragon version BEFORE first render!
@@ -1970,7 +1674,7 @@
 
       const m = ANALYTICS.meta;
       document.getElementById("patchPill").textContent =
-        `패치 ${m.patch || "26.23"} · 탑 ${ANALYTICS.items.length}종 (v${m.schemaVersion || "2.2"})`;
+        `패치 ${m.patch || "26.23"} · 탑 ${ANALYTICS.items.length}종 (v${m.schemaVersion || "2.3.0"})`;
       if (m.isCollecting) {
         document.getElementById("collectingPill").style.display = "inline-block";
       }
