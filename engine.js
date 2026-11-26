@@ -1,5 +1,5 @@
 /**
- * BANPICK - 순수 계산 & 분석 엔진 (engine.js v2.3.1)
+ * BANPICK - 순수 계산 & 분석 엔진 (engine.js v2.3.2)
  * - DOM / HTML과 완전히 분리된 순수 연산 모듈 (향후 UI 교체 및 미드·바텀 확장 공용)
  * - 티켓 1 반영: 50:50 평균 합산 폐기 -> 2축 분리 카운터 판정(승률 축 / 라인전 축)
  *   · 승률(+) & 라인전(+) -> 🔥 라인전 압도 (정석 카운터)
@@ -7,11 +7,12 @@
  *   · 승률(-) & 라인전(+) -> ⚠ 초반 압박 주의 (정식 카운터 제외, 주의 섹션 분리)
  */
 window.BANPICK_ENGINE = (function () {
-  const VERSION = "2.3.1";
+  const VERSION = "2.3.2";
 
   const TIER_BASE = { "OP": 95, "1티어": 83, "2티어": 69, "3티어": 55, "4티어": 41, "5티어": 28 };
   const TIER_ORDER = { "OP": 0, "1티어": 1, "2티어": 2, "3티어": 3, "4티어": 4, "5티어": 5 };
   const ENEMY_THREAT_WEIGHT = { "OP": 1.35, "1티어": 1.20, "2티어": 1.0, "3티어": 0.8, "4티어": 0.65, "5티어": 0.5 };
+  const TIER_FREQ_WEIGHT = { "OP": 1.48, "1티어": 1.28, "2티어": 1.0, "3티어": 0.72, "4티어": 0.48, "5티어": 0.32 };
   const SNIPE_WEIGHT = {
     "OP": [18, 10],
     "1티어": [13, 7],
@@ -558,12 +559,247 @@ window.BANPICK_ENGINE = (function () {
     };
   }
 
+
+  /**
+   * 티켓 3: 내 챔프폭 종합 코치 (필밴 Top 3 + Greedy 1픽 보완 추천 + 구조 약점 진단)
+   * - options: { beginnerOnly: boolean, includeJoker: boolean }
+   * - 필밴 Top 3: 내 챔프폭을 가장 많이 역상성으로 망가뜨리면서 자주 만나는(티어/픽률 가중) 적 Top 3
+   *   (이미 내 폭에 7:3 하드카운터가 있으면 밴 우선순위 대폭 하향)
+   * - Greedy 보완 픽 Top 3: 1명 추가 시 OP·1티어 대응률 상승폭(+N%) + 전원불리 구출 + 올AD/원거리 약점 해소 종합 점수
+   */
+  function buildPoolCoach(pool, analytics, options) {
+    if (!pool || !pool.length || !analytics || !analytics.items) return null;
+
+    const opts = Object.assign({ beginnerOnly: false, includeJoker: true }, options || {});
+    const byName = analytics.byName;
+    const items = analytics.items;
+    const counterModel = analytics.counterModel;
+    const poolSet = new Set(pool.filter((n) => byName[n]));
+    const cleanPool = Array.from(poolSet);
+    if (!cleanPool.length) return null;
+
+    const diag = diagnosePool(cleanPool, byName, items);
+    const topMeta = items.filter((it) => it.tier === "OP" || it.tier === "1티어");
+    const topMetaSet = new Set(topMeta.map((it) => it.name));
+
+    const coveredTopMeta = new Set();
+    topMeta.forEach((enemy) => {
+      if (enemy.hard.some((c) => poolSet.has(c)) || enemy.counter.some((c) => poolSet.has(c))) {
+        coveredTopMeta.add(enemy.name);
+      }
+    });
+
+    // Check blind-pick safety across pool
+    const maxBlindScore = cleanPool.reduce((mx, n) => Math.max(mx, byName[n].blindScore), 0);
+    const hasSafeBlind = maxBlindScore >= 63; // A등급 이상 선픽 보유 여부
+
+    const warnings = [];
+    if (!diag.hasAP) warnings.push({ key: "all_ad", label: "올 AD 조합 취약 (AP·혼합 없음)" });
+    if (!diag.hasRangeAnswer) warnings.push({ key: "no_range", label: "원거리 견제 대응 약함" });
+    if (!hasSafeBlind) warnings.push({ key: "no_blind", label: "안전한 선픽(A등급↑) 부재" });
+
+    // 1) 필밴 Top 3 & 현재 전원 불리(damage_control) 적 목록 동시 산출
+    const banCandidates = [];
+    const allBadEnemies = new Set();
+
+    items.forEach((enemy) => {
+      if (poolSet.has(enemy.name)) return;
+      const pv = evaluatePoolVsEnemy(cleanPool, enemy.name, byName, counterModel);
+      if (!pv || pv.state !== "ready") return;
+
+      const hardHitNames = pv.tiers.forbidden.map((c) => c.name);
+      const softHitNames = pv.tiers.disadvantage.map((c) => c.name);
+      const hardHitCount = hardHitNames.length;
+      const softHitCount = softHitNames.length;
+      const isAllBad = pv.verdict === "damage_control";
+
+      if (isAllBad && (enemy.tier === "OP" || enemy.tier === "1티어" || enemy.tier === "2티어")) {
+        allBadEnemies.add(enemy.name);
+      }
+
+      const freqWeight = (enemy.stats && enemy.stats.pr != null)
+        ? Math.min(1.6, Math.max(0.4, 0.55 + enemy.stats.pr * 0.12))
+        : (TIER_FREQ_WEIGHT[enemy.tier] || 0.7) * (enemy.rosterType === "joker" ? 0.65 : 1.0);
+
+      let rawThreat = 0;
+      let isMetaFallback = false;
+
+      if (hardHitCount > 0 || softHitCount > 0) {
+        const hardRatio = hardHitCount / cleanPool.length;
+        rawThreat =
+          hardHitCount * 24 +
+          softHitCount * 11 +
+          (isAllBad ? 40 : 0) +
+          (pv.allHardCountered ? 22 : 0) +
+          (hardRatio >= 0.5 ? 14 : 0);
+
+        // 내 폭에 이미 확실한 카운터가 있다면 밴할 이유가 크게 줄어듦
+        if (pv.verdict === "optimal") {
+          const isHardAns = pv.bestPick && pv.bestPick.strength === "hard";
+          rawThreat *= isHardAns ? 0.22 : 0.48;
+        }
+      } else if (pv.verdict === "neutral" && (enemy.tier === "OP" || enemy.tier === "1티어")) {
+        // 역상성이 아예 없는 넓은 폭일 때만 메타 OP 견제 폴백
+        rawThreat = enemy.metaScore * 0.18;
+        isMetaFallback = true;
+      }
+
+      if (rawThreat <= 0) return;
+
+      const banScore = +(rawThreat * freqWeight).toFixed(1);
+      const reasons = [];
+      if (isAllBad) {
+        reasons.push(pv.allHardCountered ? "전원 3:7 역상성" : "전원 불리");
+      } else if (hardHitCount > 0) {
+        reasons.push(`하드 ${hardHitCount}명 저격 (${hardHitNames.slice(0, 2).join("·")})`);
+      } else if (softHitCount > 0) {
+        reasons.push(`불리 ${softHitCount}명 (${softHitNames.slice(0, 2).join("·")})`);
+      } else if (isMetaFallback) {
+        reasons.push("미대응 상위 메타");
+      }
+
+      if (pv.verdict === "optimal" && pv.bestPick) {
+        reasons.push(`${pv.bestPick.name} 대응 가능`);
+      } else if (enemy.tier === "OP" || enemy.tier === "1티어") {
+        reasons.push(`${enemy.tier} 고빈도`);
+      }
+
+      banCandidates.push({
+        name: enemy.name,
+        tier: enemy.tier,
+        rosterType: enemy.rosterType,
+        banScore,
+        isAllBad,
+        hardHitCount,
+        softHitCount,
+        hardHitNames,
+        softHitNames,
+        reasons
+      });
+    });
+
+    banCandidates.sort((a, b) => b.banScore - a.banScore || b.hardHitCount - a.hardHitCount);
+    const mustBans = banCandidates.slice(0, 3);
+
+    // 2) Greedy 1픽 보완 추천 (Top 3)
+    const recCandidates = [];
+    const currentCovPct = diag.coveragePct;
+
+    items.forEach((cand) => {
+      if (poolSet.has(cand.name)) return;
+      if (opts.beginnerOnly && cand.difficulty === "어려움") return;
+      if (!opts.includeJoker && cand.rosterType === "joker") return;
+
+      const newlyCoveredHard = [];
+      const newlyCoveredSoft = [];
+
+      topMeta.forEach((enemy) => {
+        if (coveredTopMeta.has(enemy.name)) return;
+        if (enemy.hard.includes(cand.name)) newlyCoveredHard.push(enemy.name);
+        else if (enemy.counter.includes(cand.name)) newlyCoveredSoft.push(enemy.name);
+      });
+
+      const newlyCoveredNames = [...newlyCoveredHard, ...newlyCoveredSoft].sort((a, b) => {
+        const aOwn = poolSet.has(a) ? 1 : 0;
+        const bOwn = poolSet.has(b) ? 1 : 0;
+        return aOwn - bOwn;
+      });
+      const extHardCnt = newlyCoveredHard.filter((n) => !poolSet.has(n)).length;
+      const ownHardCnt = newlyCoveredHard.length - extHardCnt;
+      const extSoftCnt = newlyCoveredSoft.filter((n) => !poolSet.has(n)).length;
+      const ownSoftCnt = newlyCoveredSoft.length - extSoftCnt;
+      const afterCoveredCount = coveredTopMeta.size + newlyCoveredNames.length;
+      const afterCoveragePct = topMeta.length ? Math.round((afterCoveredCount / topMeta.length) * 100) : 100;
+      const gainPct = Math.max(0, afterCoveragePct - currentCovPct);
+
+      // 전원 불리 적 구출 여부 (최소 5:5 반반 이상으로 끌어올려 주거나 카운터 쳐줌)
+      const rescuedAllBad = [];
+      allBadEnemies.forEach((enemyName) => {
+        const enemy = byName[enemyName];
+        if (!enemy) return;
+        const countersEnemy = enemy.hard.includes(cand.name) || enemy.counter.includes(cand.name);
+        const notCounteredByEnemy = !cand.hard.includes(enemyName) && !cand.counter.includes(enemyName);
+        if (countersEnemy || notCounteredByEnemy) {
+          rescuedAllBad.push(enemyName);
+        }
+      });
+
+      const fixesAP = !diag.hasAP && (cand.damageType === "AP" || cand.damageType === "혼합");
+      const fixesRange = !diag.hasRangeAnswer && (
+        cand.rangeType === "원거리" ||
+        cand.snipedHard.some((t) => byName[t] && byName[t].rangeType === "원거리")
+      );
+      const fixesBlind = !hasSafeBlind && cand.blindScore >= 68;
+
+      const addsRealValue = newlyCoveredNames.length > 0 || rescuedAllBad.length > 0 || fixesAP || fixesRange || fixesBlind;
+      if (!addsRealValue && coveredTopMeta.size < topMeta.length) return;
+
+      const recScore = +(
+        extHardCnt * 28 + ownHardCnt * 12 +
+        extSoftCnt * 18 + ownSoftCnt * 8 +
+        rescuedAllBad.length * 12 +
+        (fixesAP ? 16 : 0) +
+        (fixesRange ? 14 : 0) +
+        (fixesBlind ? 12 : 0) +
+        cand.metaScore * 0.22 +
+        cand.blindScore * 0.12 -
+        (cand.rosterType === "joker" ? 6 : 0)
+      ).toFixed(1);
+
+      const tags = [];
+      if (gainPct > 0) tags.push(`대응률 +${gainPct}%`);
+      if (rescuedAllBad.length > 0) tags.push(`전원불리 ${rescuedAllBad.length}종 해소`);
+      if (fixesAP) tags.push("AP 보강");
+      if (fixesRange) tags.push("원거리 대응");
+      if (fixesBlind) tags.push("선픽 보강");
+      if (!tags.length) tags.push(`체급 ${cand.metaScore}점`);
+
+      recCandidates.push({
+        name: cand.name,
+        tier: cand.tier,
+        rosterType: cand.rosterType,
+        difficulty: cand.difficulty,
+        damageType: cand.damageType,
+        rangeType: cand.rangeType,
+        recScore,
+        gainPct,
+        afterCoveragePct,
+        newlyCoveredNames,
+        newlyCoveredHardCount: newlyCoveredHard.length,
+        rescuedAllBad,
+        fixesAP,
+        fixesRange,
+        fixesBlind,
+        tags
+      });
+    });
+
+    recCandidates.sort((a, b) => b.recScore - a.recScore || b.gainPct - a.gainPct);
+    const recommendations = recCandidates.slice(0, 3);
+
+    return {
+      diag,
+      hasSafeBlind,
+      maxBlindScore,
+      warnings,
+      allBadCount: allBadEnemies.size,
+      mustBans,
+      recommendations,
+      isFullMetaCovered: coveredTopMeta.size >= topMeta.length,
+      filterApplied: {
+        beginnerOnly: opts.beginnerOnly,
+        includeJoker: opts.includeJoker
+      }
+    };
+  }
+
   return {
     VERSION,
     computeTopAnalytics,
     evaluateMatchupTwoAxis,
     evaluatePoolVsEnemy,
     diagnosePool,
+    buildPoolCoach,
     getChosung,
     normalizeSearch
   };
