@@ -595,6 +595,25 @@
     }
     .pool-rec-box.ok { border-color: rgba(16, 185, 129, 0.45); background: rgba(16, 185, 129, 0.06); }
     .pool-rec-box.danger { border-color: rgba(244, 63, 94, 0.45); background: rgba(244, 63, 94, 0.06); }
+    .pool-rec-box.neutral { border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.06); }
+    .pool-rec-box.warn { border-color: rgba(245, 158, 11, 0.5); background: rgba(245, 158, 11, 0.08); }
+    .verdict-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+    .verdict-title { font-size: 12.5px; font-weight: 800; }
+    .verdict-hero { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding: 8px 10px; border-radius: 8px; background: rgba(0, 0, 0, 0.25); border: 1px solid var(--border); cursor: pointer; }
+    .verdict-hero:hover { border-color: var(--gold-border); }
+    .verdict-hero-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .verdict-tip { margin-top: 7px; padding: 6px 8px; border-radius: 6px; background: rgba(255, 255, 255, 0.03); border-left: 2px solid var(--amber); font-size: 11.5px; color: #e2e2ec; line-height: 1.45; }
+    .verdict-tip.ok-tip { border-left-color: var(--emerald); }
+    .pool-matrix { margin-top: 9px; padding-top: 8px; border-top: 1px dashed rgba(255, 255, 255, 0.1); display: flex; flex-direction: column; gap: 5px; }
+    .pool-matrix-title { font-size: 11px; color: var(--text-muted); font-weight: 700; display: flex; justify-content: space-between; }
+    .pool-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 5px 7px; border-radius: 7px; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(44, 44, 56, 0.8); cursor: pointer; font-size: 12px; }
+    .pool-row:hover { border-color: var(--border-strong); }
+    .pool-row.t-opt { border-left: 3px solid var(--emerald); }
+    .pool-row.t-neu { border-left: 3px solid var(--sky); }
+    .pool-row.t-dis { border-left: 3px solid var(--amber); }
+    .pool-row.t-forb { border-left: 3px solid var(--rose); background: rgba(244, 63, 94, 0.06); }
+    .pool-row-left { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .pool-row-right { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 
     .matchup-list {
       display: flex;
@@ -797,9 +816,9 @@
 
   <div id="toast" class="toast"></div>
 
-  <!-- External Data & Calculation Engine (v2.3.0 cache-busted) -->
+  <!-- External Data (v2.3.0) & Calculation Engine (v2.3.1 cache-busted) -->
   <script src="data_top.js?v=2.3.0"></script>
-  <script src="engine.js?v=2.3.0"></script>
+  <script src="engine.js?v=2.3.1"></script>
 
   <script>
     /* =========================================================================
@@ -1133,14 +1152,16 @@
 
         let poolSignal = "";
         if (state.pool.length && !isPool) {
-          const canHard = it.hard.some((c) => poolSet.has(c));
-          const canSoft = it.counter.some((c) => poolSet.has(c));
-          if (canHard) {
-            poolSignal = `<span class="badge b-buff" title="내 챔프폭에 하드카운터 보유">내 픽 압도</span>`;
-          } else if (canSoft) {
-            poolSignal = `<span class="badge b-t2" title="내 챔프폭에 일반 카운터 보유">내 픽 우세</span>`;
+          const pv = window.BANPICK_ENGINE.evaluatePoolVsEnemy(state.pool, it.name, ANALYTICS.byName, ANALYTICS.counterModel);
+          if (pv && pv.verdict === "optimal") {
+            const isHard = pv.bestPick && pv.bestPick.strength === "hard";
+            poolSignal = isHard
+              ? `<span class="badge b-buff" title="내 챔프폭에 하드카운터(${escapeHtml(pv.bestPick.name)}) 보유">내 픽 압도</span>`
+              : `<span class="badge b-t2" title="내 챔프폭에 일반 카운터(${escapeHtml(pv.bestPick.name)}) 보유">내 픽 우세</span>`;
+          } else if (pv && pv.verdict === "damage_control") {
+            poolSignal = `<span class="badge b-nerf" title="내 챔프폭 전원 역상성 · 차악 픽 필요">전원 불리</span>`;
           } else if (it.tier === "OP" || it.tier === "1티어") {
-            poolSignal = `<span class="badge b-nerf" title="내 챔프폭으로 카운터 불가">미대응</span>`;
+            poolSignal = `<span class="badge b-warn" title="내 챔프폭에 카운터 없음(반반 구도)">반반·미대응</span>`;
           }
         }
 
@@ -1252,32 +1273,108 @@
       const isPool = poolSet.has(it.name);
       const safeName = escapeHtml(it.name);
 
-      // My Pool Recommendations vs this champion
+      // Ticket 2: 4-Tier Pool Response Verdict & Damage-Control Fallback vs Enemy Pick
+      const poolEval = window.BANPICK_ENGINE.evaluatePoolVsEnemy(state.pool, it.name, ANALYTICS.byName, ANALYTICS.counterModel);
       let poolRecHtml = "";
-      if (!state.pool.length) {
-        poolRecHtml = `<div class="pool-rec-box">내 챔프폭을 등록하면 <strong>${safeName}</strong> 상대로 내가 꺼낼 수 있는 최적 후픽을 바로 알려줍니다.</div>`;
+
+      function renderArchBadge(archetype, label) {
+        if (!archetype || !label) return "";
+        const cls = archetype === "lane_dominate" ? "b-dom" : (archetype === "late_turnaround" ? "b-turn" : "b-trap");
+        return `<span class="badge ${cls}">${escapeHtml(label)}</span>`;
+      }
+
+      if (!poolEval || poolEval.state === "empty") {
+        poolRecHtml = `<div class="pool-rec-box">내 챔프폭을 등록하면 상대가 <strong>${safeName}</strong>을(를) 선픽했을 때 내 폭 안의 최적 후픽·역상성 금지·차악 픽을 바로 판정해 줍니다.</div>`;
+      } else if (poolEval.state === "only_self") {
+        poolRecHtml = `<div class="pool-rec-box warn"><div style="font-weight:700;color:var(--amber);">⚠ 내 챔프폭에 ${safeName} 1개만 등록됨</div><div style="font-size:12px;color:var(--text-sub);margin-top:3px;">상대가 ${safeName}을(를) 먼저 뺏어갈 경우 꺼낼 대체 픽이 없습니다. 서브 챔프를 1~2개 추가해 보세요.</div></div>`;
       } else {
-        const myHard = it.hard.filter((c) => poolSet.has(c));
-        const mySoft = it.counter.filter((c) => poolSet.has(c));
-        if (myHard.length || mySoft.length) {
-          const itemsHtml = [
-            ...myHard.map((c) => `<span class="badge b-op" style="cursor:pointer;" data-jump="${escapeHtml(c)}">★ ${escapeHtml(c)} (7:3 하드)</span>`),
-            ...mySoft.map((c) => `<span class="badge b-t1" style="cursor:pointer;" data-jump="${escapeHtml(c)}">★ ${escapeHtml(c)} (6:4 우세)</span>`)
-          ].join(" ");
-          poolRecHtml = `
-            <div class="pool-rec-box ok">
-              <div style="font-weight:700;color:var(--emerald);margin-bottom:6px;">내 챔프폭 추천 후픽</div>
-              <div style="display:flex;gap:6px;flex-wrap:wrap;">${itemsHtml}</div>
-            </div>
+        const bp = poolEval.bestPick;
+        const safeBp = bp ? escapeHtml(bp.name) : "";
+        const selfNote = poolEval.excludedSelf
+          ? `<span style="font-size:11px;color:var(--text-muted);">상대가 내 ${safeName} 선점 가정</span>`
+          : "";
+
+        let boxCls = "neutral";
+        let verdictTitle = "";
+        let heroBadges = "";
+        let tipHtml = "";
+
+        if (poolEval.verdict === "optimal") {
+          boxCls = "ok";
+          verdictTitle = `<span class="verdict-title" style="color:var(--emerald);">✅ 최적 후픽 추천</span>`;
+          heroBadges = `
+            <span class="badge ${bp.strength === "hard" ? "b-op" : "b-t1"}">${escapeHtml(bp.tierLabel)}</span>
+            ${renderArchBadge(bp.archetype, bp.archetypeLabel)}
+            ${bp.enemyWr != null ? `<span class="badge b-tag">승률 ${bp.enemyWr}%</span>` : ""}
           `;
+          if (bp.hint) {
+            tipHtml = `<div class="verdict-tip ok-tip">🎯 ${escapeHtml(bp.hint)}</div>`;
+          }
+        } else if (poolEval.verdict === "neutral") {
+          boxCls = "neutral";
+          verdictTitle = `<span class="verdict-title" style="color:var(--sky);">⚖️ 카운터 없음 · 차선책(반반) 추천</span>`;
+          heroBadges = `
+            <span class="badge ${bp.laneTrapWarning ? "b-trap" : "b-t2"}">${escapeHtml(bp.tierLabel)}</span>
+            <span class="badge b-tag">선픽 ${bp.blindScore}점</span>
+          `;
+          if (bp.survivalTip) {
+            tipHtml = `<div class="verdict-tip">⚠ 초반 압박 주의: ${escapeHtml(bp.survivalTip)}</div>`;
+          }
         } else {
-          poolRecHtml = `
-            <div class="pool-rec-box danger">
-              <div style="font-weight:700;color:var(--rose);">⚠ 내 챔프폭에 ${safeName} 카운터 없음</div>
-              <div style="font-size:12px;color:var(--text-sub);margin-top:3px;">상대가 선픽하면 라인전이 빡빡할 수 있습니다. 아래 전체 카운터 중 쉬운 픽을 연습하거나 필밴을 고려하세요.</div>
+          boxCls = poolEval.allHardCountered ? "danger" : "warn";
+          verdictTitle = `<span class="verdict-title" style="color:${poolEval.allHardCountered ? "var(--rose)" : "var(--amber)"};">⚠ 전원 역상성 · 피해 최소화(차악) 픽</span>`;
+          heroBadges = `
+            ${bp.damageControlReasons.map((r, i) => `<span class="badge ${i === 0 ? (bp.tier === 4 ? "b-nerf" : "b-warn") : "b-tag"}">${escapeHtml(r)}</span>`).join("")}
+            ${poolEval.allHardCountered ? `<span class="badge b-nerf">닷지·스왑 고려</span>` : ""}
+          `;
+          if (bp.survivalTip) {
+            tipHtml = `<div class="verdict-tip">🛡️ 생존 전략 (${safeBp}): ${escapeHtml(bp.survivalTip)}</div>`;
+          }
+        }
+
+        const matrixRows = poolEval.candidates.map((c) => {
+          const rowCls = c.tier === 1 ? "t-opt" : (c.tier === 2 ? "t-neu" : (c.tier === 3 ? "t-dis" : "t-forb"));
+          const badgeCls = c.tier === 1 ? (c.strength === "hard" ? "b-op" : "b-t1") : (c.tier === 2 ? (c.laneTrapWarning ? "b-trap" : "b-t2") : (c.tier === 3 ? "b-warn" : "b-nerf"));
+          const isBest = bp && c.name === bp.name;
+          return `
+            <div class="pool-row ${rowCls}" data-jump="${escapeHtml(c.name)}">
+              <div class="pool-row-left">
+                ${avatarHtml(c.name, "avatar-chip")}
+                <strong>${escapeHtml(c.name)}</strong>
+                ${isBest ? `<span class="badge ${poolEval.verdict === "damage_control" ? "b-warn" : "b-op"}">${poolEval.verdict === "damage_control" ? "차악 1순위" : "1순위"}</span>` : ""}
+              </div>
+              <div class="pool-row-right">
+                ${c.tier === 1 ? renderArchBadge(c.archetype, c.archetypeLabel) : ""}
+                <span class="badge ${badgeCls}">${escapeHtml(c.tierLabel)}</span>
+              </div>
             </div>
           `;
-        }
+        }).join("");
+
+        poolRecHtml = `
+          <div class="pool-rec-box ${boxCls}">
+            <div class="verdict-head">
+              ${verdictTitle}
+              ${selfNote}
+            </div>
+            <div class="verdict-hero" data-jump="${safeBp}">
+              <div class="verdict-hero-left">
+                ${avatarHtml(bp.name, "avatar-sm")}
+                <strong style="font-size:14px;">${safeBp}</strong>
+                ${diffBadgeHtml(bp.difficulty)}
+              </div>
+              <div style="display:flex;gap:4px;flex-wrap:wrap;">${heroBadges}</div>
+            </div>
+            ${tipHtml}
+            <div class="pool-matrix">
+              <div class="pool-matrix-title">
+                <span>내 챔프폭 전체 판정 (${poolEval.candidates.length}종)</span>
+                <span>최적 → 반반 → 불리 → 금지</span>
+              </div>
+              ${matrixRows}
+            </div>
+          </div>
+        `;
       }
 
       function renderCounterCards(list, labelType) {
@@ -1399,7 +1496,7 @@
         </div>
 
         <div class="insp-section">
-          <div class="sec-title"><span>내 챔프폭 대응 진단</span></div>
+          <div class="sec-title"><span>상대가 ${safeName} 뽑았을 때 → 내 챔프폭 판정</span></div>
           ${poolRecHtml}
         </div>
 
@@ -1648,7 +1745,7 @@
     }
 
     function bootstrap() {
-      const EXPECTED_ENGINE_VER = "2.3.0";
+      const EXPECTED_ENGINE_VER = "2.3.1";
       const err = document.getElementById("errorBanner");
       const topBundle = window.BANPICK_DATA && window.BANPICK_DATA.top;
       if (!topBundle || !topBundle.champions) {
@@ -1674,7 +1771,7 @@
 
       const m = ANALYTICS.meta;
       document.getElementById("patchPill").textContent =
-        `패치 ${m.patch || "26.23"} · 탑 ${ANALYTICS.items.length}종 (v${m.schemaVersion || "2.3.0"})`;
+        `패치 ${m.patch || "26.23"} · 탑 ${ANALYTICS.items.length}종 (v${window.BANPICK_ENGINE.VERSION || "2.3.1"})`;
       if (m.isCollecting) {
         document.getElementById("collectingPill").style.display = "inline-block";
       }

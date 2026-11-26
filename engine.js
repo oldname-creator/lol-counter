@@ -1,5 +1,5 @@
 /**
- * BANPICK - 순수 계산 & 분석 엔진 (engine.js v2.3.0)
+ * BANPICK - 순수 계산 & 분석 엔진 (engine.js v2.3.1)
  * - DOM / HTML과 완전히 분리된 순수 연산 모듈 (향후 UI 교체 및 미드·바텀 확장 공용)
  * - 티켓 1 반영: 50:50 평균 합산 폐기 -> 2축 분리 카운터 판정(승률 축 / 라인전 축)
  *   · 승률(+) & 라인전(+) -> 🔥 라인전 압도 (정석 카운터)
@@ -7,7 +7,7 @@
  *   · 승률(-) & 라인전(+) -> ⚠ 초반 압박 주의 (정식 카운터 제외, 주의 섹션 분리)
  */
 window.BANPICK_ENGINE = (function () {
-  const VERSION = "2.3.0";
+  const VERSION = "2.3.1";
 
   const TIER_BASE = { "OP": 95, "1티어": 83, "2티어": 69, "3티어": 55, "4티어": 41, "5티어": 28 };
   const TIER_ORDER = { "OP": 0, "1티어": 1, "2티어": 2, "3티어": 3, "4티어": 4, "5티어": 5 };
@@ -359,10 +359,210 @@ window.BANPICK_ENGINE = (function () {
     };
   }
 
+
+  /**
+   * 티켓 2: 상대 선픽(enemyName) 대비 내 챔프폭 4단계 대응 판정 + 전원 불리 시 '피해 최소화(차악) 픽' 자동 선정
+   * - 1순위 optimal: 내 챔프가 상대의 하드(7:3) 또는 일반(6:4) 카운터
+   * - 2순위 neutral: 서로 카운터 관계 없음 (단, 상대가 초반 압박(lane_trap)이면 주의 배지 부착)
+   * - 3순위 disadvantage: 상대가 내 챔프의 일반 카운터 (6:4 불리)
+   * - 4순위 forbidden: 상대가 내 챔프의 하드카운터 (7:3 역상성 금지)
+   * - 자기 자신은 추천 후보에서 제외 (상대가 내 주력 챔프를 뺏어간 상황 대응)
+   */
+  function evaluatePoolVsEnemy(pool, enemyName, byName, counterModel) {
+    const enemy = enemyName && byName && byName[enemyName];
+    if (!enemy) return null;
+
+    if (!pool || !pool.length) {
+      return {
+        state: "empty",
+        verdict: "empty",
+        enemyName,
+        excludedSelf: false,
+        allHardCountered: false,
+        bestPick: null,
+        candidates: [],
+        tiers: { optimal: [], neutral: [], disadvantage: [], forbidden: [] }
+      };
+    }
+
+    const excludedSelf = pool.includes(enemyName);
+    const available = pool.filter((n) => n !== enemyName && byName[n]);
+
+    if (!available.length) {
+      return {
+        state: "only_self",
+        verdict: "only_self",
+        enemyName,
+        excludedSelf,
+        allHardCountered: false,
+        bestPick: null,
+        candidates: [],
+        tiers: { optimal: [], neutral: [], disadvantage: [], forbidden: [] }
+      };
+    }
+
+    const tiers = { optimal: [], neutral: [], disadvantage: [], forbidden: [] };
+
+    available.forEach((pName) => {
+      const pObj = byName[pName];
+      const isHardCounter = enemy.hard.includes(pName);
+      const isSoftCounter = !isHardCounter && enemy.counter.includes(pName);
+      const isHardCountered = pObj.hard.includes(enemyName);
+      const isSoftCountered = !isHardCountered && pObj.counter.includes(enemyName);
+
+      // 상대 입장 데이터 (내가 카운터일 때 성향·승률 참조)
+      const vsEnemyStat = enemy.matchupStats && enemy.matchupStats[pName];
+      const vsEnemyMeta = (enemy.matchupMeta && enemy.matchupMeta[pName]) ||
+        (vsEnemyStat ? evaluateMatchupTwoAxis(vsEnemyStat, counterModel) : null);
+
+      // 내 입장 데이터 (내가 불리/초반압박일 때 생존 팁 참조 — 시점 일치!)
+      const myStat = pObj.matchupStats && pObj.matchupStats[enemyName];
+      const myMeta = (pObj.matchupMeta && pObj.matchupMeta[enemyName]) ||
+        (myStat ? evaluateMatchupTwoAxis(myStat, counterModel) : null);
+
+      const isTeamfight = (pObj.playstyleTags || []).includes("#한타");
+      const isTank = (pObj.roleTags || []).includes("탱커");
+      const isRange = pObj.rangeType === "원거리";
+      const diffBonus = pObj.difficulty === "쉬움" ? 6 : (pObj.difficulty === "보통" ? 3 : 0);
+
+      if (isHardCounter || isSoftCounter) {
+        const strength = isHardCounter ? "hard" : "soft";
+        const winHint = vsEnemyMeta && vsEnemyMeta.archetype === "late_turnaround"
+          ? "초반 무리 금지 · 6렙/1코어 이후 역전"
+          : (vsEnemyMeta && vsEnemyMeta.archetype === "lane_dominate"
+            ? "초반 라인전부터 주도권 잡고 압박"
+            : null);
+
+        tiers.optimal.push({
+          name: pName,
+          tier: 1,
+          tierKey: "optimal",
+          tierLabel: isHardCounter ? "최적 후픽 (7:3)" : "우세 후픽 (6:4)",
+          strength,
+          archetype: vsEnemyMeta ? vsEnemyMeta.archetype : null,
+          archetypeLabel: vsEnemyMeta ? vsEnemyMeta.label : null,
+          enemyWr: vsEnemyStat && vsEnemyStat.wr != null ? +(100 - vsEnemyStat.wr).toFixed(1) : null,
+          hint: winHint,
+          rankScore: (isHardCounter ? 200 : 100) + pObj.metaScore * 0.6 + pObj.counterScore * 0.4,
+          metaScore: pObj.metaScore,
+          blindScore: pObj.blindScore,
+          difficulty: pObj.difficulty
+        });
+      } else if (isHardCountered || isSoftCountered) {
+        const isHardRev = isHardCountered;
+        const dcReasons = [];
+        if (!isHardRev) dcReasons.push("6:4 일반 불리");
+        else dcReasons.push("7:3 하드 역상성");
+        if (isTank && isTeamfight) dcReasons.push("탱커·한타 기여");
+        else if (isTeamfight) dcReasons.push("한타 기여");
+        else if (isTank) dcReasons.push("탱커 버티기");
+        else if (isRange) dcReasons.push("원거리 파밍");
+        else if (pObj.difficulty === "쉬움") dcReasons.push("안정적 운용");
+
+        const fallbackSurvivalTip = (isTank || isTeamfight)
+          ? "라인전 킬 욕심을 버리고 경험치·CS 손실만 줄이며 한타·오브젝트 타이밍 1인분을 노리세요."
+          : (pObj.timing === "후반"
+            ? "초반 딜교를 피하고 포탑 앞 파밍에 집중해 1~2코어 이후 반전을 노리세요."
+            : "초반 무리한 맞다이를 피하고 정글 콜이나 합류전으로 변수를 만드세요.");
+
+        const damageControlScore =
+          (isHardRev ? 0 : 100) +
+          (isTeamfight ? 18 : 0) +
+          (isTank ? 14 : 0) +
+          (isRange ? 6 : 0) +
+          diffBonus +
+          pObj.blindScore * 0.25 +
+          pObj.metaScore * 0.15;
+
+        const entry = {
+          name: pName,
+          tier: isHardRev ? 4 : 3,
+          tierKey: isHardRev ? "forbidden" : "disadvantage",
+          tierLabel: isHardRev ? "역상성 금지 (3:7)" : "불리 · 주의 (4:6)",
+          strength: isHardRev ? "hard_rev" : "soft_rev",
+          archetype: myMeta ? myMeta.archetype : null,
+          archetypeLabel: myMeta ? myMeta.label : null,
+          myWr: myStat && myStat.wr != null ? myStat.wr : null,
+          survivalTip: (myStat && myStat.tip) ? myStat.tip : fallbackSurvivalTip,
+          hasCustomTip: Boolean(myStat && myStat.tip),
+          damageControlScore: +damageControlScore.toFixed(1),
+          damageControlReasons: dcReasons,
+          rankScore: +damageControlScore.toFixed(1),
+          metaScore: pObj.metaScore,
+          blindScore: pObj.blindScore,
+          difficulty: pObj.difficulty
+        };
+
+        if (isHardRev) tiers.forbidden.push(entry);
+        else tiers.disadvantage.push(entry);
+      } else {
+        const laneTrapWarning = Boolean(myMeta && myMeta.archetype === "lane_trap");
+        tiers.neutral.push({
+          name: pName,
+          tier: 2,
+          tierKey: "neutral",
+          tierLabel: laneTrapWarning ? "반반 (초반 압박 주의)" : "차선책 · 반반 (5:5)",
+          strength: "neutral",
+          laneTrapWarning,
+          archetype: laneTrapWarning ? "lane_trap" : null,
+          archetypeLabel: laneTrapWarning ? myMeta.label : null,
+          survivalTip: laneTrapWarning && myStat && myStat.tip ? myStat.tip : null,
+          rankScore: +(pObj.blindScore * 0.6 + pObj.metaScore * 0.4 - (laneTrapWarning ? 10 : 0)).toFixed(1),
+          metaScore: pObj.metaScore,
+          blindScore: pObj.blindScore,
+          difficulty: pObj.difficulty
+        });
+      }
+    });
+
+    tiers.optimal.sort((a, b) => b.rankScore - a.rankScore || b.metaScore - a.metaScore);
+    tiers.neutral.sort((a, b) => b.rankScore - a.rankScore || b.blindScore - a.blindScore);
+    tiers.disadvantage.sort((a, b) => b.damageControlScore - a.damageControlScore);
+    tiers.forbidden.sort((a, b) => b.damageControlScore - a.damageControlScore);
+
+    let verdict = "neutral";
+    let bestPick = null;
+    let allHardCountered = false;
+
+    if (tiers.optimal.length > 0) {
+      verdict = "optimal";
+      bestPick = tiers.optimal[0];
+    } else if (tiers.neutral.length > 0) {
+      verdict = "neutral";
+      bestPick = tiers.neutral[0];
+    } else {
+      verdict = "damage_control";
+      const fallbackPool = [...tiers.disadvantage, ...tiers.forbidden].sort(
+        (a, b) => b.damageControlScore - a.damageControlScore
+      );
+      bestPick = fallbackPool[0] || null;
+      allHardCountered = tiers.disadvantage.length === 0 && tiers.forbidden.length > 0;
+    }
+
+    const candidates = [
+      ...tiers.optimal,
+      ...tiers.neutral,
+      ...tiers.disadvantage,
+      ...tiers.forbidden
+    ];
+
+    return {
+      state: "ready",
+      verdict,
+      enemyName,
+      excludedSelf,
+      allHardCountered,
+      bestPick,
+      candidates,
+      tiers
+    };
+  }
+
   return {
     VERSION,
     computeTopAnalytics,
     evaluateMatchupTwoAxis,
+    evaluatePoolVsEnemy,
     diagnosePool,
     getChosung,
     normalizeSearch
