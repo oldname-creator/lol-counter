@@ -860,6 +860,7 @@
       <div class="brand">
         <span class="brand-logo">BANPICK</span>
         <span id="patchPill" class="patch-pill">로딩 중...</span>
+        <span id="updatedPill" class="patch-pill" style="display:none;"></span>
         <span id="collectingPill" class="badge b-warn" style="display:none;">⏳ 패치 직후 표본 수집 중</span>
       </div>
       <div class="lane-tabs">
@@ -967,9 +968,9 @@
 
   <div id="toast" class="toast"></div>
 
-  <!-- External Data & Calculation Engine (v2.4.0 Ticket 4-4) -->
-  <script src="data_top.js?v=2.4.0"></script>
-  <script src="engine.js?v=2.4.0"></script>
+  <!-- External Data & Calculation Engine (v2.4.1 Hotfix) -->
+  <script src="data_top.js?v=2.4.1"></script>
+  <script src="engine.js?v=2.4.1"></script>
 
   <script>
     /* =========================================================================
@@ -1715,6 +1716,10 @@
             const enemyPlates = +(-mStat.plates).toFixed(1);
             statPieces.push(`채굴 ${enemyPlates > 0 ? "+" : ""}${enemyPlates}`);
           }
+          if (mStat && mStat.soloKill != null) {
+            const enemySk = +(-mStat.soloKill).toFixed(1);
+            statPieces.push(`솔킬 ${enemySk > 0 ? "+" : ""}${enemySk}`);
+          }
 
           return `
             <div class="matchup-card ${isMine ? "is-mine" : ""}" ${!isExternal ? `data-jump="${safeCName}"` : ""}>
@@ -1807,7 +1812,7 @@
         <div class="insp-section">
           <div class="sec-title">
             <span>📊 KR 에메랄드+ 실측 통계</span>
-            <span style="font-size:10.5px;color:var(--text-muted);">${it.usedApiStats ? `패치 ${escapeHtml(ANALYTICS.meta.patch || "")} 기준` : "표본 수집 중"}</span>
+            <span style="font-size:10.5px;color:var(--text-muted);">${it.usedApiStats ? `패치 ${escapeHtml(ANALYTICS.meta.patch || "")}${ANALYTICS.meta.updatedAt ? ` · 갱신 ${escapeHtml(ANALYTICS.meta.updatedAt)}` : ""}` : "표본 수집 중"}</span>
           </div>
           ${it.usedApiStats && it.stats ? `
             <div class="api-stat-grid">
@@ -2159,7 +2164,7 @@
     }
 
     async function bootstrap() {
-      const EXPECTED_ENGINE_VER = "2.4.0";
+      const EXPECTED_ENGINE_VER = "2.4.1";
       const err = document.getElementById("errorBanner");
       const topBundle = window.BANPICK_DATA && window.BANPICK_DATA.top;
       if (!topBundle || !topBundle.champions) {
@@ -2198,7 +2203,15 @@
       const apiSum = ANALYTICS.apiSummary || {};
       const apiTag = apiSum.hasAnyApiStats ? ` · 실측 ${apiSum.apiChampCount}종` : "";
       document.getElementById("patchPill").textContent =
-        `패치 ${m.patch || "26.23"} · 탑 ${ANALYTICS.items.length}종${apiTag} (v${window.BANPICK_ENGINE.VERSION || "2.4.0"})`;
+        `패치 ${m.patch || "26.23"} · 탑 ${ANALYTICS.items.length}종${apiTag} (v${window.BANPICK_ENGINE.VERSION || "2.4.1"})`;
+      const updatedEl = document.getElementById("updatedPill");
+      if (updatedEl && m.updatedAt) {
+        const matchCnt = m.totalPatchMatches || apiSum.approxMatches || 0;
+        updatedEl.textContent = matchCnt > 0
+          ? `갱신 ${m.updatedAt} · 누적 ${Number(matchCnt).toLocaleString()}판`
+          : `갱신 ${m.updatedAt}`;
+        updatedEl.style.display = "inline-block";
+      }
       if (m.isCollecting) {
         document.getElementById("collectingPill").style.display = "inline-block";
       }

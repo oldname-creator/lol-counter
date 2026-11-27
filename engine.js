@@ -1,5 +1,5 @@
 /**
- * BANPICK - 순수 계산 & 분석 엔진 (engine.js v2.4.0)
+ * BANPICK - 순수 계산 & 분석 엔진 (engine.js v2.4.1)
  * - DOM / HTML과 완전히 분리된 순수 연산 모듈 (향후 UI 교체 및 미드·바텀 확장 공용)
  * - 티켓 1 반영: 50:50 평균 합산 폐기 -> 2축 분리 카운터 판정(승률 축 / 라인전 축)
  *   · 승률(+) & 라인전(+) -> 🔥 라인전 압도 (정석 카운터)
@@ -7,7 +7,7 @@
  *   · 승률(-) & 라인전(+) -> ⚠ 초반 압박 주의 (정식 카운터 제외, 주의 섹션 분리)
  */
 window.BANPICK_ENGINE = (function () {
-  const VERSION = "2.4.0";
+  const VERSION = "2.4.1";
 
   const TIER_BASE = { "OP": 95, "1티어": 83, "2티어": 69, "3티어": 55, "4티어": 41, "5티어": 28 };
   const TIER_ORDER = { "OP": 0, "1티어": 1, "2티어": 2, "3티어": 3, "4티어": 4, "5티어": 5 };
@@ -69,9 +69,9 @@ window.BANPICK_ENGINE = (function () {
    * - 실측 픽률(pr)이 충분(15판+)하면 픽률 75% + 티어 체급 25%로 현실적 조우 빈도 반영
    * - 미수집 시 기존 ENEMY_THREAT_WEIGHT(티어 기반)로 안전 폴백
    */
-  function getEnemyThreatWeight(enemyObj) {
+  function getEnemyThreatWeight(enemyObj, effectiveTier) {
     if (!enemyObj) return { weight: 0.75, usedPickRate: false, pr: null };
-    const tierW = ENEMY_THREAT_WEIGHT[enemyObj.tier] || 0.8;
+    const tierW = ENEMY_THREAT_WEIGHT[effectiveTier || enemyObj.tier] || 0.8;
     const st = enemyObj.stats || {};
     if (st.pr != null && st.games >= 15) {
       const prW = Math.max(0.45, Math.min(1.50, 0.38 + 0.32 * Math.sqrt(Math.max(0, st.pr))));
@@ -222,8 +222,33 @@ window.BANPICK_ENGINE = (function () {
       });
     });
 
+    // Pass 1 (v2.4.1 Bug 2 fix): API 실측 기반 최신 티어(effectiveTier)를 먼저 산출하여
+    // 선픽 안정성·후픽 저격력 계산이 구버전 수동 c.tier에 고착되지 않도록 동기화
+    const apiPrecalc = {};
+    const effectiveTierMap = {};
+    names.forEach((name) => {
+      const c = raw[name];
+      const stats = c.stats || {};
+      if (stats.wr != null && stats.games) {
+        const smoothedWr = +(((stats.wr * stats.games) + (avgWr * priorGames)) / (stats.games + priorGames)).toFixed(2);
+        const winDelta = smoothedWr - avgWr;
+        const pr = stats.pr || 1.0;
+        const br = stats.br || 0.0;
+        const metaScore = Math.max(15, Math.min(99, +(65 + winDelta * 7.5 + Math.min(12, pr * 0.9) + Math.min(8, br * 0.35)).toFixed(1)));
+        const unifiedTier = scoreToUnifiedTier(metaScore, null);
+        apiPrecalc[name] = { usedApiStats: true, smoothedWr, metaScore, unifiedTier };
+        effectiveTierMap[name] = unifiedTier;
+      } else {
+        apiPrecalc[name] = { usedApiStats: false, smoothedWr: null, metaScore: null, unifiedTier: c.tier };
+        effectiveTierMap[name] = c.tier;
+      }
+    });
+
+    // Pass 2: 최신 effectiveTierMap 기반으로 선픽·후픽·메타 3축 점수 일괄 산출
     const items = names.map((name) => {
       const c = raw[name];
+      const pre = apiPrecalc[name];
+      const liveTier = effectiveTierMap[name] || c.tier;
       const rosterType = c.rosterType || "main";
       const effectiveHard = effectiveHardMap[name] || [];
       const effectiveSoft = effectiveSoftMap[name] || [];
@@ -235,14 +260,14 @@ window.BANPICK_ENGINE = (function () {
         if (ev) matchupMeta[opp] = ev;
       });
 
-      // 1) Blind Pick Stability (0~100) — Ticket 4-4: 실측 픽률 가중 + 표본 희소성 왜곡 보정
+      // 1) Blind Pick Stability (0~100) — 실측 픽률 + 최신 티어 가중 + 표본 희소성 왜곡 보정
       let hardPenalty = 0;
       let blindUsedPickRate = false;
       const threatDetails = [];
       effectiveHard.forEach((h) => {
         const hObj = raw[h];
-        const t = hObj ? hObj.tier : "3티어";
-        const tw = getEnemyThreatWeight(hObj);
+        const t = effectiveTierMap[h] || (hObj ? hObj.tier : "3티어");
+        const tw = getEnemyThreatWeight(hObj, t);
         if (tw.usedPickRate) blindUsedPickRate = true;
         hardPenalty += 11.0 * tw.weight;
         threatDetails.push({ name: h, tier: t, type: "hard", pr: tw.pr, threatWeight: tw.weight });
@@ -251,7 +276,8 @@ window.BANPICK_ENGINE = (function () {
       let softPenalty = 0;
       effectiveSoft.forEach((s) => {
         const sObj = raw[s];
-        const tw = getEnemyThreatWeight(sObj);
+        const t = effectiveTierMap[s] || (sObj ? sObj.tier : "3티어");
+        const tw = getEnemyThreatWeight(sObj, t);
         if (tw.usedPickRate) blindUsedPickRate = true;
         softPenalty += 3.8 * tw.weight;
       });
@@ -259,10 +285,10 @@ window.BANPICK_ENGINE = (function () {
       const apiMatchupCount = Object.values(c.matchupStats || {}).filter((m) => m && m.games >= 15).length;
       const hasMatureApiMatchups = apiMatchupCount >= 5;
       const totalDocCounters = effectiveHard.length + effectiveSoft.length;
-      const blindDataSparse = !hasMatureApiMatchups && totalDocCounters < 4 && (c.tier === "3티어" || c.tier === "4티어" || c.tier === "5티어");
+      const blindDataSparse = !hasMatureApiMatchups && totalDocCounters < 4 && (liveTier === "3티어" || liveTier === "4티어" || liveTier === "5티어");
       const sparsePenalty = blindDataSparse ? (4 - totalDocCounters) * 4.5 : 0.0;
 
-      const tierResilience = ((TIER_BASE[c.tier] || 55) - 65) * 0.28;
+      const tierResilience = ((TIER_BASE[liveTier] || 55) - 65) * 0.28;
       const jokerBlindPenalty = rosterType === "joker" ? -7.0 : 0.0;
       const blindScore = Math.max(
         12,
@@ -278,14 +304,14 @@ window.BANPICK_ENGINE = (function () {
       const metaTargets = [];
 
       snipedHard.forEach((target) => {
-        const t = raw[target] ? raw[target].tier : "3티어";
+        const t = effectiveTierMap[target] || (raw[target] ? raw[target].tier : "3티어");
         snipeRaw += (SNIPE_WEIGHT[t] || [4, 2])[0];
         if (t === "OP" || t === "1티어") {
           metaTargets.push({ name: target, tier: t, type: "hard" });
         }
       });
       snipedSoft.forEach((target) => {
-        const t = raw[target] ? raw[target].tier : "3티어";
+        const t = effectiveTierMap[target] || (raw[target] ? raw[target].tier : "3티어");
         snipeRaw += (SNIPE_WEIGHT[t] || [4, 2])[1];
         if (t === "OP" || t === "1티어") {
           metaTargets.push({ name: target, tier: t, type: "soft" });
@@ -300,19 +326,14 @@ window.BANPICK_ENGINE = (function () {
 
       // 3) Comprehensive Meta Score (0~100)
       const stats = c.stats || {};
+      const usedApiStats = pre.usedApiStats;
+      const smoothedWr = pre.smoothedWr;
       let metaScore;
-      let smoothedWr = null;
-      let usedApiStats = false;
 
-      if (stats.wr != null && stats.games) {
-        usedApiStats = true;
-        smoothedWr = +(((stats.wr * stats.games) + (avgWr * priorGames)) / (stats.games + priorGames)).toFixed(2);
-        const winDelta = smoothedWr - avgWr;
-        const pr = stats.pr || 1.0;
-        const br = stats.br || 0.0;
-        metaScore = Math.max(15, Math.min(99, +(65 + winDelta * 7.5 + Math.min(12, pr * 0.9) + Math.min(8, br * 0.35)).toFixed(1)));
+      if (usedApiStats) {
+        metaScore = pre.metaScore;
       } else {
-        const base = TIER_BASE[c.tier] || 55;
+        const base = TIER_BASE[liveTier] || 55;
         const pfStatus = c.patchFlag && c.patchFlag.status;
         const patchAdj = (pfStatus === "meta_up" || pfStatus === "buff") ? 2.5 : (pfStatus === "nerf" ? -2.5 : 0);
         const utilityAdj = ((blindScore - 60) * 0.08) + ((counterScore - 55) * 0.08);
@@ -320,7 +341,7 @@ window.BANPICK_ENGINE = (function () {
         metaScore = Math.max(15, Math.min(99, +(base + patchAdj + utilityAdj + jokerMetaAdj).toFixed(1)));
       }
 
-      const unifiedTier = scoreToUnifiedTier(metaScore, usedApiStats ? null : c.tier);
+      const unifiedTier = pre.unifiedTier;
 
       const rawTokens = [
         name,
@@ -462,10 +483,18 @@ window.BANPICK_ENGINE = (function () {
 
     available.forEach((pName) => {
       const pObj = byName[pName];
-      const isHardCounter = enemy.hard.includes(pName);
-      const isSoftCounter = !isHardCounter && enemy.counter.includes(pName);
-      const isHardCountered = pObj.hard.includes(enemyName);
-      const isSoftCountered = !isHardCountered && pObj.counter.includes(enemyName);
+      let isHardCounter = enemy.hard.includes(pName);
+      let isSoftCounter = !isHardCounter && enemy.counter.includes(pName);
+      let isHardCountered = pObj.hard.includes(enemyName);
+      let isSoftCountered = !isHardCountered && pObj.counter.includes(enemyName);
+
+      // Bug 4 방어: 데이터 경계 충돌로 상호 카운터가 동시 등록된 경우 오판(최적 후픽 승격) 차단 -> 반반(5:5) 처리
+      if ((isHardCounter || isSoftCounter) && (isHardCountered || isSoftCountered)) {
+        isHardCounter = false;
+        isSoftCounter = false;
+        isHardCountered = false;
+        isSoftCountered = false;
+      }
 
       // 상대 입장 데이터 (내가 카운터일 때 성향·승률 참조)
       const vsEnemyStat = enemy.matchupStats && enemy.matchupStats[pName];
