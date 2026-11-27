@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BANPICK — 탑 3종 티어리스트 &amp; 카운터 엔진</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23111115'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-weight='900' font-size='36' fill='%23D4AF37'%3EB%3C/text%3E%3C/svg%3E" />
   <style>
     :root {
       --bg-base: #111115;
@@ -866,7 +867,7 @@
 
         <div class="filter-bar">
           <div class="filter-row">
-            <input id="searchInput" class="search-input" type="text" placeholder="챔피언 이름 · 초성(ㄱㄹ) · 별명(크산, 딩거, 빵테)..." autocomplete="off" />
+            <input id="searchInput" class="search-input" type="text" placeholder="챔피언 · 초성(ㄱㄹ) · 별명 · Enter 선택 / Esc 초기화" autocomplete="off" />
             <button id="btnBeginnerFilter" class="toggle-pill" type="button">🟢 초보 친화 (어려움 제외)</button>
             <button id="btnJokerToggle" class="toggle-pill on-violet" type="button">🎭 조커 픽 포함</button>
             <button id="btnPoolOnly" class="toggle-pill" type="button">★ 내 챔프폭만</button>
@@ -915,9 +916,9 @@
 
   <div id="toast" class="toast"></div>
 
-  <!-- External Data & Calculation Engine (v2.3.3 audited release) -->
-  <script src="data_top.js?v=2.3.3"></script>
-  <script src="engine.js?v=2.3.3"></script>
+  <!-- External Data & Calculation Engine (v2.3.4 hotfix) -->
+  <script src="data_top.js?v=2.3.4"></script>
+  <script src="engine.js?v=2.3.4"></script>
 
   <script>
     /* =========================================================================
@@ -926,6 +927,7 @@
     const STORAGE_KEYS = {
       POOL: "banpick_pool_top_v1",
       MEMOS: "banpick_memos_top_v1",
+      COACH_COLLAPSED: "banpick_coach_collapsed_v1",
       DDRAGON_VER: "banpick_ddragon_ver",
       DDRAGON_TS: "banpick_ddragon_ts"
     };
@@ -1008,11 +1010,22 @@
         if (m) state.memos = JSON.parse(m) || {};
       } catch (_) {}
 
-      // Check URL ?pool=... first
+      // Load coach panel collapsed preference
+      try {
+        state.coachCollapsed = localStorage.getItem(STORAGE_KEYS.COACH_COLLAPSED) === "1";
+      } catch (_) {}
+
+      // Check URL ?pool=... first, then strip param so F5 never overwrites user edits
       const params = new URLSearchParams(window.location.search);
       const urlPool = params.get("pool");
       if (urlPool) {
         const parsed = urlPool.split(",").map((s) => s.trim()).filter((n) => ANALYTICS.byName[n]);
+        try {
+          params.delete("pool");
+          const qs = params.toString();
+          const cleanUrl = window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash;
+          window.history.replaceState({}, "", cleanUrl);
+        } catch (_) {}
         if (parsed.length) {
           state.pool = Array.from(new Set(parsed));
           savePool();
@@ -1051,20 +1064,20 @@
       } catch (_) {}
     }
 
-    // Read cached DDragon version SYNCHRONOUSLY before first render (Bug #1 fix)
+    // Read cached DDragon version SYNCHRONOUSLY before first render
     function loadCachedDDragonVersion() {
       try {
         const cachedVer = localStorage.getItem(STORAGE_KEYS.DDRAGON_VER);
         const cachedTs = Number(localStorage.getItem(STORAGE_KEYS.DDRAGON_TS) || 0);
         if (cachedVer) {
           state.ddragonVer = cachedVer;
-          return (Date.now() - cachedTs) < CACHE_TTL_MS;
+          return { hasCache: true, isFresh: (Date.now() - cachedTs) < CACHE_TTL_MS };
         }
       } catch (_) {}
-      return false;
+      return { hasCache: false, isFresh: false };
     }
 
-    async function fetchLatestDDragonVersion() {
+    async function fetchLatestDDragonVersion(shouldRefreshDom = true) {
       try {
         const res = await fetch("https://ddragon.leagueoflegends.com/api/versions.json");
         if (!res.ok) return;
@@ -1076,7 +1089,7 @@
             localStorage.setItem(STORAGE_KEYS.DDRAGON_VER, versions[0]);
             localStorage.setItem(STORAGE_KEYS.DDRAGON_TS, String(Date.now()));
           } catch (_) {}
-          if (prev !== versions[0]) {
+          if (shouldRefreshDom && prev !== versions[0]) {
             refreshVisibleAvatars();
           }
         }
@@ -1837,9 +1850,39 @@
         });
       });
 
-      document.getElementById("searchInput").addEventListener("input", (e) => {
+      const searchEl = document.getElementById("searchInput");
+      searchEl.addEventListener("input", (e) => {
         state.search = e.target.value;
         renderTierTable(false);
+      });
+      searchEl.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          const list = getFilteredSortedList();
+          if (list.length) {
+            e.preventDefault();
+            selectChampion(list[0].name, true, true);
+          }
+        } else if (e.key === "Escape") {
+          e.preventDefault();
+          if (state.search) {
+            state.search = "";
+            searchEl.value = "";
+            renderTierTable(false);
+          } else {
+            searchEl.blur();
+          }
+        }
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "/" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+          const tag = document.activeElement && document.activeElement.tagName;
+          if (tag !== "INPUT" && tag !== "TEXTAREA" && tag !== "SELECT") {
+            e.preventDefault();
+            searchEl.focus();
+            searchEl.select();
+          }
+        }
       });
 
       document.getElementById("btnBeginnerFilter").addEventListener("click", (e) => {
@@ -1950,6 +1993,9 @@
 
       document.getElementById("btnToggleCoach").addEventListener("click", () => {
         state.coachCollapsed = !state.coachCollapsed;
+        try {
+          localStorage.setItem(STORAGE_KEYS.COACH_COLLAPSED, state.coachCollapsed ? "1" : "0");
+        } catch (_) {}
         renderPoolBar();
       });
 
@@ -2001,8 +2047,8 @@
       });
     }
 
-    function bootstrap() {
-      const EXPECTED_ENGINE_VER = "2.3.3";
+    async function bootstrap() {
+      const EXPECTED_ENGINE_VER = "2.3.4";
       const err = document.getElementById("errorBanner");
       const topBundle = window.BANPICK_DATA && window.BANPICK_DATA.top;
       if (!topBundle || !topBundle.champions) {
@@ -2025,15 +2071,21 @@
         err.innerHTML = `<strong>엔진 버전 불일치 감지</strong> (현재: ${escapeHtml(window.BANPICK_ENGINE.VERSION || "구버전")} / 필요: ${EXPECTED_ENGINE_VER}). <code>Ctrl + Shift + R</code>로 캐시를 새로고침해 주세요.`;
       }
 
-      // 1) Read cached DDragon version BEFORE first render!
-      const isCacheFresh = loadCachedDDragonVersion();
+      // 1) Read cached DDragon version BEFORE first render; on first-ever visit wait briefly for latest version (zero 404!)
+      const ddCache = loadCachedDDragonVersion();
+      if (!ddCache.hasCache) {
+        await Promise.race([
+          fetchLatestDDragonVersion(false),
+          new Promise((resolve) => setTimeout(resolve, 1200))
+        ]);
+      }
 
       ANALYTICS = window.BANPICK_ENGINE.computeTopAnalytics(topBundle);
       window.BANPICK_ANALYTICS_TOP = ANALYTICS;
 
       const m = ANALYTICS.meta;
       document.getElementById("patchPill").textContent =
-        `패치 ${m.patch || "26.23"} · 탑 ${ANALYTICS.items.length}종 (v${window.BANPICK_ENGINE.VERSION || "2.3.3"})`;
+        `패치 ${m.patch || "26.23"} · 탑 ${ANALYTICS.items.length}종 (v${window.BANPICK_ENGINE.VERSION || "2.3.4"})`;
       if (m.isCollecting) {
         document.getElementById("collectingPill").style.display = "inline-block";
       }
@@ -2047,9 +2099,9 @@
       renderTierTable(false);
       renderInspector();
 
-      // 2) Refresh latest DDragon version in background if cache expired
-      if (!isCacheFresh) {
-        fetchLatestDDragonVersion();
+      // 2) Refresh latest DDragon version in background if cached version expired
+      if (ddCache.hasCache && !ddCache.isFresh) {
+        fetchLatestDDragonVersion(true);
       }
     }
 

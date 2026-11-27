@@ -1,5 +1,5 @@
 /**
- * BANPICK - 순수 계산 & 분석 엔진 (engine.js v2.3.3)
+ * BANPICK - 순수 계산 & 분석 엔진 (engine.js v2.3.4)
  * - DOM / HTML과 완전히 분리된 순수 연산 모듈 (향후 UI 교체 및 미드·바텀 확장 공용)
  * - 티켓 1 반영: 50:50 평균 합산 폐기 -> 2축 분리 카운터 판정(승률 축 / 라인전 축)
  *   · 승률(+) & 라인전(+) -> 🔥 라인전 압도 (정석 카운터)
@@ -7,7 +7,7 @@
  *   · 승률(-) & 라인전(+) -> ⚠ 초반 압박 주의 (정식 카운터 제외, 주의 섹션 분리)
  */
 window.BANPICK_ENGINE = (function () {
-  const VERSION = "2.3.3";
+  const VERSION = "2.3.4";
 
   const TIER_BASE = { "OP": 95, "1티어": 83, "2티어": 69, "3티어": 55, "4티어": 41, "5티어": 28 };
   const TIER_ORDER = { "OP": 0, "1티어": 1, "2티어": 2, "3티어": 3, "4티어": 4, "5티어": 5 };
@@ -43,7 +43,7 @@ window.BANPICK_ENGINE = (function () {
   }
 
   function normalizeSearch(str) {
-    return String(str || "").toLowerCase().replace(/\s+/g, "");
+    return String(str || "").toLowerCase().replace(/[\s'’‘.\-_]+/g, "");
   }
 
   function scoreToGrade(score) {

@@ -1,7 +1,7 @@
 /**
- * BANPICK - LoL 26.23 패치 탑 라인 통합 데이터 (data_top.js v2.3.3)
+ * BANPICK - LoL 26.23 패치 탑 라인 통합 데이터 (data_top.js v2.3.4)
  * - 총 65종 탑 챔피언 (메인 53종 + 조커 12종) + 목록 외 조커 픽(1종) 안전 매핑
- * - 스키마 v2.3.3 (1차 감사 완료): 2축 분리 카운터(🔥라인전 압도 / ⏳중후반 역전 / ⚠초반 압박 주의),
+ * - 스키마 v2.3.4 (1차 감사 완료): 2축 분리 카운터(🔥라인전 압도 / ⏳중후반 역전 / ⚠초반 압박 주의),
  *   OP 단순 승률 과승격 정리, 중복 메타 키 제거, 3패치 표본 적응형 & API 라인전 지표 슬롯 완비
  */
 
@@ -9,20 +9,20 @@ window.BANPICK_DATA = window.BANPICK_DATA || {};
 
 window.BANPICK_DATA.top = {
   meta: {
-  "schemaVersion": "2.3.3",
+  "schemaVersion": "2.3.4",
   "lane": "top",
   "patch": "26.23",
   "tierScope": "EMERALD_PLUS",
   "tierAvgWinRate": 51.8,
   "isCollecting": false,
-  "updatedAt": "2026-11-26",
+  "updatedAt": "2026-11-27",
   "rosterCutline": {
     "mainMinPickRate": 0.5,
     "jokerMinPickRate": 0.15,
     "newOrReworkMinPickRate": 1.0,
     "bayesianPriorGames": 200
   },
-  "dataVersion": "2.3.3",
+  "dataVersion": "2.3.4",
   "counterModel": {
     "type": "two_axis_separated",
     "aggregation": "sample_adaptive_3patch",
@@ -79,7 +79,8 @@ window.BANPICK_DATA.top = {
     "id": "Garen",
     "aliases": [
       "가렌",
-      "ㄱㄹ"
+      "ㄱㄹ",
+      "가붕이"
     ],
     "damageType": "AD",
     "rangeType": "근접",
@@ -2015,7 +2016,9 @@ window.BANPICK_DATA.top = {
     "id": "MonkeyKing",
     "aliases": [
       "오공",
-      "원숭이"
+      "원숭이",
+      "wukong",
+      "우콩"
     ],
     "damageType": "AD",
     "rangeType": "근접",
@@ -2385,7 +2388,8 @@ window.BANPICK_DATA.top = {
     "id": "Urgot",
     "aliases": [
       "우르곳",
-      "게"
+      "게",
+      "우가"
     ],
     "damageType": "AD",
     "rangeType": "원거리",
