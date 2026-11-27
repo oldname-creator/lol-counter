@@ -1,0 +1,50 @@
+name: BANPICK Top Data Collector
+
+on:
+  schedule:
+    # 매일 한국 시간(KST) 새벽 5:00 자동 실행 (UTC 20:00)
+    - cron: '0 20 * * *'
+  workflow_dispatch:
+    inputs:
+      max_matches:
+        description: '1회 실행당 수집할 최대 신규 탑 경기 수 (테스트 시 60~120 권장)'
+        required: false
+        default: '120'
+
+permissions:
+  contents: write
+
+jobs:
+  collect-top-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Verify collector script integrity
+        run: python3 scripts/collect_top.py --self-test
+
+      - name: Collect KR Top-lane ranked matches
+        env:
+          RIOT_API_KEY: ${{ secrets.RIOT_API_KEY }}
+          MAX_MATCHES: ${{ github.event.inputs.max_matches || '120' }}
+        run: python3 scripts/collect_top.py
+
+      - name: Commit and push updated data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data_top.js index.html data/raw_top_history.json
+          if git diff --staged --quiet; then
+            echo "변경된 데이터가 없어 커밋을 건너뜁니다."
+          else
+            git commit -m "chore(data): auto-update KR top-lane stats"
+            git push
+          fi
