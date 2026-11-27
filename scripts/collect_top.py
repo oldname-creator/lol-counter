@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-BANPICK - KR 솔랭 탑 라인 자동 수집 & 집계기 (scripts/collect_top.py v1.0.0)
+BANPICK - KR 솔랭 탑 라인 자동 수집 & 집계기 (scripts/collect_top.py v1.1.0)
 - 외부 라이브러리(pip install) 없이 Python 3 표준 라이브러리만으로 즉시 실행 가능
 - 기능:
   1) DDragon 최신 패치 버전 조회 및 챔피언 ID <-> 한국어 이름 매핑
@@ -148,6 +148,9 @@ def load_existing_data_js(path: str):
 
 
 def build_champion_key_maps(champions: dict, external_champions: dict, ddragon_ver: str, client: RiotAPIClient):
+    """
+    Riot Match-V5의 championId(숫자) 및 championName(영문 ID)을 한국어 챔피언명으로 매핑
+    """
     en_to_ko = {}
     for ko_name, obj in champions.items():
         if obj.get("id"):
@@ -177,6 +180,9 @@ def build_champion_key_maps(champions: dict, external_champions: dict, ddragon_v
 # 4. KR 솔랭 시드 유저 & Top 맞대결 수집기
 # ==============================================================================
 def fetch_seed_puuids(client: RiotAPIClient, target_puuids: int = 35):
+    """
+    KR 서버 에메랄드+ 솔랭 유저 PUUID 수집 (Emerald I~IV, Diamond I~IV, Master)
+    """
     puuids = []
     seen = set()
 
@@ -191,10 +197,12 @@ def fetch_seed_puuids(client: RiotAPIClient, target_puuids: int = 35):
                 if len(puuids) >= target_puuids:
                     return
 
+    # 1) 에메랄드 & 다이아몬드 (전체 솔랭 표본의 주력 구간)
     tiers_divs = [
         ("EMERALD", "I"), ("EMERALD", "II"), ("EMERALD", "III"), ("EMERALD", "IV"),
         ("DIAMOND", "I"), ("DIAMOND", "II"), ("DIAMOND", "III"), ("DIAMOND", "IV"),
     ]
+    # 날짜 기반 로테이션으로 매일 다른 페이지/디비전 샘플링
     day_seed = datetime.date.today().toordinal()
     rotated = tiers_divs[day_seed % len(tiers_divs):] + tiers_divs[:day_seed % len(tiers_divs)]
 
@@ -206,6 +214,7 @@ def fetch_seed_puuids(client: RiotAPIClient, target_puuids: int = 35):
         entries = client.get_json(url, use_api_key=True)
         add_entries(entries)
 
+    # 2) 마스터 리그 상위 표본 소량 혼합
     if len(puuids) < target_puuids:
         master_data = client.get_json(
             f"{PLATFORM_HOST}/lol/league/v4/masterleagues/by-queue/RANKED_SOLO_5x5",
@@ -218,6 +227,9 @@ def fetch_seed_puuids(client: RiotAPIClient, target_puuids: int = 35):
 
 
 def extract_top_match_record(match_json: dict, num_to_ko: dict, en_to_ko: dict):
+    """
+    Match-V5 응답에서 유효한 15분 이상 솔랭(420) 탑 1:1 맞대결 및 밴 데이터 추출
+    """
     if not isinstance(match_json, dict):
         return None
     meta = match_json.get("metadata") or {}
@@ -252,11 +264,17 @@ def extract_top_match_record(match_json: dict, num_to_ko: dict, en_to_ko: dict):
         if not ko_name:
             continue
 
+        challenges = p.get("challenges") or {}
         top_by_team[team_id].append({
             "champ": ko_name,
             "win": bool(p.get("win")),
+            "soloKills": challenges.get("soloKills"),
+            "turretPlates": challenges.get("turretPlatesTaken"),
+            "goldEarned": p.get("goldEarned"),
+            "cs": (p.get("totalMinionsKilled") or 0) + (p.get("neutralMinionsKilled") or 0),
         })
 
+    # 양 팀 모두 정확히 1명의 TOP 라이너가 매칭된 정상 경기만 채택
     if len(top_by_team[100]) != 1 or len(top_by_team[200]) != 1:
         return None
 
@@ -281,11 +299,6 @@ def extract_top_match_record(match_json: dict, num_to_ko: dict, en_to_ko: dict):
 # ==============================================================================
 # 5. 히스토리 누적 & 최근 3패치 표본 적응형 통계 계산
 # ==============================================================================
-def patch_sort_key(patch_str: str):
-    nums = [int(x) for x in re.findall(r"\d+", str(patch_str))]
-    return tuple(nums) if nums else (0, 0)
-
-
 def load_history(path: str):
     if os.path.exists(path):
         with open(path, "r", encoding="utf-8") as f:
@@ -296,6 +309,7 @@ def load_history(path: str):
 
 
 def save_history(path: str, history: dict):
+    # 최근 MAX_STORED_PATCHES개 패치만 유지하고 seenMatchIds 크기 제한
     patches = history.get("patches", {})
     sorted_p = sorted(patches.keys(), key=patch_sort_key, reverse=True)
     for old_p in sorted_p[MAX_STORED_PATCHES:]:
@@ -308,7 +322,12 @@ def save_history(path: str, history: dict):
 
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
-        json.dump(history, f, ensure_ascii=False, indent=2)
+        json.dump(history, f, ensure_ascii=False, separators=(",", ":"))
+
+
+def patch_sort_key(patch_str: str):
+    nums = [int(x) for x in re.findall(r"\d+", str(patch_str))]
+    return tuple(nums) if nums else (0, 0)
 
 
 def ingest_match_into_history(history: dict, rec: dict):
@@ -350,6 +369,17 @@ def ingest_match_into_history(history: dict, rec: dict):
         if me["win"]:
             vs_obj["wins"] += 1
 
+        # API 호출 0회 추가: Match-V5 기본 응답의 솔킬·포탑 채굴 격차 누적 (하위 호환 안전)
+        me_sk, opp_sk = me.get("soloKills"), opp.get("soloKills")
+        if isinstance(me_sk, (int, float)) and isinstance(opp_sk, (int, float)):
+            vs_obj["skDiffSum"] = round(vs_obj.get("skDiffSum", 0.0) + (me_sk - opp_sk), 3)
+            vs_obj["skCount"] = vs_obj.get("skCount", 0) + 1
+
+        me_pl, opp_pl = me.get("turretPlates"), opp.get("turretPlates")
+        if isinstance(me_pl, (int, float)) and isinstance(opp_pl, (int, float)):
+            vs_obj["plateDiffSum"] = round(vs_obj.get("plateDiffSum", 0.0) + (me_pl - opp_pl), 3)
+            vs_obj["plateCount"] = vs_obj.get("plateCount", 0) + 1
+
     return True
 
 
@@ -363,6 +393,10 @@ def aggregate_and_merge(
     min_counter_champ_games: int = MIN_CHAMP_GAMES_FOR_COUNTERS,
     min_matchup_games: int = MIN_MATCHUP_GAMES,
 ):
+    """
+    티어표는 최신 패치 단독(표본 부족 시 직전 패치 30% 혼합),
+    카운터표는 최근 3패치 표본 적응형(55/30/15, 1000판+ 시 최신 80%)으로 합산하여 champions 갱신
+    """
     patches = history.get("patches", {})
     if not patches:
         return meta, champions, {"updatedChamps": 0, "updatedMatchups": 0}
@@ -371,10 +405,12 @@ def aggregate_and_merge(
     active_patch = current_patch if current_patch in patches else sorted_patches[0]
     window_patches = sorted_patches[:3]
 
+    # 1) 최신 패치 챔피언별 승률·픽률·밴률 계산
     cur_bucket = patches[active_patch]
     cur_total_matches = max(1, cur_bucket.get("totalMatches", 0))
     cur_champs = cur_bucket.get("champs", {})
 
+    # 패치 1~2일 차 표본 부족(< 500판) 시 직전 패치 30% 혼합
     prev_patch = window_patches[1] if len(window_patches) > 1 else None
     blend_prev = (cur_total_matches < 500) and (prev_patch is not None)
     prev_bucket = patches.get(prev_patch, {}) if blend_prev else {}
@@ -382,8 +418,8 @@ def aggregate_and_merge(
     prev_champs = prev_bucket.get("champs", {}) if blend_prev else {}
 
     champ_wr_map = {}
-    weighted_wr_sum = 0.0
-    weighted_games_sum = 0
+    all_eff_wins = 0.0
+    all_eff_games = 0.0
 
     for c_name, c_data in champions.items():
         c_cur = cur_champs.get(c_name, {"games": 0, "wins": 0, "bans": 0})
@@ -403,8 +439,13 @@ def aggregate_and_merge(
             eff_bans = float(b_cur)
             eff_matches = float(cur_total_matches)
 
+        if eff_games > 0:
+            all_eff_wins += eff_wins
+            all_eff_games += eff_games
+
         if eff_games >= min_champ_games:
             wr = round((eff_wins / eff_games) * 100.0, 2)
+            # 탑 라인 기준 픽률(%) = 해당 챔프 탑 등장 판수 / 전체 경기 수 * 100
             pr = round((eff_games / max(1.0, eff_matches)) * 100.0, 2)
             br = round((eff_bans / max(1.0, eff_matches)) * 100.0, 2)
             c_data["stats"] = {
@@ -414,11 +455,14 @@ def aggregate_and_merge(
                 "games": int(round(eff_games)),
             }
             champ_wr_map[c_name] = wr
-            weighted_wr_sum += wr * int(round(eff_games))
-            weighted_games_sum += int(round(eff_games))
 
-    avg_wr = round(weighted_wr_sum / weighted_games_sum, 2) if weighted_games_sum > 0 else meta.get("tierAvgWinRate", 51.8)
+    # 전체 기록된 탑 1:1 판수 기준 평균 승률 (초반 소수 인기 챔프 편향 차단)
+    if all_eff_games > 0:
+        avg_wr = round((all_eff_wins / all_eff_games) * 100.0, 2)
+    else:
+        avg_wr = meta.get("tierAvgWinRate", 50.0)
 
+    # 2) 최근 3패치 표본 적응형 매치업 집계
     c_model = meta.get("counterModel") or {}
     base_weights = c_model.get("defaultPatchWeights") or [0.55, 0.30, 0.15]
     high_sample_th = c_model.get("highSampleThreshold") or 1000
@@ -432,6 +476,7 @@ def aggregate_and_merge(
         reset_hist = bool((c_data.get("patchFlag") or {}).get("resetHistory"))
         target_patches = [active_patch] if reset_hist else window_patches
 
+        # 모든 상대 후보 수집
         opponents = set()
         for p_ver in target_patches:
             vs_dict = ((patches.get(p_ver) or {}).get("champs") or {}).get(c_name, {}).get("vs", {})
@@ -447,6 +492,7 @@ def aggregate_and_merge(
             if opp not in valid_targets or opp == c_name:
                 continue
 
+            # 현재 패치 판수 확인 -> 표본 적응형 가중치 선택
             cur_vs = ((patches.get(active_patch) or {}).get("champs") or {}).get(c_name, {}).get("vs", {}).get(opp, {})
             cur_g = cur_vs.get("games", 0)
             if len(target_patches) == 1:
@@ -459,6 +505,12 @@ def aggregate_and_merge(
 
             w_games = 0.0
             w_wins = 0.0
+            w_sk_sum = 0.0
+            w_sk_cnt = 0.0
+            raw_sk_cnt = 0
+            w_pl_sum = 0.0
+            w_pl_cnt = 0.0
+            raw_pl_cnt = 0
             raw_sum_games = 0
             patches_used = 0
 
@@ -474,16 +526,32 @@ def aggregate_and_merge(
                 raw_sum_games += g
                 patches_used += 1
 
+                sk_c = vs_rec.get("skCount", 0)
+                if sk_c > 0:
+                    w_sk_sum += vs_rec.get("skDiffSum", 0.0) * wt
+                    w_sk_cnt += sk_c * wt
+                    raw_sk_cnt += sk_c
+
+                pl_c = vs_rec.get("plateCount", 0)
+                if pl_c > 0:
+                    w_pl_sum += vs_rec.get("plateDiffSum", 0.0) * wt
+                    w_pl_cnt += pl_c * wt
+                    raw_pl_cnt += pl_c
+
             total_c_matchup_games += raw_sum_games
             if raw_sum_games < min_matchup_games or w_games <= 0:
                 continue
 
             my_wr = round((w_wins / w_games) * 100.0, 1)
+            # Lolalytics 스타일 정규화 Delta2 (내 체급·상대 체급 보정 후 순수 상성 편차)
             my_base = champ_wr_map.get(c_name, avg_wr)
             opp_base = champ_wr_map.get(opp, avg_wr)
             delta2 = round((my_wr - 50.0) - (my_base - avg_wr) * 0.5 + (opp_base - avg_wr) * 0.5, 2)
 
             prev_entry = dict(existing_ms.get(opp) or {})
+            solo_kill_val = round(w_sk_sum / w_sk_cnt, 2) if (raw_sk_cnt >= min_matchup_games and w_sk_cnt > 0) else prev_entry.get("soloKill")
+            plates_val = round(w_pl_sum / w_pl_cnt, 2) if (raw_pl_cnt >= min_matchup_games and w_pl_cnt > 0) else prev_entry.get("plates")
+
             prev_entry.update({
                 "wr": my_wr,
                 "delta2": delta2,
@@ -492,14 +560,15 @@ def aggregate_and_merge(
                 "patches": patches_used,
                 "tip": prev_entry.get("tip"),
                 "firstTower": prev_entry.get("firstTower"),
-                "plates": prev_entry.get("plates"),
-                "soloKill": prev_entry.get("soloKill"),
+                "plates": plates_val,
+                "soloKill": solo_kill_val,
                 "csAdv": prev_entry.get("csAdv"),
                 "archetype": prev_entry.get("archetype"),
             })
             merged_ms[opp] = prev_entry
             updated_matchups += 1
 
+            # 상대 우세도(winAxis = -delta2) 기준 카운터 분류
             opp_adv = -delta2
             if opp_adv >= 5.5:
                 auto_hard.append((opp_adv, opp))
@@ -508,15 +577,42 @@ def aggregate_and_merge(
 
         c_data["matchupStats"] = merged_ms
 
+        # 누적 판수가 충분히 성숙했을 때만 수동 카운터 목록을 API 실측 카운터로 전환
         if total_c_matchup_games >= min_counter_champ_games and (auto_hard or auto_soft):
             auto_hard.sort(reverse=True)
             auto_soft.sort(reverse=True)
             c_data["hard"] = [name for _, name in auto_hard[:6]]
             c_data["counter"] = [name for _, name in auto_soft[:6]]
 
+    # Bug 4 방어: A↔B 상호 카운터 충돌 자동 해소 (API 전환·수동 혼재 경계 보호)
+    champ_names_list = list(champions.keys())
+    for i, a in enumerate(champ_names_list):
+        ca = champions[a]
+        for b in champ_names_list[i + 1:]:
+            cb = champions[b]
+            a_has_b = (b in ca.get("hard", [])) or (b in ca.get("counter", []))
+            b_has_a = (a in cb.get("hard", [])) or (a in cb.get("counter", []))
+            if not (a_has_b and b_has_a):
+                continue
+            ms_a = (ca.get("matchupStats") or {}).get(b) or {}
+            ms_b = (cb.get("matchupStats") or {}).get(a) or {}
+            # 상대 우세도(-delta2) 비교; API 실측 판수 보유 쪽 우선
+            adv_b_over_a = -(ms_a["delta2"]) if ms_a.get("delta2") is not None else (5.5 if b in ca.get("hard", []) else 2.5)
+            adv_a_over_b = -(ms_b["delta2"]) if ms_b.get("delta2") is not None else (5.5 if a in cb.get("hard", []) else 2.5)
+            score_b_over_a = (1 if (ms_a.get("games") or 0) >= min_matchup_games else 0, adv_b_over_a)
+            score_a_over_b = (1 if (ms_b.get("games") or 0) >= min_matchup_games else 0, adv_a_over_b)
+            if score_b_over_a >= score_a_over_b:
+                cb["hard"] = [x for x in cb.get("hard", []) if x != a]
+                cb["counter"] = [x for x in cb.get("counter", []) if x != a]
+            else:
+                ca["hard"] = [x for x in ca.get("hard", []) if x != b]
+                ca["counter"] = [x for x in ca.get("counter", []) if x != b]
+
+    # 메타 헤더 최신화
     today_str = datetime.date.today().isoformat()
     meta["patch"] = active_patch
     meta["tierAvgWinRate"] = avg_wr
+    meta["totalPatchMatches"] = cur_total_matches
     meta["updatedAt"] = today_str
     meta["isCollecting"] = cur_total_matches < 500
     if "counterModel" in meta:
@@ -537,6 +633,7 @@ def write_updated_data_js(path: str, meta: dict, external_champions: dict, champ
     with open(path, "r", encoding="utf-8") as f:
         orig = f.read()
 
+    # 하단 IIFE 검증·전역 바인딩 코드 보존
     tail_marker = "\n(function bindAndValidateTopData()"
     idx = orig.find(tail_marker)
     if idx == -1:
@@ -571,7 +668,7 @@ def sync_index_html_cache_tag(index_path: str, data_version: str):
         html = f.read()
     new_html = re.sub(
         r'(<script src="data_top\.js\?v=)[^"]+(")',
-        rf'\g<1>{data_version}\2',
+        rf'\g<1>{data_version}"',
         html,
         count=1,
     )
@@ -588,6 +685,7 @@ def run_self_test(data_js_path: str):
     meta, ext, champs = load_existing_data_js(data_js_path)
     assert len(champs) == 65, f"기대 챔피언 수 65종 불일치: {len(champs)}"
 
+    # 가상 Match-V5 경기 200판 생성 (잭스 vs 가렌, 제이스 vs 이렐리아, 럼블 vs 아트록스 등)
     fake_history = {"schemaVersion": "1.0", "patches": {}}
     sample_pairs = [
         ("가렌", "잭스", 0.62, 60),
@@ -596,20 +694,25 @@ def run_self_test(data_js_path: str):
         ("암베사", "크산테", 0.61, 45),
     ]
     mid = 1
+    # Bug 1 회귀 검증: patch_sort_key 정상 정렬 확인
+    assert patch_sort_key("26.24") > patch_sort_key("26.23") > patch_sort_key("26.9"), "patch_sort_key 정렬 오류!"
+
     for winner_c, loser_c, win_prob, n_games in sample_pairs:
         for i in range(n_games):
             c1_win = (i / n_games) < win_prob
             rec = {
                 "matchId": f"KR_TEST_{mid}",
                 "patch": meta.get("patch", "26.23"),
-                "blue": {"champ": winner_c, "win": c1_win},
-                "red": {"champ": loser_c, "win": not c1_win},
+                "blue": {"champ": winner_c, "win": c1_win, "soloKills": 2, "turretPlates": 3},
+                "red": {"champ": loser_c, "win": not c1_win, "soloKills": 1, "turretPlates": 1},
                 "bans": ["다리우스", "말파이트"],
             }
             assert ingest_match_into_history(fake_history, rec) is True
+            # 중복 경기 무시 확인
             assert ingest_match_into_history(fake_history, rec) is False
             mid += 1
 
+    # 원본 수동 팁 보존 여부 확인
     orig_tip = champs["잭스"]["matchupStats"]["가렌"]["tip"]
     assert orig_tip, "기존 잭스 vs 가렌 수동 팁이 비어 있음"
 
@@ -618,11 +721,16 @@ def run_self_test(data_js_path: str):
         min_champ_games=10, min_counter_champ_games=30, min_matchup_games=10
     )
     assert summary["totalPatchMatches"] == 200
+    assert new_meta["totalPatchMatches"] == 200
+    assert new_meta["tierAvgWinRate"] == 50.0, f"avg_wr 왜곡 감지: {new_meta['tierAvgWinRate']}"
     assert new_champs["잭스"]["stats"]["games"] == 60
     assert new_champs["잭스"]["matchupStats"]["가렌"]["tip"] == orig_tip, "수동 팁 유실!"
     assert new_champs["잭스"]["matchupStats"]["가렌"]["wr"] == 36.7
+    assert new_champs["잭스"]["matchupStats"]["가렌"]["soloKill"] == -1.0
+    assert new_champs["잭스"]["matchupStats"]["가렌"]["plates"] == -2.0
     assert "가렌" in new_champs["잭스"]["hard"]
-    print(f"  [PASS] 200판 가상 집계 · 중복 차단 · 수동 팁 보존 · 카운터 판정 검증 완료: {summary}")
+    assert "잭스" not in new_champs["가렌"]["hard"] and "잭스" not in new_champs["가렌"]["counter"]
+    print(f"  [PASS] 200판 가상 집계 · 패치정렬 · 솔킬/채굴 · 평균승률 · 상호충돌방어 검증 완료: {summary}")
 
 
 # ==============================================================================
@@ -647,6 +755,7 @@ def main():
     meta, ext, champs = load_existing_data_js(args.data_js)
     history = load_history(args.history)
 
+    # 1) 최신 DDragon 패치 버전 확인
     versions = client.get_json(DDRAGON_VERSIONS_URL, use_api_key=False)
     dd_full = versions[0] if (isinstance(versions, list) and versions) else "26.23.1"
     vp = dd_full.split(".")
@@ -655,9 +764,11 @@ def main():
 
     num_to_ko, en_to_ko = build_champion_key_maps(champs, ext, dd_full, client)
 
+    # 2) KR 에메랄드+ 시드 유저 조회
     puuids = fetch_seed_puuids(client, target_puuids=args.seed_users)
     print(f"[2/4] KR 에메랄드+ 시드 유저 {len(puuids)}명 확보")
 
+    # 3) 신규 솔랭 경기 수집
     already_seen = set()
     for p_data in history.get("patches", {}).values():
         already_seen.update(p_data.get("seenMatchIds", []))
@@ -691,9 +802,10 @@ def main():
 
     print(f"  · 수집 종료: 조회 {inspected}건 중 유효 탑 1:1 경기 {collected_valid}판 신규 반영 (총 API 호출 {client.total_requests}회)")
 
+    # 4) 저장 및 data_top.js / index.html 갱신
     save_history(args.history, history)
     today_tag = datetime.date.today().strftime("%Y%m%d")
-    meta["dataVersion"] = f"2.4.0-{today_tag}"
+    meta["dataVersion"] = f"2.4.1-{today_tag}"
     meta, champs, summary = aggregate_and_merge(meta, ext, champs, history, current_patch)
     write_updated_data_js(args.data_js, meta, ext, champs)
     sync_index_html_cache_tag(args.index_html, meta["dataVersion"])
