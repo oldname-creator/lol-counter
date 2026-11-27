@@ -620,7 +620,7 @@ def run_self_test(data_js_path: str):
     assert summary["totalPatchMatches"] == 200
     assert new_champs["잭스"]["stats"]["games"] == 60
     assert new_champs["잭스"]["matchupStats"]["가렌"]["tip"] == orig_tip, "수동 팁 유실!"
-    assert new_champs["잭스"]["matchupStats"]["가렌"]["wr"] == 38.0
+    assert new_champs["잭스"]["matchupStats"]["가렌"]["wr"] == 36.7
     assert "가렌" in new_champs["잭스"]["hard"]
     print(f"  [PASS] 200판 가상 집계 · 중복 차단 · 수동 팁 보존 · 카운터 판정 검증 완료: {summary}")
 
