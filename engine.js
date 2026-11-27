@@ -1,5 +1,5 @@
 /**
- * BANPICK - 순수 계산 & 분석 엔진 (engine.js v2.3.4)
+ * BANPICK - 순수 계산 & 분석 엔진 (engine.js v2.4.0)
  * - DOM / HTML과 완전히 분리된 순수 연산 모듈 (향후 UI 교체 및 미드·바텀 확장 공용)
  * - 티켓 1 반영: 50:50 평균 합산 폐기 -> 2축 분리 카운터 판정(승률 축 / 라인전 축)
  *   · 승률(+) & 라인전(+) -> 🔥 라인전 압도 (정석 카운터)
@@ -7,7 +7,7 @@
  *   · 승률(-) & 라인전(+) -> ⚠ 초반 압박 주의 (정식 카운터 제외, 주의 섹션 분리)
  */
 window.BANPICK_ENGINE = (function () {
-  const VERSION = "2.3.4";
+  const VERSION = "2.4.0";
 
   const TIER_BASE = { "OP": 95, "1티어": 83, "2티어": 69, "3티어": 55, "4티어": 41, "5티어": 28 };
   const TIER_ORDER = { "OP": 0, "1티어": 1, "2티어": 2, "3티어": 3, "4티어": 4, "5티어": 5 };
@@ -62,6 +62,26 @@ window.BANPICK_ENGINE = (function () {
     if (score >= 50) return "3티어";
     if (score >= 36) return "4티어";
     return "5티어";
+  }
+
+  /**
+   * 티켓 4-4: 상대 천적 위협 가중치 (실측 API 픽률 우선 반영 + 티어 체급 혼합)
+   * - 실측 픽률(pr)이 충분(15판+)하면 픽률 75% + 티어 체급 25%로 현실적 조우 빈도 반영
+   * - 미수집 시 기존 ENEMY_THREAT_WEIGHT(티어 기반)로 안전 폴백
+   */
+  function getEnemyThreatWeight(enemyObj) {
+    if (!enemyObj) return { weight: 0.75, usedPickRate: false, pr: null };
+    const tierW = ENEMY_THREAT_WEIGHT[enemyObj.tier] || 0.8;
+    const st = enemyObj.stats || {};
+    if (st.pr != null && st.games >= 15) {
+      const prW = Math.max(0.45, Math.min(1.50, 0.38 + 0.32 * Math.sqrt(Math.max(0, st.pr))));
+      return {
+        weight: +(prW * 0.75 + tierW * 0.25).toFixed(3),
+        usedPickRate: true,
+        pr: st.pr
+      };
+    }
+    return { weight: tierW, usedPickRate: false, pr: st.pr != null ? st.pr : null };
   }
 
   /**
@@ -215,26 +235,41 @@ window.BANPICK_ENGINE = (function () {
         if (ev) matchupMeta[opp] = ev;
       });
 
-      // 1) Blind Pick Stability (0~100)
+      // 1) Blind Pick Stability (0~100) — Ticket 4-4: 실측 픽률 가중 + 표본 희소성 왜곡 보정
       let hardPenalty = 0;
+      let blindUsedPickRate = false;
       const threatDetails = [];
       effectiveHard.forEach((h) => {
-        const t = raw[h] ? raw[h].tier : "3티어";
-        hardPenalty += 11.0 * (ENEMY_THREAT_WEIGHT[t] || 0.8);
-        threatDetails.push({ name: h, tier: t, type: "hard" });
+        const hObj = raw[h];
+        const t = hObj ? hObj.tier : "3티어";
+        const tw = getEnemyThreatWeight(hObj);
+        if (tw.usedPickRate) blindUsedPickRate = true;
+        hardPenalty += 11.0 * tw.weight;
+        threatDetails.push({ name: h, tier: t, type: "hard", pr: tw.pr, threatWeight: tw.weight });
       });
 
       let softPenalty = 0;
       effectiveSoft.forEach((s) => {
-        const t = raw[s] ? raw[s].tier : "3티어";
-        softPenalty += 3.8 * (ENEMY_THREAT_WEIGHT[t] || 0.8);
+        const sObj = raw[s];
+        const tw = getEnemyThreatWeight(sObj);
+        if (tw.usedPickRate) blindUsedPickRate = true;
+        softPenalty += 3.8 * tw.weight;
       });
+
+      const apiMatchupCount = Object.values(c.matchupStats || {}).filter((m) => m && m.games >= 15).length;
+      const hasMatureApiMatchups = apiMatchupCount >= 5;
+      const totalDocCounters = effectiveHard.length + effectiveSoft.length;
+      const blindDataSparse = !hasMatureApiMatchups && totalDocCounters < 4 && (c.tier === "3티어" || c.tier === "4티어" || c.tier === "5티어");
+      const sparsePenalty = blindDataSparse ? (4 - totalDocCounters) * 4.5 : 0.0;
 
       const tierResilience = ((TIER_BASE[c.tier] || 55) - 65) * 0.28;
       const jokerBlindPenalty = rosterType === "joker" ? -7.0 : 0.0;
-      const blindScore = Math.max(12, Math.min(99, +(95 - hardPenalty - softPenalty + tierResilience + jokerBlindPenalty).toFixed(1)));
+      const blindScore = Math.max(
+        12,
+        Math.min(99, +(95 - hardPenalty - softPenalty - sparsePenalty + tierResilience + jokerBlindPenalty).toFixed(1))
+      );
 
-      threatDetails.sort((a, b) => (TIER_ORDER[a.tier] ?? 9) - (TIER_ORDER[b.tier] ?? 9));
+      threatDetails.sort((a, b) => (b.threatWeight - a.threatWeight) || ((TIER_ORDER[a.tier] ?? 9) - (TIER_ORDER[b.tier] ?? 9)));
 
       // 2) Counter-Pick Joker Value (0~100) — NO joker penalty!
       let snipeRaw = 0;
@@ -319,6 +354,8 @@ window.BANPICK_ENGINE = (function () {
         metaScore,
         blindScore,
         blindGrade: scoreToGrade(blindScore),
+        blindUsedPickRate,
+        blindDataSparse,
         counterScore,
         counterGrade: scoreToGrade(counterScore),
         worstThreats: threatDetails.slice(0, 3),
@@ -330,9 +367,27 @@ window.BANPICK_ENGINE = (function () {
     });
 
     const byName = {};
-    items.forEach((it) => { byName[it.name] = it; });
+    let apiChampCount = 0;
+    let pickRateWeightedBlindCount = 0;
+    let totalChampGames = 0;
+    items.forEach((it) => {
+      byName[it.name] = it;
+      if (it.usedApiStats) {
+        apiChampCount++;
+        totalChampGames += Number((it.stats && it.stats.games) || 0);
+      }
+      if (it.blindUsedPickRate) pickRateWeightedBlindCount++;
+    });
 
-    return { meta, items, byName, external, counterModel };
+    const apiSummary = {
+      hasAnyApiStats: apiChampCount > 0,
+      apiChampCount,
+      totalChamps: items.length,
+      approxMatches: Math.round(totalChampGames / 2),
+      pickRateWeightedBlindCount
+    };
+
+    return { meta, items, byName, external, counterModel, apiSummary };
   }
 
   function diagnosePool(pool, byName, items) {

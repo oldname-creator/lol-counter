@@ -684,6 +684,41 @@
     .score-card .sc-val { font-size: 18px; font-weight: 800; margin-top: 2px; font-variant-numeric: tabular-nums; }
     .score-card .sc-sub { font-size: 10.5px; color: var(--text-sub); margin-top: 2px; }
 
+    .api-stat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+    @media (max-width: 520px) {
+      .api-stat-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    .api-stat-card {
+      background: var(--bg-base);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 8px;
+      text-align: center;
+    }
+    .api-stat-card .as-lbl { font-size: 10.5px; color: var(--text-muted); }
+    .api-stat-card .as-val { font-size: 14px; font-weight: 800; margin-top: 1px; font-variant-numeric: tabular-nums; }
+    .api-stat-card .as-sub { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+    .stat-inline {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+      align-items: center;
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+      margin-bottom: 4px;
+      color: var(--text-sub);
+    }
+    .stat-inline strong { font-weight: 700; }
+    .stat-pending {
+      font-size: 10.5px;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
     .pool-rec-box {
       background: var(--bg-base);
       border: 1px solid var(--border-strong);
@@ -932,9 +967,9 @@
 
   <div id="toast" class="toast"></div>
 
-  <!-- External Data & Calculation Engine (v2.3.4 hotfix) -->
-  <script src="data_top.js?v=2.4.0-20261127"></script>
-  <script src="engine.js?v=2.3.4"></script>
+  <!-- External Data & Calculation Engine (v2.4.0 Ticket 4-4) -->
+  <script src="data_top.js?v=2.4.0"></script>
+  <script src="engine.js?v=2.4.0"></script>
 
   <script>
     /* =========================================================================
@@ -1349,17 +1384,20 @@
       const thead = document.getElementById("tierHead");
       const tbody = document.getElementById("tierBody");
 
+      const apiSum = ANALYTICS.apiSummary || {};
       if (state.mode === "meta") {
         thead.innerHTML = `
           <tr>
             <th style="text-align:center;">#</th>
             <th style="width:32px;text-align:center;">★</th>
             <th>챔피언</th>
-            <th>특성 (입문·타이밍·속성)</th>
+            <th>${apiSum.hasAnyApiStats ? "실측 지표 · 특성" : "특성 (입문·타이밍·속성)"}</th>
             <th>3축 점수 (메타·선픽·후픽)</th>
           </tr>
         `;
-        document.getElementById("formulaHint").textContent = "종합 메타 = 티어 체급 + 패치 변동 + 선/후픽 유틸 (조커 표본 보정)";
+        document.getElementById("formulaHint").textContent = apiSum.hasAnyApiStats
+          ? `종합 메타 = KR 실측 승률(베이지안 보정)·픽률·밴률 반영 (${apiSum.apiChampCount}/${apiSum.totalChamps}종 실측 완료)`
+          : "종합 메타 = 티어 체급 + 패치 변동 + 선/후픽 유틸 (조커 표본 보정)";
       } else if (state.mode === "blind") {
         thead.innerHTML = `
           <tr>
@@ -1370,7 +1408,9 @@
             <th>하드카운터 수 &amp; 최악의 천적</th>
           </tr>
         `;
-        document.getElementById("formulaHint").textContent = "선픽 안정성 = 2축 분리 카운터(라인전 압도·중후반 역전 모두 반영) 천적 감점 + 체급";
+        document.getElementById("formulaHint").textContent = apiSum.pickRateWeightedBlindCount > 0
+          ? "선픽 안정성 = 2축 분리 카운터 + 천적 실측 픽률·티어 가중 감점 + 표본 희소성 보정"
+          : "선픽 안정성 = 2축 분리 카운터 천적 가중 감점 + 표본 희소성 보정 + 체급";
       } else {
         thead.innerHTML = `
           <tr>
@@ -1436,11 +1476,30 @@
         let col5 = "";
 
         if (state.mode === "meta") {
+          let statsLineHtml = "";
+          if (it.usedApiStats && it.stats) {
+            const wrNum = Number(it.stats.wr);
+            const wrCol = wrNum >= 51.5 ? "var(--emerald)" : (wrNum <= 48.5 ? "var(--rose)" : "var(--text-main)");
+            const prTxt = it.stats.pr != null ? `${Number(it.stats.pr).toFixed(1)}%` : "-";
+            const brTxt = it.stats.br != null ? `${Number(it.stats.br).toFixed(1)}%` : "-";
+            const tipAttr = `KR 실측 표본 ${it.stats.games}판${it.smoothedWr != null ? ` · 보정 승률 ${it.smoothedWr}%` : ""}`;
+            statsLineHtml = `
+              <div class="stat-inline" title="${escapeHtml(tipAttr)}">
+                <span>승 <strong style="color:${wrCol};">${wrNum.toFixed(1)}%</strong></span>
+                <span>픽 <strong>${prTxt}</strong></span>
+                <span>밴 <strong>${brTxt}</strong></span>
+              </div>
+            `;
+          }
           col4 = `
-            <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">
-              ${diffBadgeHtml(it.difficulty)}
-              <span class="badge b-tag">${escapeHtml(it.timing)}</span>
-              <span class="badge b-tag">${escapeHtml(it.damageType)}·${escapeHtml(it.rangeType)}</span>
+            <div>
+              ${statsLineHtml}
+              <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">
+                ${diffBadgeHtml(it.difficulty)}
+                <span class="badge b-tag">${escapeHtml(it.timing)}</span>
+                <span class="badge b-tag">${escapeHtml(it.damageType)}·${escapeHtml(it.rangeType)}</span>
+              </div>
+              ${(!it.usedApiStats && apiSum.hasAnyApiStats) ? `<div class="stat-pending">표본 수집 중</div>` : ""}
             </div>
           `;
           col5 = `
@@ -1466,11 +1525,12 @@
           col4 = `
             <div>
               <span class="score-big" style="color:${it.blindScore >= 70 ? 'var(--emerald)' : it.blindScore >= 50 ? 'var(--text-main)' : 'var(--rose)'}">${it.blindScore}점</span>
+              ${it.blindDataSparse ? `<span class="badge b-tag" style="margin-left:4px;" title="등록 카운터 표본이 적어 보수적으로 보정됨">표본 보정</span>` : ""}
               <div style="font-size:11px;margin-top:2px;">${gradeBadgeHtml(it.blindGrade, "blind")} · 하드 ${it.hard.length} / 일반 ${it.counter.length}</div>
             </div>
           `;
           col5 = it.worstThreats.length
-            ? `<div class="mini-icons">${it.worstThreats.map((t) => `<span class="mini-chip hard-threat">${avatarHtml(t.name, "avatar-sm")} ${escapeHtml(t.name)}</span>`).join("")}</div>`
+            ? `<div class="mini-icons">${it.worstThreats.map((t) => `<span class="mini-chip hard-threat" title="${t.pr != null ? `실측 픽률 ${Number(t.pr).toFixed(1)}% · 위협 가중치 ${t.threatWeight}` : `${escapeHtml(t.tier)} 천적`}">${avatarHtml(t.name, "avatar-sm")} ${escapeHtml(t.name)}${t.pr != null ? ` <span style="opacity:0.8;font-size:10px;">${Number(t.pr).toFixed(1)}%</span>` : ""}</span>`).join("")}</div>`
             : `<span class="badge b-buff">하드카운터 없음 (최상급 선픽)</span>`;
         } else {
           col4 = `
@@ -1742,6 +1802,41 @@
               <div class="sc-sub">${escapeHtml(it.counterGrade)}등급 (1T저격 ${it.metaTargets.length})</div>
             </div>
           </div>
+        </div>
+
+        <div class="insp-section">
+          <div class="sec-title">
+            <span>📊 KR 에메랄드+ 실측 통계</span>
+            <span style="font-size:10.5px;color:var(--text-muted);">${it.usedApiStats ? `패치 ${escapeHtml(ANALYTICS.meta.patch || "")} 기준` : "표본 수집 중"}</span>
+          </div>
+          ${it.usedApiStats && it.stats ? `
+            <div class="api-stat-grid">
+              <div class="api-stat-card">
+                <div class="as-lbl">승률</div>
+                <div class="as-val" style="color:${Number(it.stats.wr) >= 51.5 ? "var(--emerald)" : (Number(it.stats.wr) <= 48.5 ? "var(--rose)" : "var(--text-main)")};">${Number(it.stats.wr).toFixed(1)}%</div>
+                <div class="as-sub">${it.smoothedWr != null && it.stats.games < 200 ? `보정 ${it.smoothedWr}%` : "실측 반영"}</div>
+              </div>
+              <div class="api-stat-card">
+                <div class="as-lbl">픽률</div>
+                <div class="as-val" style="color:var(--sky);">${it.stats.pr != null ? `${Number(it.stats.pr).toFixed(1)}%` : "-"}</div>
+                <div class="as-sub">탑 등장 비율</div>
+              </div>
+              <div class="api-stat-card">
+                <div class="as-lbl">밴률</div>
+                <div class="as-val" style="color:var(--amber);">${it.stats.br != null ? `${Number(it.stats.br).toFixed(1)}%` : "-"}</div>
+                <div class="as-sub">솔랭 밴 비율</div>
+              </div>
+              <div class="api-stat-card">
+                <div class="as-lbl">표본 판수</div>
+                <div class="as-val">${Number(it.stats.games || 0).toLocaleString()}판</div>
+                <div class="as-sub">${Number(it.stats.games || 0) >= 80 ? "안정 표본" : "누적 중"}</div>
+              </div>
+            </div>
+          ` : `
+            <div class="note-box" style="font-size:11.5px;color:var(--text-muted);">
+              ⏳ KR 솔랭 실측 표본 수집 중입니다. 해당 챔피언이 15판 이상 누적되면 승률·픽률·밴률이 자동으로 표시됩니다.
+            </div>
+          `}
         </div>
 
         <div class="insp-section">
@@ -2064,7 +2159,7 @@
     }
 
     async function bootstrap() {
-      const EXPECTED_ENGINE_VER = "2.3.4";
+      const EXPECTED_ENGINE_VER = "2.4.0";
       const err = document.getElementById("errorBanner");
       const topBundle = window.BANPICK_DATA && window.BANPICK_DATA.top;
       if (!topBundle || !topBundle.champions) {
@@ -2100,8 +2195,10 @@
       window.BANPICK_ANALYTICS_TOP = ANALYTICS;
 
       const m = ANALYTICS.meta;
+      const apiSum = ANALYTICS.apiSummary || {};
+      const apiTag = apiSum.hasAnyApiStats ? ` · 실측 ${apiSum.apiChampCount}종` : "";
       document.getElementById("patchPill").textContent =
-        `패치 ${m.patch || "26.23"} · 탑 ${ANALYTICS.items.length}종 (v${window.BANPICK_ENGINE.VERSION || "2.3.4"})`;
+        `패치 ${m.patch || "26.23"} · 탑 ${ANALYTICS.items.length}종${apiTag} (v${window.BANPICK_ENGINE.VERSION || "2.4.0"})`;
       if (m.isCollecting) {
         document.getElementById("collectingPill").style.display = "inline-block";
       }
