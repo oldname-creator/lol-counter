@@ -1,8 +1,7 @@
 /**
- * BANPICK - LoL 26.23 패치 탑 라인 통합 데이터 (data_top.js v2.3.4)
- * - 총 65종 탑 챔피언 (메인 53종 + 조커 12종) + 목록 외 조커 픽(1종) 안전 매핑
- * - 스키마 v2.3.4 (1차 감사 완료): 2축 분리 카운터(🔥라인전 압도 / ⏳중후반 역전 / ⚠초반 압박 주의),
- *   OP 단순 승률 과승격 정리, 중복 메타 키 제거, 3패치 표본 적응형 & API 라인전 지표 슬롯 완비
+ * BANPICK - LoL 16.23 패치 탑 라인 통합 데이터 (data_top.js v2.4.0-20261127)
+ * - 총 65종 탑 챔피언 + 목록 외 조커 픽(1종) 안전 매핑
+ * - 스키마 v2.4.0-20261127: Riot API KR 에메랄드+ 자동 수집 + 2축 분리 카운터 & 3패치 표본 적응형
  */
 
 window.BANPICK_DATA = window.BANPICK_DATA || {};
@@ -11,10 +10,10 @@ window.BANPICK_DATA.top = {
   meta: {
   "schemaVersion": "2.3.4",
   "lane": "top",
-  "patch": "26.23",
+  "patch": "16.23",
   "tierScope": "EMERALD_PLUS",
   "tierAvgWinRate": 51.8,
-  "isCollecting": false,
+  "isCollecting": true,
   "updatedAt": "2026-11-27",
   "rosterCutline": {
     "mainMinPickRate": 0.5,
@@ -22,14 +21,14 @@ window.BANPICK_DATA.top = {
     "newOrReworkMinPickRate": 1.0,
     "bayesianPriorGames": 200
   },
-  "dataVersion": "2.3.4",
+  "dataVersion": "2.4.0-20261127",
   "counterModel": {
     "type": "two_axis_separated",
     "aggregation": "sample_adaptive_3patch",
     "patchWindow": [
-      "26.23",
-      "26.22",
-      "26.21"
+      "16.23",
+      "16.22",
+      "16.21"
     ],
     "defaultPatchWeights": [
       0.55,
