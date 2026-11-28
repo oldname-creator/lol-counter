@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-BANPICK - KR 솔랭 탑 라인 자동 수집 & 집계기 (scripts/collect_top.py v1.1.0)
+BANPICK - KR 솔랭 탑 라인 자동 수집 & 집계기 (scripts/collect_top.py v1.2.0)
 - 외부 라이브러리(pip install) 없이 Python 3 표준 라이브러리만으로 즉시 실행 가능
 - 기능:
   1) DDragon 최신 패치 버전 조회 및 챔피언 ID <-> 한국어 이름 매핑
@@ -61,6 +61,7 @@ class RiotAPIClient:
         self.total_requests = 0
 
     def _wait_for_slot(self):
+        logged_long_wait = False
         while True:
             now = time.monotonic()
             while self.ts_1s and (now - self.ts_1s[0]) >= 1.05:
@@ -76,8 +77,9 @@ class RiotAPIClient:
 
             if wait_sec <= 0:
                 break
-            if wait_sec > 3.0:
-                print(f"  [레이트 리밋 대기] 라이엇 2분 호출 한도 보호를 위해 {wait_sec:.1f}초 대기 중...")
+            if wait_sec > 3.0 and not logged_long_wait:
+                print(f"  [레이트 리밋 대기] 라이엇 2분 호출 한도 보호를 위해 약 {wait_sec:.0f}초 대기 중...")
+                logged_long_wait = True
             time.sleep(min(wait_sec, 5.0))
 
         stamp = time.monotonic()
@@ -179,50 +181,74 @@ def build_champion_key_maps(champions: dict, external_champions: dict, ddragon_v
 # ==============================================================================
 # 4. KR 솔랭 시드 유저 & Top 맞대결 수집기
 # ==============================================================================
-def fetch_seed_puuids(client: RiotAPIClient, target_puuids: int = 35):
+def pick_active_puuids(entries, limit: int):
+    """휴면(inactive) 계정을 제외하고 시즌 판수가 많은 현역 유저 순으로 PUUID 추출"""
+    if not isinstance(entries, list):
+        return []
+    active = []
+    for ent in entries:
+        p = ent.get("puuid")
+        if not p or ent.get("inactive"):
+            continue
+        total_games = int(ent.get("wins") or 0) + int(ent.get("losses") or 0)
+        hot = 1 if ent.get("hotStreak") else 0
+        active.append((hot, total_games, p))
+    active.sort(reverse=True)
+    return [p for _, _, p in active[:limit]]
+
+
+def fetch_seed_puuids(client: RiotAPIClient, target_puuids: int = 90):
     """
-    KR 서버 에메랄드+ 솔랭 유저 PUUID 수집 (Emerald I~IV, Diamond I~IV, Master)
+    KR 서버 에메랄드+ 현역 솔랭 유저 PUUID 균형 수집 (Emerald + Diamond + Master)
+    - API 3회 호출만으로 휴면/주차 계정을 걸러낸 현역 시드 풀 확보
     """
+    day_seed = datetime.date.today().toordinal()
+    divs = ["I", "II", "III", "IV"]
+    em_div = divs[day_seed % len(divs)]
+    di_div = divs[(day_seed + 1) % len(divs)]
+    page = (day_seed % 3) + 1
+
+    buckets = []
+
+    # 1) 에메랄드 현역 (주력 구간)
+    em_entries = client.get_json(
+        f"{PLATFORM_HOST}/lol/league/v4/entries/RANKED_SOLO_5x5/EMERALD/{em_div}?page={page}",
+        use_api_key=True,
+    )
+    buckets.append(pick_active_puuids(em_entries, 40))
+
+    # 2) 다이아몬드 현역
+    di_entries = client.get_json(
+        f"{PLATFORM_HOST}/lol/league/v4/entries/RANKED_SOLO_5x5/DIAMOND/{di_div}?page={page}",
+        use_api_key=True,
+    )
+    buckets.append(pick_active_puuids(di_entries, 35))
+
+    # 3) 마스터 현역 (휴면 강등으로 최근 7일 활성도 최상)
+    master_data = client.get_json(
+        f"{PLATFORM_HOST}/lol/league/v4/masterleagues/by-queue/RANKED_SOLO_5x5",
+        use_api_key=True,
+    )
+    if isinstance(master_data, dict):
+        m_entries = master_data.get("entries", [])
+        # 매일 다른 구간을 슬라이스해 중복 시드 최소화
+        offset = (day_seed * 37) % max(1, len(m_entries))
+        rotated_m = m_entries[offset:] + m_entries[:offset]
+        buckets.append(pick_active_puuids(rotated_m[:250], 35))
+
+    # 3개 티어 버킷을 번갈아 섞어(round-robin) 에메랄드·다이아·마스터 균형 유지
     puuids = []
     seen = set()
-
-    def add_entries(entries):
-        if not isinstance(entries, list):
-            return
-        for ent in entries:
-            p = ent.get("puuid")
-            if p and p not in seen:
-                seen.add(p)
-                puuids.append(p)
-                if len(puuids) >= target_puuids:
-                    return
-
-    # 1) 에메랄드 & 다이아몬드 (전체 솔랭 표본의 주력 구간)
-    tiers_divs = [
-        ("EMERALD", "I"), ("EMERALD", "II"), ("EMERALD", "III"), ("EMERALD", "IV"),
-        ("DIAMOND", "I"), ("DIAMOND", "II"), ("DIAMOND", "III"), ("DIAMOND", "IV"),
-    ]
-    # 날짜 기반 로테이션으로 매일 다른 페이지/디비전 샘플링
-    day_seed = datetime.date.today().toordinal()
-    rotated = tiers_divs[day_seed % len(tiers_divs):] + tiers_divs[:day_seed % len(tiers_divs)]
-
-    for tier, div in rotated:
-        if len(puuids) >= target_puuids:
-            break
-        page = (day_seed % 3) + 1
-        url = f"{PLATFORM_HOST}/lol/league/v4/entries/RANKED_SOLO_5x5/{tier}/{div}?page={page}"
-        entries = client.get_json(url, use_api_key=True)
-        add_entries(entries)
-
-    # 2) 마스터 리그 상위 표본 소량 혼합
-    if len(puuids) < target_puuids:
-        master_data = client.get_json(
-            f"{PLATFORM_HOST}/lol/league/v4/masterleagues/by-queue/RANKED_SOLO_5x5",
-            use_api_key=True,
-        )
-        if isinstance(master_data, dict):
-            add_entries(master_data.get("entries", [])[:15])
-
+    max_len = max((len(b) for b in buckets), default=0)
+    for i in range(max_len):
+        for b in buckets:
+            if i < len(b):
+                p = b[i]
+                if p not in seen:
+                    seen.add(p)
+                    puuids.append(p)
+                    if len(puuids) >= target_puuids:
+                        return puuids
     return puuids
 
 
@@ -696,6 +722,13 @@ def run_self_test(data_js_path: str):
     mid = 1
     # Bug 1 회귀 검증: patch_sort_key 정상 정렬 확인
     assert patch_sort_key("26.24") > patch_sort_key("26.23") > patch_sort_key("26.9"), "patch_sort_key 정렬 오류!"
+    # v1.2.0 휴면 계정 필터 & 판수 우선 정렬 검증
+    mock_entries = [
+        {"puuid": "parked", "inactive": True, "wins": 200, "losses": 200},
+        {"puuid": "low_act", "inactive": False, "wins": 10, "losses": 10},
+        {"puuid": "high_act", "inactive": False, "wins": 120, "losses": 110},
+    ]
+    assert pick_active_puuids(mock_entries, 5) == ["high_act", "low_act"], "pick_active_puuids 필터 오류!" 
 
     for winner_c, loser_c, win_prob, n_games in sample_pairs:
         for i in range(n_games):
@@ -740,7 +773,8 @@ def main():
     parser = argparse.ArgumentParser(description="BANPICK KR 솔랭 탑 데이터 자동 수집기")
     parser.add_argument("--api-key", default=os.environ.get("RIOT_API_KEY", ""), help="Riot API Key (기본: RIOT_API_KEY 환경변수)")
     parser.add_argument("--max-matches", type=int, default=int(os.environ.get("MAX_MATCHES", "120")), help="1회 실행당 최대 신규 수집 경기 수")
-    parser.add_argument("--seed-users", type=int, default=35, help="시드 PUUID 조회 인원 수")
+    parser.add_argument("--seed-users", type=int, default=90, help="현역 시드 PUUID 확보 인원 수")
+    parser.add_argument("--lookback-days", type=int, default=7, help="최근 N일 이내 경기만 조회 (구패치 휴면 경기 원천 차단)")
     parser.add_argument("--data-js", default=DEFAULT_DATA_JS, help="대상 data_top.js 경로")
     parser.add_argument("--index-html", default=DEFAULT_INDEX_HTML, help="캐시 태그 동기화할 index.html 경로")
     parser.add_argument("--history", default=DEFAULT_HISTORY_JSON, help="누적 히스토리 JSON 경로")
@@ -764,31 +798,46 @@ def main():
 
     num_to_ko, en_to_ko = build_champion_key_maps(champs, ext, dd_full, client)
 
-    # 2) KR 에메랄드+ 시드 유저 조회
+    # 2) KR 에메랄드+ 현역 시드 유저 조회
     puuids = fetch_seed_puuids(client, target_puuids=args.seed_users)
-    print(f"[2/4] KR 에메랄드+ 시드 유저 {len(puuids)}명 확보")
+    print(f"[2/4] KR 에메랄드+ 현역 시드 유저 {len(puuids)}명 확보 (API 호출 {client.total_requests}회)")
 
-    # 3) 신규 솔랭 경기 수집
+    # 3) 최근 lookback_days일 이내 신규 솔랭 경기 수집 (구패치 휴면 경기 차단)
     already_seen = set()
     for p_data in history.get("patches", {}).values():
         already_seen.update(p_data.get("seenMatchIds", []))
 
+    start_ts = int(time.time()) - max(1, args.lookback_days) * 86400
+    target_candidates = int(args.max_matches * 1.45)
     candidate_ids = []
     seen_cand = set()
+    checked_users = 0
+    active_users = 0
+
     for puuid in puuids:
-        if len(candidate_ids) >= args.max_matches * 2:
+        if len(candidate_ids) >= target_candidates:
             break
-        ids_url = f"{REGIONAL_HOST}/lol/match/v5/matches/by-puuid/{urllib.parse.quote(puuid)}/ids?queue=420&type=ranked&count=15"
+        checked_users += 1
+        ids_url = (
+            f"{REGIONAL_HOST}/lol/match/v5/matches/by-puuid/{urllib.parse.quote(puuid)}/ids"
+            f"?queue=420&type=ranked&startTime={start_ts}&count=20"
+        )
         m_ids = client.get_json(ids_url, use_api_key=True)
-        if isinstance(m_ids, list):
+        if isinstance(m_ids, list) and m_ids:
+            active_users += 1
             for mid in m_ids:
                 if mid not in already_seen and mid not in seen_cand:
                     seen_cand.add(mid)
                     candidate_ids.append(mid)
 
-    print(f"[3/4] 신규 후보 경기 {len(candidate_ids)}건 중 최대 {args.max_matches}건 수집 시작...")
+    print(
+        f"[3/4] 최근 {args.lookback_days}일 기준 현역 {active_users}/{checked_users}명에서 "
+        f"신규 후보 {len(candidate_ids)}건 확보 → 최대 {args.max_matches}건 수집 시작..."
+    )
     collected_valid = 0
     inspected = 0
+    patch_counts = collections.Counter()
+
     for mid in candidate_ids:
         if collected_valid >= args.max_matches:
             break
@@ -797,10 +846,15 @@ def main():
         rec = extract_top_match_record(m_json, num_to_ko, en_to_ko)
         if rec and ingest_match_into_history(history, rec):
             collected_valid += 1
+            patch_counts[rec["patch"]] += 1
             if collected_valid % 20 == 0:
                 print(f"  · 진행률: 유효 탑 매치 {collected_valid}/{args.max_matches}판 수집 완료 (API 호출 {client.total_requests}회)")
 
-    print(f"  · 수집 종료: 조회 {inspected}건 중 유효 탑 1:1 경기 {collected_valid}판 신규 반영 (총 API 호출 {client.total_requests}회)")
+    dist_str = ", ".join(f"{p}={cnt}판" for p, cnt in patch_counts.most_common()) or "없음"
+    print(
+        f"  · 수집 종료: 조회 {inspected}건 중 유효 탑 1:1 경기 {collected_valid}판 신규 반영 "
+        f"(패치 분포: {dist_str} / 총 API 호출 {client.total_requests}회)"
+    )
 
     # 4) 저장 및 data_top.js / index.html 갱신
     save_history(args.history, history)
