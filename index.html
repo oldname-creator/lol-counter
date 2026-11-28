@@ -834,6 +834,11 @@
       color: #d7d7e2;
       line-height: 1.45;
     }
+    .matchup-tip.win-tip {
+      border-left-color: var(--emerald);
+      background: rgba(16, 185, 129, 0.06);
+      color: #e6f4ee;
+    }
     .matchup-stat-pill {
       font-size: 11px;
       font-weight: 700;
@@ -1024,9 +1029,10 @@
 
   <div id="toast" class="toast"></div>
 
-  <!-- External Data & Calculation Engine (UI v2.6.1 / Engine v2.4.4) -->
-  <script src="data_top.js?v=2.4.1-20261128"></script>
-  <script src="engine.js?v=2.4.4"></script>
+  <!-- External Data, Tips & Calculation Engine (UI v2.6.2 / Engine v2.4.5 / Tips v1.0.0) -->
+  <script src="data_top.js?v=2.4.1"></script>
+  <script src="tips_top.js?v=1.0.0"></script>
+  <script src="engine.js?v=2.4.5"></script>
 
   <script>
     /* =========================================================================
@@ -1044,7 +1050,7 @@
     const DDRAGON_FALLBACK = "15.22.1";
     const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
-    const UI_VERSION = "2.6.1";
+    const UI_VERSION = "2.6.2";
     const DEFAULT_SORT_BY_MODE = {
       meta: { key: "metaScore", dir: "desc" },
       blind: { key: "blindScore", dir: "desc" },
@@ -1783,7 +1789,9 @@
             ${renderArchBadge(bp.archetype, bp.archetypeLabel)}
             ${bp.enemyWr != null ? `<span class="badge b-tag">승률 ${bp.enemyWr}%</span>` : ""}
           `;
-          if (bp.hint) {
+          if (bp.counterTip) {
+            tipHtml = `<div class="verdict-tip ok-tip">🎯 <strong>${safeBp} 1줄 공략:</strong> ${escapeHtml(bp.counterTip)}</div>`;
+          } else if (bp.hint) {
             tipHtml = `<div class="verdict-tip ok-tip">🎯 ${escapeHtml(bp.hint)}</div>`;
           }
         } else if (poolEval.verdict === "neutral") {
@@ -1912,7 +1920,9 @@
                 </div>
                 ${statPieces.length ? `<span class="matchup-stat-pill">${statPieces.join(" · ")}</span>` : ""}
               </div>
-              ${mStat && mStat.tip ? `<div class="matchup-tip">💡 ${escapeHtml(mStat.tip)}</div>` : ""}
+              ${(labelType !== "lane" && it.counterTips && it.counterTips[cName])
+                ? `<div class="matchup-tip win-tip">🎯 <strong>${safeCName} 공략:</strong> ${escapeHtml(it.counterTips[cName])}</div>`
+                : (mStat && mStat.tip ? `<div class="matchup-tip">💡 ${escapeHtml(mStat.tip)}</div>` : "")}
             </div>
           `;
         }).join("")}</div>`;
@@ -2477,7 +2487,7 @@
     }
 
     async function bootstrap() {
-      const EXPECTED_ENGINE_VER = "2.4.4";
+      const EXPECTED_ENGINE_VER = "2.4.5";
       const err = document.getElementById("errorBanner");
       const topBundle = window.BANPICK_DATA && window.BANPICK_DATA.top;
       if (!topBundle || !topBundle.champions) {
@@ -2509,7 +2519,8 @@
         ]);
       }
 
-      ANALYTICS = window.BANPICK_ENGINE.computeTopAnalytics(topBundle);
+      const topTips = window.BANPICK_TIPS && window.BANPICK_TIPS.top;
+      ANALYTICS = window.BANPICK_ENGINE.computeTopAnalytics(topBundle, topTips);
       window.BANPICK_ANALYTICS_TOP = ANALYTICS;
 
       const m = ANALYTICS.meta;

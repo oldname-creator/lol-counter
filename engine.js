@@ -1,5 +1,5 @@
 /**
- * BANPICK - 순수 계산 & 분석 엔진 (engine.js v2.4.4)
+ * BANPICK - 순수 계산 & 분석 엔진 (engine.js v2.4.5)
  * - DOM / HTML과 완전히 분리된 순수 연산 모듈 (향후 UI 교체 및 미드·바텀 확장 공용)
  * - 티켓 1 반영: 50:50 평균 합산 폐기 -> 2축 분리 카운터 판정(승률 축 / 라인전 축)
  *   · 승률(+) & 라인전(+) -> 🔥 라인전 압도 (정석 카운터)
@@ -7,7 +7,7 @@
  *   · 승률(-) & 라인전(+) -> ⚠ 초반 압박 주의 (정식 카운터 제외, 주의 섹션 분리)
  */
 window.BANPICK_ENGINE = (function () {
-  const VERSION = "2.4.4";
+  const VERSION = "2.4.5";
 
   const TIER_BASE = { "OP": 95, "1티어": 83, "2티어": 69, "3티어": 55, "4티어": 41, "5티어": 28 };
   const TIER_ORDER = { "OP": 0, "1티어": 1, "2티어": 2, "3티어": 3, "4티어": 4, "5티어": 5 };
@@ -192,11 +192,15 @@ window.BANPICK_ENGINE = (function () {
     return null;
   }
 
-  function computeTopAnalytics(topBundle) {
+  function computeTopAnalytics(topBundle, tipsBundle) {
     const meta = topBundle.meta || {};
     const raw = topBundle.champions || {};
     const external = topBundle.externalChampions || {};
     const names = Object.keys(raw);
+    const resolvedTipsBundle = tipsBundle || (typeof window !== "undefined" && window.BANPICK_TIPS && window.BANPICK_TIPS.top) || {};
+    const counterTipsMap = (resolvedTipsBundle && resolvedTipsBundle.counterTips && typeof resolvedTipsBundle.counterTips === "object")
+      ? resolvedTipsBundle.counterTips
+      : {};
     const priorGames = (meta.rosterCutline && meta.rosterCutline.bayesianPriorGames) || 200;
     const avgWr = meta.tierAvgWinRate || 51.8;
     const counterModel = meta.counterModel || {
@@ -443,6 +447,7 @@ window.BANPICK_ENGINE = (function () {
         counter: effectiveSoft,
         matchupStats: c.matchupStats || {},
         matchupMeta,
+        counterTips: (counterTipsMap[name] && typeof counterTipsMap[name] === "object") ? counterTipsMap[name] : {},
         note: c.note || "",
         stats,
         smoothedWr,
@@ -484,7 +489,26 @@ window.BANPICK_ENGINE = (function () {
       pickRateWeightedBlindCount
     };
 
-    return { meta, items, byName, external, counterModel, apiSummary };
+    let tipChampCount = 0;
+    let tipMatchupCount = 0;
+    Object.keys(counterTipsMap).forEach((k) => {
+      const entry = counterTipsMap[k];
+      if (byName[k] && entry && typeof entry === "object") {
+        const cnt = Object.keys(entry).filter((opp) => typeof entry[opp] === "string" && entry[opp].trim()).length;
+        if (cnt > 0) {
+          tipChampCount++;
+          tipMatchupCount += cnt;
+        }
+      }
+    });
+    const tipSummary = {
+      version: resolvedTipsBundle.version || null,
+      updatedAt: resolvedTipsBundle.updatedAt || null,
+      champCount: tipChampCount,
+      matchupCount: tipMatchupCount
+    };
+
+    return { meta, items, byName, external, counterModel, apiSummary, tipSummary };
   }
 
   function diagnosePool(pool, byName, items) {
@@ -594,6 +618,9 @@ window.BANPICK_ENGINE = (function () {
           : (vsEnemyMeta && vsEnemyMeta.archetype === "lane_dominate"
             ? "초반 라인전부터 주도권 잡고 압박"
             : null);
+        const counterTip = (enemy.counterTips && typeof enemy.counterTips[pName] === "string" && enemy.counterTips[pName].trim())
+          ? enemy.counterTips[pName].trim()
+          : null;
 
         tiers.optimal.push({
           name: pName,
@@ -605,6 +632,7 @@ window.BANPICK_ENGINE = (function () {
           archetypeLabel: vsEnemyMeta ? vsEnemyMeta.label : null,
           enemyWr: vsEnemyStat && vsEnemyStat.wr != null ? +(100 - vsEnemyStat.wr).toFixed(1) : null,
           hint: winHint,
+          counterTip,
           rankScore: (isHardCounter ? 200 : 100) + pObj.metaScore * 0.6 + pObj.counterScore * 0.4,
           metaScore: pObj.metaScore,
           blindScore: pObj.blindScore,
