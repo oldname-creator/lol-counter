@@ -11,7 +11,7 @@ on:
         required: false
         default: '120'
 
-# 동시 실행 잠금: 실행 중 1개 + 대기 1개 순차 처리 (git push 충돌 원천 차단)
+# 동시 실행 잠금: 실행 중 1개 + 대기 1개 순차 처리 (Actions 간 충돌 차단)
 concurrency:
   group: banpick-top-data-collector
   cancel-in-progress: false
@@ -22,11 +22,13 @@ permissions:
 jobs:
   collect-top-data:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 20
 
       - name: Set up Python 3
         uses: actions/setup-python@v5
@@ -42,14 +44,59 @@ jobs:
           MAX_MATCHES: ${{ github.event.inputs.max_matches || '120' }}
         run: python3 scripts/collect_top.py
 
-      - name: Commit and push updated data
+      - name: Commit and push updated data (auto-merge safe)
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data_top.js index.html data/raw_top_history.json
-          if git diff --staged --quiet; then
+
+          if [ -z "$(git status --porcelain data_top.js index.html data/raw_top_history.json)" ]; then
             echo "변경된 데이터가 없어 커밋을 건너뜁니다."
-          else
-            git commit -m "chore(data): auto-update KR top-lane stats"
-            git push
+            exit 0
           fi
+
+          BASE_SHA="$(git rev-parse HEAD)"
+          TMP_DIR="$(mktemp -d)"
+          cp data_top.js "$TMP_DIR/data_top.js"
+          if [ -f data/raw_top_history.json ]; then
+            cp data/raw_top_history.json "$TMP_DIR/raw_top_history.json"
+          fi
+
+          for attempt in 1 2 3; do
+            git fetch origin main
+            REMOTE_SHA="$(git rev-parse origin/main)"
+
+            if [ "$(git rev-parse HEAD)" != "$REMOTE_SHA" ]; then
+              if git diff --name-only "$BASE_SHA" "$REMOTE_SHA" | grep -Eq '^(data_top\.js|data/raw_top_history\.json)$'; then
+                echo "::error::원격 저장소의 data_top.js 또는 raw_top_history.json이 동시에 변경되어 안전하게 중단합니다."
+                exit 1
+              fi
+
+              echo "수집 중 업로드된 최신 파일과 자동 병합합니다 (시도 ${attempt}/3)..."
+              git reset --hard origin/main
+              cp "$TMP_DIR/data_top.js" data_top.js
+              if [ -f "$TMP_DIR/raw_top_history.json" ]; then
+                mkdir -p data
+                cp "$TMP_DIR/raw_top_history.json" data/raw_top_history.json
+              fi
+              python3 -c "import sys; sys.path.insert(0, 'scripts'); import collect_top; m, _, _ = collect_top.load_existing_data_js('data_top.js'); collect_top.sync_index_html_cache_tag('index.html', m.get('dataVersion', '2.4.1'))"
+            fi
+
+            git add data_top.js index.html data/raw_top_history.json
+            if git diff --staged --quiet; then
+              echo "변경된 데이터가 없어 커밋을 건너뜁니다."
+              exit 0
+            fi
+
+            git commit -m "chore(data): auto-update KR top-lane stats"
+            if git push origin HEAD:main; then
+              echo "최신 데이터 저장 완료!"
+              exit 0
+            fi
+
+            echo "푸시 경합 감지 — 3초 후 재시도합니다 (${attempt}/3)..."
+            sleep 3
+          done
+
+          echo "::error::3회 재시도 후에도 푸시에 실패했습니다."
+          exit 1
