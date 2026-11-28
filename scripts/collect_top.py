@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-BANPICK - KR 솔랭 탑 라인 자동 수집 & 집계기 (scripts/collect_top.py v1.2.0)
+BANPICK - KR 솔랭 탑 라인 자동 수집 & 집계기 (scripts/collect_top.py v1.3.0)
 - 외부 라이브러리(pip install) 없이 Python 3 표준 라이브러리만으로 즉시 실행 가능
 - 기능:
   1) DDragon 최신 패치 버전 조회 및 챔피언 ID <-> 한국어 이름 매핑
@@ -19,6 +19,7 @@ import collections
 import datetime
 import json
 import os
+import random
 import re
 import time
 import urllib.error
@@ -197,32 +198,52 @@ def pick_active_puuids(entries, limit: int):
     return [p for _, _, p in active[:limit]]
 
 
-def fetch_seed_puuids(client: RiotAPIClient, target_puuids: int = 90):
+def fetch_seed_puuids(client: RiotAPIClient, target_puuids: int = 90, rng=None):
     """
-    KR 서버 에메랄드+ 현역 솔랭 유저 PUUID 균형 수집 (Emerald + Diamond + Master)
-    - API 3회 호출만으로 휴면/주차 계정을 걸러낸 현역 시드 풀 확보
+    KR 서버 에메랄드+ 현역 솔랭 유저 PUUID 매 실행 랜덤 균형 수집 (Emerald + Diamond + Master)
+    - v1.3.0: 하루 고정(day_seed) 폐기 -> 매 실행마다 다른 디비전·페이지·마스터 구간을 랜덤 샘플링
+    - 같은 날 수동으로 여러 번 실행해도 중복 유저 재조회(API 낭비) 없이 신규 경기 확보
     """
-    day_seed = datetime.date.today().toordinal()
+    if rng is None:
+        rng = random.SystemRandom()
+
     divs = ["I", "II", "III", "IV"]
-    em_div = divs[day_seed % len(divs)]
-    di_div = divs[(day_seed + 1) % len(divs)]
-    page = (day_seed % 3) + 1
+    em_div = rng.choice(divs)
+    di_div = rng.choice(divs)
+    em_page = rng.randint(1, 10)
+    di_page = rng.randint(1, 8)
 
     buckets = []
 
-    # 1) 에메랄드 현역 (주력 구간)
+    # 1) 에메랄드 현역 (주력 구간 — 페이지 비어 있으면 1페이지 폴백)
     em_entries = client.get_json(
-        f"{PLATFORM_HOST}/lol/league/v4/entries/RANKED_SOLO_5x5/EMERALD/{em_div}?page={page}",
+        f"{PLATFORM_HOST}/lol/league/v4/entries/RANKED_SOLO_5x5/EMERALD/{em_div}?page={em_page}",
         use_api_key=True,
     )
-    buckets.append(pick_active_puuids(em_entries, 40))
+    if not em_entries and em_page != 1:
+        em_page = 1
+        em_entries = client.get_json(
+            f"{PLATFORM_HOST}/lol/league/v4/entries/RANKED_SOLO_5x5/EMERALD/{em_div}?page=1",
+            use_api_key=True,
+        )
+    em_list = pick_active_puuids(em_entries, 45)
+    rng.shuffle(em_list)
+    buckets.append(em_list)
 
     # 2) 다이아몬드 현역
     di_entries = client.get_json(
-        f"{PLATFORM_HOST}/lol/league/v4/entries/RANKED_SOLO_5x5/DIAMOND/{di_div}?page={page}",
+        f"{PLATFORM_HOST}/lol/league/v4/entries/RANKED_SOLO_5x5/DIAMOND/{di_div}?page={di_page}",
         use_api_key=True,
     )
-    buckets.append(pick_active_puuids(di_entries, 35))
+    if not di_entries and di_page != 1:
+        di_page = 1
+        di_entries = client.get_json(
+            f"{PLATFORM_HOST}/lol/league/v4/entries/RANKED_SOLO_5x5/DIAMOND/{di_div}?page=1",
+            use_api_key=True,
+        )
+    di_list = pick_active_puuids(di_entries, 40)
+    rng.shuffle(di_list)
+    buckets.append(di_list)
 
     # 3) 마스터 현역 (휴면 강등으로 최근 7일 활성도 최상)
     master_data = client.get_json(
@@ -231,10 +252,14 @@ def fetch_seed_puuids(client: RiotAPIClient, target_puuids: int = 90):
     )
     if isinstance(master_data, dict):
         m_entries = master_data.get("entries", [])
-        # 매일 다른 구간을 슬라이스해 중복 시드 최소화
-        offset = (day_seed * 37) % max(1, len(m_entries))
-        rotated_m = m_entries[offset:] + m_entries[:offset]
-        buckets.append(pick_active_puuids(rotated_m[:250], 35))
+        if m_entries:
+            offset = rng.randrange(len(m_entries))
+            rotated_m = m_entries[offset:] + m_entries[:offset]
+            m_list = pick_active_puuids(rotated_m[:250], 40)
+            rng.shuffle(m_list)
+            buckets.append(m_list)
+
+    print(f"  · 시드 샘플 구간: EMERALD {em_div} (p.{em_page}) · DIAMOND {di_div} (p.{di_page}) · MASTER 랜덤 구간")
 
     # 3개 티어 버킷을 번갈아 섞어(round-robin) 에메랄드·다이아·마스터 균형 유지
     puuids = []
@@ -313,12 +338,14 @@ def extract_top_match_record(match_json: dict, num_to_ko: dict, en_to_ko: dict):
                 if b_ko:
                     banned_champs.append(b_ko)
 
+    part_puuids = [p for p in (meta.get("participants") or []) if isinstance(p, str) and p]
     return {
         "matchId": match_id,
         "patch": patch,
         "blue": top_by_team[100][0],
         "red": top_by_team[200][0],
         "bans": banned_champs,
+        "participantPuuids": part_puuids,
     }
 
 
@@ -808,52 +835,85 @@ def main():
         already_seen.update(p_data.get("seenMatchIds", []))
 
     start_ts = int(time.time()) - max(1, args.lookback_days) * 86400
-    target_candidates = int(args.max_matches * 1.45)
-    candidate_ids = []
+    target_candidates = int(args.max_matches * 1.25)
+    candidate_queue = collections.deque()
     seen_cand = set()
-    checked_users = 0
-    active_users = 0
+    queried_puuids = set()
+    snowball_queue = collections.deque()
+    snowball_seen = set(puuids)
 
-    for puuid in puuids:
-        if len(candidate_ids) >= target_candidates:
-            break
-        checked_users += 1
+    def fetch_user_candidates(p_id: str, count: int = 12):
+        queried_puuids.add(p_id)
         ids_url = (
-            f"{REGIONAL_HOST}/lol/match/v5/matches/by-puuid/{urllib.parse.quote(puuid)}/ids"
-            f"?queue=420&type=ranked&startTime={start_ts}&count=20"
+            f"{REGIONAL_HOST}/lol/match/v5/matches/by-puuid/{urllib.parse.quote(p_id)}/ids"
+            f"?queue=420&type=ranked&startTime={start_ts}&count={count}"
         )
         m_ids = client.get_json(ids_url, use_api_key=True)
+        added = 0
         if isinstance(m_ids, list) and m_ids:
-            active_users += 1
             for mid in m_ids:
                 if mid not in already_seen and mid not in seen_cand:
                     seen_cand.add(mid)
-                    candidate_ids.append(mid)
+                    candidate_queue.append(mid)
+                    added += 1
+            return True, added
+        return False, 0
+
+    checked_users = 0
+    active_users = 0
+    for puuid in puuids:
+        if len(candidate_queue) >= target_candidates:
+            break
+        checked_users += 1
+        is_act, _ = fetch_user_candidates(puuid, count=12)
+        if is_act:
+            active_users += 1
 
     print(
         f"[3/4] 최근 {args.lookback_days}일 기준 현역 {active_users}/{checked_users}명에서 "
-        f"신규 후보 {len(candidate_ids)}건 확보 → 최대 {args.max_matches}건 수집 시작..."
+        f"신규 후보 {len(candidate_queue)}건 확보 → 최대 {args.max_matches}건 수집 시작..."
     )
     collected_valid = 0
     inspected = 0
+    snowball_used = 0
     patch_counts = collections.Counter()
 
-    for mid in candidate_ids:
-        if collected_valid >= args.max_matches:
-            break
+    while collected_valid < args.max_matches:
+        # 후보가 바닥나면 방금 수집한 경기 참가자(100% 현역 에메랄드+)에서 추가 후보 자동 보충
+        if not candidate_queue:
+            refilled = 0
+            while snowball_queue and len(candidate_queue) < min(60, (args.max_matches - collected_valid) + 15):
+                next_p = snowball_queue.popleft()
+                if next_p in queried_puuids:
+                    continue
+                snowball_used += 1
+                _, added = fetch_user_candidates(next_p, count=12)
+                refilled += added
+                if snowball_used >= 25:
+                    break
+            if not candidate_queue:
+                break
+            print(f"  · [현역 스노우볼 확장] 방금 수집한 경기 참가자에서 신규 후보 {refilled}건 추가 확보")
+
+        mid = candidate_queue.popleft()
         inspected += 1
         m_json = client.get_json(f"{REGIONAL_HOST}/lol/match/v5/matches/{urllib.parse.quote(mid)}", use_api_key=True)
         rec = extract_top_match_record(m_json, num_to_ko, en_to_ko)
         if rec and ingest_match_into_history(history, rec):
             collected_valid += 1
             patch_counts[rec["patch"]] += 1
+            for pp in rec.get("participantPuuids", []):
+                if pp not in snowball_seen and len(snowball_queue) < 200:
+                    snowball_seen.add(pp)
+                    snowball_queue.append(pp)
             if collected_valid % 20 == 0:
                 print(f"  · 진행률: 유효 탑 매치 {collected_valid}/{args.max_matches}판 수집 완료 (API 호출 {client.total_requests}회)")
 
     dist_str = ", ".join(f"{p}={cnt}판" for p, cnt in patch_counts.most_common()) or "없음"
+    sb_note = f" · 스노우볼 {snowball_used}명" if snowball_used > 0 else ""
     print(
         f"  · 수집 종료: 조회 {inspected}건 중 유효 탑 1:1 경기 {collected_valid}판 신규 반영 "
-        f"(패치 분포: {dist_str} / 총 API 호출 {client.total_requests}회)"
+        f"(패치 분포: {dist_str}{sb_note} / 총 API 호출 {client.total_requests}회)"
     )
 
     # 4) 저장 및 data_top.js / index.html 갱신
