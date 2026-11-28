@@ -442,12 +442,33 @@
       font-size: 11px;
       font-weight: 700;
       text-align: left;
-      padding: 8px 10px;
+      padding: 7px 8px;
       border-bottom: 1px solid var(--border);
       white-space: nowrap;
     }
+    thead th.th-num { text-align: right; }
+    thead th.th-sort {
+      cursor: pointer;
+      user-select: none;
+      transition: color 0.12s, background 0.12s;
+    }
+    thead th.th-sort:hover {
+      color: var(--text-main);
+      background: var(--bg-hover);
+    }
+    thead th.th-sort.active { color: var(--gold); }
+    .sort-ind {
+      display: inline-block;
+      margin-left: 3px;
+      font-size: 9.5px;
+      opacity: 0.42;
+    }
+    thead th.th-sort.active .sort-ind {
+      opacity: 1;
+      color: var(--gold);
+    }
     tbody tr {
-      border-bottom: 1px solid rgba(44, 44, 56, 0.65);
+      border-bottom: 1px solid rgba(44, 44, 56, 0.55);
       cursor: pointer;
       transition: background 0.1s;
     }
@@ -457,13 +478,45 @@
     tbody tr.is-joker td:first-child { box-shadow: inset 3px 0 0 var(--violet); }
     tbody tr.in-pool.is-joker td:first-child { box-shadow: inset 3px 0 0 var(--gold); }
     tbody td {
-      padding: 8px 10px;
-      font-size: 13px;
+      padding: 6px 8px;
+      font-size: 12.5px;
       vertical-align: middle;
+    }
+    tbody td.col-sorted { background: rgba(212, 175, 55, 0.045); }
+    .num-cell {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      font-weight: 600;
+      color: var(--text-sub);
+    }
+    .num-empty {
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .score-cell {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    .meta-num {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--gold);
+      min-width: 31px;
+      text-align: right;
+    }
+    .patch-dot {
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1;
     }
 
     .rank-cell {
-      width: 34px;
+      width: 32px;
       color: var(--text-muted);
       font-weight: 700;
       font-variant-numeric: tabular-nums;
@@ -473,9 +526,9 @@
       background: none;
       border: none;
       color: var(--text-muted);
-      font-size: 16px;
+      font-size: 15px;
       cursor: pointer;
-      padding: 2px 4px;
+      padding: 2px 3px;
       line-height: 1;
     }
     .star-btn.active { color: var(--gold); }
@@ -484,13 +537,13 @@
     .champ-cell {
       display: flex;
       align-items: center;
-      gap: 9px;
-      min-width: 155px;
+      gap: 8px;
+      min-width: 145px;
     }
     .avatar {
-      width: 34px;
-      height: 34px;
-      border-radius: 8px;
+      width: 30px;
+      height: 30px;
+      border-radius: 7px;
       background: var(--bg-elevated);
       border: 1px solid var(--border-strong);
       flex-shrink: 0;
@@ -528,8 +581,7 @@
       gap: 5px;
       flex-wrap: wrap;
     }
-    .champ-name { font-weight: 700; font-size: 13.5px; color: var(--text-main); }
-    .champ-sub { font-size: 11px; color: var(--text-muted); }
+    .champ-name { font-weight: 700; font-size: 13px; color: var(--text-main); }
 
     /* Badges */
     .badge {
@@ -556,31 +608,6 @@
     .b-dom { background: rgba(249, 115, 22, 0.16); color: #FDBA74; border: 1px solid rgba(249, 115, 22, 0.45); }
     .b-turn { background: rgba(56, 189, 248, 0.15); color: #7DD3FC; border: 1px solid rgba(56, 189, 248, 0.42); }
     .b-trap { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(245, 158, 11, 0.45); }
-
-    /* Mini 3-axis bars */
-    .tri-bars {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-      min-width: 112px;
-    }
-    .bar-line {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      font-size: 10.5px;
-      color: var(--text-sub);
-    }
-    .bar-label { width: 24px; color: var(--text-muted); }
-    .bar-track {
-      flex: 1;
-      height: 5px;
-      background: var(--bg-base);
-      border-radius: 99px;
-      overflow: hidden;
-    }
-    .bar-fill { height: 100%; border-radius: 99px; }
-    .bar-num { width: 28px; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
 
     .score-big {
       font-size: 14px;
@@ -634,8 +661,7 @@
       .mode-btn .m-desc { font-size: 10px; }
       tbody td, thead th { padding: 7px 6px; font-size: 12px; }
       .champ-cell { min-width: 135px; gap: 7px; }
-      .avatar { width: 30px; height: 30px; }
-      .tri-bars { min-width: 96px; }
+      .avatar { width: 28px; height: 28px; }
     }
 
     .insp-head {
@@ -702,22 +728,7 @@
     .api-stat-card .as-lbl { font-size: 10.5px; color: var(--text-muted); }
     .api-stat-card .as-val { font-size: 14px; font-weight: 800; margin-top: 1px; font-variant-numeric: tabular-nums; }
     .api-stat-card .as-sub { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
-    .stat-inline {
-      display: flex;
-      gap: 7px;
-      flex-wrap: wrap;
-      align-items: center;
-      font-size: 11px;
-      font-variant-numeric: tabular-nums;
-      margin-bottom: 4px;
-      color: var(--text-sub);
-    }
-    .stat-inline strong { font-weight: 700; }
-    .stat-pending {
-      font-size: 10.5px;
-      color: var(--text-muted);
-      margin-top: 3px;
-    }
+
 
     .pool-rec-box {
       background: var(--bg-base);
@@ -968,8 +979,8 @@
 
   <div id="toast" class="toast"></div>
 
-  <!-- External Data & Calculation Engine (v2.4.1 Hotfix) -->
-  <script src="data_top.js?v=2.4.1-20261128"></script>
+  <!-- External Data & Calculation Engine (UI v2.5.0 / Engine v2.4.1) -->
+  <script src="data_top.js?v=2.4.1"></script>
   <script src="engine.js?v=2.4.1"></script>
 
   <script>
@@ -988,9 +999,18 @@
     const DDRAGON_FALLBACK = "15.22.1";
     const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
+    const UI_VERSION = "2.5.0";
+    const DEFAULT_SORT_BY_MODE = {
+      meta: { key: "metaScore", dir: "desc" },
+      blind: { key: "blindScore", dir: "desc" },
+      counter: { key: "counterScore", dir: "desc" }
+    };
+
     const state = {
       ddragonVer: DDRAGON_FALLBACK,
       mode: "meta",
+      sortKey: "metaScore",
+      sortDir: "desc",
       search: "",
       beginnerOnly: false,
       includeJoker: true,
@@ -1232,13 +1252,38 @@
         return true;
       });
 
+      const key = state.sortKey || (DEFAULT_SORT_BY_MODE[state.mode] && DEFAULT_SORT_BY_MODE[state.mode].key) || "metaScore";
+      const mul = state.sortDir === "asc" ? 1 : -1;
+
+      function getMetricVal(it, k) {
+        if (k === "wr") return (it.usedApiStats && it.stats && it.stats.wr != null) ? Number(it.stats.wr) : null;
+        if (k === "pr") return (it.usedApiStats && it.stats && it.stats.pr != null) ? Number(it.stats.pr) : null;
+        if (k === "br") return (it.usedApiStats && it.stats && it.stats.br != null) ? Number(it.stats.br) : null;
+        if (k === "blindScore") return it.blindScore;
+        if (k === "counterScore") return it.counterScore;
+        if (k === "hardCount") return it.hard.length;
+        if (k === "metaTargets") return it.metaTargets.length;
+        return it.metaScore;
+      }
+
       filtered.sort((a, b) => {
-        if (state.mode === "blind") {
-          return b.blindScore - a.blindScore || b.metaScore - a.metaScore;
+        if (key === "name") {
+          return a.name.localeCompare(b.name, "ko") * mul;
         }
-        if (state.mode === "counter") {
-          return b.counterScore - a.counterScore || b.metaScore - a.metaScore;
+        const av = getMetricVal(a, key);
+        const bv = getMetricVal(b, key);
+        const aNull = av == null || Number.isNaN(av);
+        const bNull = bv == null || Number.isNaN(bv);
+        // 미수집('-') 표본은 오름차순·내림차순 모두 항상 하단 고정
+        if (aNull && bNull) return b.metaScore - a.metaScore || b.blindScore - a.blindScore;
+        if (aNull) return 1;
+        if (bNull) return -1;
+        if (av !== bv) return (av - bv) * mul;
+        if (key === "hardCount" && a.counter.length !== b.counter.length) {
+          return (a.counter.length - b.counter.length) * mul;
         }
+        if (state.mode === "blind") return b.blindScore - a.blindScore || b.metaScore - a.metaScore;
+        if (state.mode === "counter") return b.counterScore - a.counterScore || b.metaScore - a.metaScore;
         return b.metaScore - a.metaScore || b.blindScore - a.blindScore;
       });
 
@@ -1376,6 +1421,34 @@
       `;
     }
 
+    function sortThHtml(key, label, alignClass = "", titleAttr = "") {
+      const active = state.sortKey === key;
+      const ariaSort = active ? (state.sortDir === "asc" ? "ascending" : "descending") : "none";
+      const ind = active ? (state.sortDir === "asc" ? "▲" : "▼") : "⇅";
+      const cls = ["th-sort", alignClass, active ? "active" : ""].filter(Boolean).join(" ");
+      return `<th class="${cls}" data-sort="${key}" tabindex="0" role="button" aria-sort="${ariaSort}"${titleAttr ? ` title="${escapeHtml(titleAttr)}"` : ""}>${label}<span class="sort-ind">${ind}</span></th>`;
+    }
+
+    function formatPctCell(it, field) {
+      const hasVal = it.usedApiStats && it.stats && it.stats[field] != null;
+      if (!hasVal) {
+        return `<span class="num-empty" title="KR 솔랭 15판 이상 누적 시 표시">-</span>`;
+      }
+      const val = Number(it.stats[field]);
+      const txt = `${val.toFixed(1)}%`;
+      if (field === "wr") {
+        const col = val >= 51.5 ? "var(--emerald)" : (val <= 48.5 ? "var(--rose)" : "var(--text-main)");
+        const tip = `KR 실측 ${Number(it.stats.games || 0).toLocaleString()}판${it.smoothedWr != null ? ` · 보정 승률 ${it.smoothedWr}%` : ""}`;
+        return `<span style="color:${col};font-weight:700;" title="${escapeHtml(tip)}">${txt}</span>`;
+      }
+      if (field === "pr") {
+        const col = val >= 8.0 ? "var(--sky)" : "var(--text-sub)";
+        return `<span style="color:${col};">${txt}</span>`;
+      }
+      const brCol = val >= 15.0 ? "var(--amber)" : "var(--text-sub)";
+      return `<span style="color:${brCol};">${txt}</span>`;
+    }
+
     function renderTierTable(preserveScroll = true) {
       const scrollBox = document.getElementById("tableScroll");
       const prevScrollTop = preserveScroll ? scrollBox.scrollTop : 0;
@@ -1386,43 +1459,67 @@
       const tbody = document.getElementById("tierBody");
 
       const apiSum = ANALYTICS.apiSummary || {};
+      const colCount = state.mode === "meta" ? 7 : 6;
+      const sortLabels = {
+        name: "챔피언명",
+        metaScore: "종합 점수",
+        blindScore: "선픽 점수",
+        counterScore: "후픽 점수",
+        wr: "승률",
+        pr: "픽률",
+        br: "밴률",
+        hardCount: "하드카운터 수",
+        metaTargets: "OP·1T 저격 수"
+      };
+      const defSort = DEFAULT_SORT_BY_MODE[state.mode] || { key: "metaScore", dir: "desc" };
+      const isCustomSort = state.sortKey !== defSort.key || state.sortDir !== defSort.dir;
+      const sortHint = isCustomSort
+        ? ` · 정렬: ${sortLabels[state.sortKey] || state.sortKey} ${state.sortDir === "asc" ? "▲" : "▼"}`
+        : "";
+
       if (state.mode === "meta") {
         thead.innerHTML = `
           <tr>
-            <th style="text-align:center;">#</th>
-            <th style="width:32px;text-align:center;">★</th>
-            <th>챔피언</th>
-            <th>${apiSum.hasAnyApiStats ? "실측 지표 · 특성" : "특성 (입문·타이밍·속성)"}</th>
-            <th>3축 점수 (메타·선픽·후픽)</th>
+            <th style="width:32px;text-align:center;">#</th>
+            <th style="width:28px;text-align:center;">★</th>
+            ${sortThHtml("name", "챔피언", "", "클릭 시 가나다순 정렬")}
+            ${sortThHtml("metaScore", "티어 · 점수", "th-num", "클릭 시 종합 메타 점수순 정렬")}
+            ${sortThHtml("wr", "승률", "th-num", "클릭 시 KR 실측 승률순 정렬")}
+            ${sortThHtml("pr", "픽률", "th-num", "클릭 시 KR 실측 픽률순 정렬")}
+            ${sortThHtml("br", "밴률", "th-num", "클릭 시 KR 실측 밴률순 정렬")}
           </tr>
         `;
         document.getElementById("formulaHint").textContent = apiSum.hasAnyApiStats
-          ? `종합 메타 = KR 실측 승률(베이지안 보정)·픽률·밴률 반영 (${apiSum.apiChampCount}/${apiSum.totalChamps}종 실측 완료)`
-          : "종합 메타 = 티어 체급 + 패치 변동 + 선/후픽 유틸 (조커 표본 보정)";
+          ? `열 제목 클릭 정렬 · KR 실측 ${apiSum.apiChampCount}/${apiSum.totalChamps}종 반영${sortHint}`
+          : `열 제목 클릭 정렬 · 종합 메타 = 티어 체급 + 패치 변동 + 유틸${sortHint}`;
       } else if (state.mode === "blind") {
         thead.innerHTML = `
           <tr>
-            <th style="text-align:center;">#</th>
-            <th style="width:32px;text-align:center;">★</th>
-            <th>챔피언</th>
-            <th>선픽 안정성</th>
-            <th>하드카운터 수 &amp; 최악의 천적</th>
+            <th style="width:32px;text-align:center;">#</th>
+            <th style="width:28px;text-align:center;">★</th>
+            ${sortThHtml("name", "챔피언", "", "클릭 시 가나다순 정렬")}
+            ${sortThHtml("blindScore", "선픽 점수", "th-num", "클릭 시 선픽 안정성 점수순 정렬")}
+            ${sortThHtml("wr", "승률", "th-num", "클릭 시 KR 실측 승률순 정렬")}
+            ${sortThHtml("hardCount", "최악의 천적", "", "클릭 시 하드카운터 적은 순 정렬")}
           </tr>
         `;
-        document.getElementById("formulaHint").textContent = apiSum.pickRateWeightedBlindCount > 0
-          ? "선픽 안정성 = 2축 분리 카운터 + 천적 실측 픽률·티어 가중 감점 + 표본 희소성 보정"
-          : "선픽 안정성 = 2축 분리 카운터 천적 가중 감점 + 표본 희소성 보정 + 체급";
+        document.getElementById("formulaHint").textContent =
+          (apiSum.pickRateWeightedBlindCount > 0
+            ? "선픽 = 2축 분리 카운터 + 천적 실측 픽률 가중"
+            : "선픽 = 2축 분리 카운터 천적 감점 + 표본 보정") + sortHint;
       } else {
         thead.innerHTML = `
           <tr>
-            <th style="text-align:center;">#</th>
-            <th style="width:32px;text-align:center;">★</th>
-            <th>챔피언</th>
-            <th>후픽 저격력</th>
-            <th>저격 가능한 현 메타 OP·1티어</th>
+            <th style="width:32px;text-align:center;">#</th>
+            <th style="width:28px;text-align:center;">★</th>
+            ${sortThHtml("name", "챔피언", "", "클릭 시 가나다순 정렬")}
+            ${sortThHtml("counterScore", "후픽 점수", "th-num", "클릭 시 후픽 저격력 점수순 정렬")}
+            ${sortThHtml("wr", "승률", "th-num", "클릭 시 KR 실측 승률순 정렬")}
+            ${sortThHtml("metaTargets", "OP·1티어 저격", "", "클릭 시 OP·1티어 저격 수순 정렬")}
           </tr>
         `;
-        document.getElementById("formulaHint").textContent = "후픽 조커 = 2축 분리 카운터 기준 현 메타 OP·1티어 저격력 (조커 페널티 없음)";
+        document.getElementById("formulaHint").textContent =
+          "후픽 = 현 메타 OP·1티어 저격력 (조커 페널티 없음)" + sortHint;
       }
 
       const jokerCount = list.filter((x) => x.rosterType === "joker").length;
@@ -1430,7 +1527,7 @@
         `표시 중: ${list.length}종 (메인 ${list.length - jokerCount} · 조커 ${jokerCount})`;
 
       if (!list.length) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:28px;color:var(--text-muted);">조건에 맞는 챔피언이 없습니다. 필터를 초기화해 보세요.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center;padding:28px;color:var(--text-muted);">조건에 맞는 챔피언이 없습니다. 필터를 초기화해 보세요.</td></tr>`;
         return;
       }
 
@@ -1455,96 +1552,27 @@
           }
         }
 
+        let patchDot = "";
+        if (it.patchFlag && it.patchFlag.label) {
+          const isNerf = it.patchFlag.status === "nerf";
+          patchDot = `<span class="patch-dot" style="color:${isNerf ? "var(--rose)" : "var(--emerald)"};" title="${escapeHtml(it.patchFlag.label)}">${isNerf ? "▼" : "▲"}</span>`;
+        }
+
+        const champTitle = `${it.difficulty} · ${it.timing} · ${it.damageType}·${it.rangeType}${it.playstyleTags.length ? " · " + it.playstyleTags.join(" ") : ""}`;
         const champCell = `
-          <div class="champ-cell">
+          <div class="champ-cell" title="${escapeHtml(champTitle)}">
             ${avatarHtml(it.name)}
             <div class="champ-name-wrap">
               <div class="champ-name-line">
                 <span class="champ-name">${safeName}</span>
-                ${tierBadgeHtml(it.tier)}
+                ${state.mode !== "meta" ? tierBadgeHtml(it.tier) : ""}
                 ${isJoker ? `<span class="badge b-joker">조커</span>` : ""}
+                ${patchDot}
                 ${poolSignal}
-              </div>
-              <div class="champ-sub">
-                ${escapeHtml(it.playstyleTags.join(" "))}
-                ${it.patchFlag && it.patchFlag.label ? ` · <span style="color:${it.patchFlag.status === 'nerf' ? 'var(--rose)' : 'var(--emerald)'}">${escapeHtml(it.patchFlag.label)}</span>` : ""}
               </div>
             </div>
           </div>
         `;
-
-        let col4 = "";
-        let col5 = "";
-
-        if (state.mode === "meta") {
-          let statsLineHtml = "";
-          if (it.usedApiStats && it.stats) {
-            const wrNum = Number(it.stats.wr);
-            const wrCol = wrNum >= 51.5 ? "var(--emerald)" : (wrNum <= 48.5 ? "var(--rose)" : "var(--text-main)");
-            const prTxt = it.stats.pr != null ? `${Number(it.stats.pr).toFixed(1)}%` : "-";
-            const brTxt = it.stats.br != null ? `${Number(it.stats.br).toFixed(1)}%` : "-";
-            const tipAttr = `KR 실측 표본 ${it.stats.games}판${it.smoothedWr != null ? ` · 보정 승률 ${it.smoothedWr}%` : ""}`;
-            statsLineHtml = `
-              <div class="stat-inline" title="${escapeHtml(tipAttr)}">
-                <span>승 <strong style="color:${wrCol};">${wrNum.toFixed(1)}%</strong></span>
-                <span>픽 <strong>${prTxt}</strong></span>
-                <span>밴 <strong>${brTxt}</strong></span>
-              </div>
-            `;
-          }
-          col4 = `
-            <div>
-              ${statsLineHtml}
-              <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">
-                ${diffBadgeHtml(it.difficulty)}
-                <span class="badge b-tag">${escapeHtml(it.timing)}</span>
-                <span class="badge b-tag">${escapeHtml(it.damageType)}·${escapeHtml(it.rangeType)}</span>
-              </div>
-              ${(!it.usedApiStats && apiSum.hasAnyApiStats) ? `<div class="stat-pending">표본 수집 중</div>` : ""}
-            </div>
-          `;
-          col5 = `
-            <div class="tri-bars">
-              <div class="bar-line">
-                <span class="bar-label">메타</span>
-                <div class="bar-track"><div class="bar-fill" style="width:${it.metaScore}%;background:var(--gold);"></div></div>
-                <span class="bar-num" style="color:var(--gold);">${it.metaScore}</span>
-              </div>
-              <div class="bar-line">
-                <span class="bar-label">선픽</span>
-                <div class="bar-track"><div class="bar-fill" style="width:${it.blindScore}%;background:var(--emerald);"></div></div>
-                <span class="bar-num">${it.blindScore}</span>
-              </div>
-              <div class="bar-line">
-                <span class="bar-label">후픽</span>
-                <div class="bar-track"><div class="bar-fill" style="width:${it.counterScore}%;background:var(--amber);"></div></div>
-                <span class="bar-num">${it.counterScore}</span>
-              </div>
-            </div>
-          `;
-        } else if (state.mode === "blind") {
-          col4 = `
-            <div>
-              <span class="score-big" style="color:${it.blindScore >= 70 ? 'var(--emerald)' : it.blindScore >= 50 ? 'var(--text-main)' : 'var(--rose)'}">${it.blindScore}점</span>
-              ${it.blindDataSparse ? `<span class="badge b-tag" style="margin-left:4px;" title="등록 카운터 표본이 적어 보수적으로 보정됨">표본 보정</span>` : ""}
-              <div style="font-size:11px;margin-top:2px;">${gradeBadgeHtml(it.blindGrade, "blind")} · 하드 ${it.hard.length} / 일반 ${it.counter.length}</div>
-            </div>
-          `;
-          col5 = it.worstThreats.length
-            ? `<div class="mini-icons">${it.worstThreats.map((t) => `<span class="mini-chip hard-threat" title="${t.pr != null ? `실측 픽률 ${Number(t.pr).toFixed(1)}% · 위협 가중치 ${t.threatWeight}` : `${escapeHtml(t.tier)} 천적`}">${avatarHtml(t.name, "avatar-sm")} ${escapeHtml(t.name)}${t.pr != null ? ` <span style="opacity:0.8;font-size:10px;">${Number(t.pr).toFixed(1)}%</span>` : ""}</span>`).join("")}</div>`
-            : `<span class="badge b-buff">하드카운터 없음 (최상급 선픽)</span>`;
-        } else {
-          col4 = `
-            <div>
-              <span class="score-big" style="color:${it.counterScore >= 72 ? 'var(--gold)' : it.counterScore >= 55 ? 'var(--amber)' : 'var(--text-sub)'}">${it.counterScore}점</span>
-              <div style="font-size:11px;margin-top:2px;">${gradeBadgeHtml(it.counterGrade, "counter")} · 하드저격 ${it.snipedHard.length} / 일반 ${it.snipedSoft.length}</div>
-            </div>
-          `;
-          const topSnipes = it.metaTargets.slice(0, 4);
-          col5 = topSnipes.length
-            ? `<div class="mini-icons">${topSnipes.map((t) => `<span class="mini-chip ${t.tier === 'OP' ? 'snipe-op' : 'snipe-t1'}" title="${t.type === 'hard' ? '하드카운터 (7:3 저격)' : '일반 카운터 (6:4 우세)'}">${avatarHtml(t.name, "avatar-sm")} ${escapeHtml(t.name)} <span style="opacity:0.85;font-size:10px;">${t.type === 'hard' ? '7:3' : '6:4'}</span></span>`).join("")}${it.metaTargets.length > 4 ? `<span style="font-size:11px;color:var(--text-muted);">+${it.metaTargets.length - 4}</span>` : ""}</div>`
-            : `<span style="font-size:11.5px;color:var(--text-muted);">OP·1티어 저격 없음 (총 ${it.snipedHard.length + it.snipedSoft.length}종 대응)</span>`;
-        }
 
         const trCls = [
           isSel ? "selected" : "",
@@ -1552,15 +1580,72 @@
           isJoker ? "is-joker" : ""
         ].filter(Boolean).join(" ");
 
+        const cNameCls = state.sortKey === "name" ? "col-sorted" : "";
+        let metricCols = "";
+
+        if (state.mode === "meta") {
+          const scCls = state.sortKey === "metaScore" ? "col-sorted" : "";
+          const wrCls = state.sortKey === "wr" ? "num-cell col-sorted" : "num-cell";
+          const prCls = state.sortKey === "pr" ? "num-cell col-sorted" : "num-cell";
+          const brCls = state.sortKey === "br" ? "num-cell col-sorted" : "num-cell";
+          const scoreTip = `선픽 ${it.blindScore}점(${it.blindGrade}) · 후픽 ${it.counterScore}점(${it.counterGrade})`;
+          metricCols = `
+            <td class="${scCls}" title="${escapeHtml(scoreTip)}">
+              <div class="score-cell">
+                ${tierBadgeHtml(it.tier)}
+                <span class="meta-num">${it.metaScore}</span>
+              </div>
+            </td>
+            <td class="${wrCls}">${formatPctCell(it, "wr")}</td>
+            <td class="${prCls}">${formatPctCell(it, "pr")}</td>
+            <td class="${brCls}">${formatPctCell(it, "br")}</td>
+          `;
+        } else if (state.mode === "blind") {
+          const bsCls = state.sortKey === "blindScore" ? "num-cell col-sorted" : "num-cell";
+          const wrCls = state.sortKey === "wr" ? "num-cell col-sorted" : "num-cell";
+          const hcCls = state.sortKey === "hardCount" ? "col-sorted" : "";
+          const threatHtml = it.worstThreats.length
+            ? `<div class="mini-icons">${it.worstThreats.map((t) => `<span class="mini-chip hard-threat" title="${t.pr != null ? `실측 픽률 ${Number(t.pr).toFixed(1)}% · 위협 가중치 ${t.threatWeight}` : `${escapeHtml(t.tier)} 천적`}">${avatarHtml(t.name, "avatar-sm")} ${escapeHtml(t.name)}${t.pr != null ? ` <span style="opacity:0.8;font-size:10px;">${Number(t.pr).toFixed(1)}%</span>` : ""}</span>`).join("")}<span style="font-size:10.5px;color:var(--text-muted);margin-left:2px;">하드 ${it.hard.length}</span></div>`
+            : `<span class="badge b-buff">하드카운터 없음</span>`;
+          metricCols = `
+            <td class="${bsCls}">
+              <div>
+                <span class="score-big" style="color:${it.blindScore >= 70 ? "var(--emerald)" : it.blindScore >= 50 ? "var(--text-main)" : "var(--rose)"}">${it.blindScore}</span>
+                <span style="font-size:11px;margin-left:3px;">${gradeBadgeHtml(it.blindGrade, "blind")}</span>
+                ${it.blindDataSparse ? `<span class="badge b-tag" style="margin-left:3px;" title="등록 카운터 표본이 적어 보수적으로 보정됨">보정</span>` : ""}
+              </div>
+            </td>
+            <td class="${wrCls}">${formatPctCell(it, "wr")}</td>
+            <td class="${hcCls}">${threatHtml}</td>
+          `;
+        } else {
+          const csCls = state.sortKey === "counterScore" ? "num-cell col-sorted" : "num-cell";
+          const wrCls = state.sortKey === "wr" ? "num-cell col-sorted" : "num-cell";
+          const mtCls = state.sortKey === "metaTargets" ? "col-sorted" : "";
+          const topSnipes = it.metaTargets.slice(0, 4);
+          const snipeHtml = topSnipes.length
+            ? `<div class="mini-icons">${topSnipes.map((t) => `<span class="mini-chip ${t.tier === "OP" ? "snipe-op" : "snipe-t1"}" title="${t.type === "hard" ? "하드카운터 (7:3 저격)" : "일반 카운터 (6:4 우세)"}">${avatarHtml(t.name, "avatar-sm")} ${escapeHtml(t.name)} <span style="opacity:0.85;font-size:10px;">${t.type === "hard" ? "7:3" : "6:4"}</span></span>`).join("")}${it.metaTargets.length > 4 ? `<span style="font-size:11px;color:var(--text-muted);">+${it.metaTargets.length - 4}</span>` : ""}</div>`
+            : `<span style="font-size:11.5px;color:var(--text-muted);">OP·1T 저격 없음 (총 ${it.snipedHard.length + it.snipedSoft.length}종)</span>`;
+          metricCols = `
+            <td class="${csCls}">
+              <div>
+                <span class="score-big" style="color:${it.counterScore >= 72 ? "var(--gold)" : it.counterScore >= 55 ? "var(--amber)" : "var(--text-sub)"}">${it.counterScore}</span>
+                <span style="font-size:11px;margin-left:3px;">${gradeBadgeHtml(it.counterGrade, "counter")}</span>
+              </div>
+            </td>
+            <td class="${wrCls}">${formatPctCell(it, "wr")}</td>
+            <td class="${mtCls}">${snipeHtml}</td>
+          `;
+        }
+
         return `
           <tr class="${trCls}" data-row="${safeName}">
             <td class="rank-cell">${idx + 1}</td>
             <td style="text-align:center;">
               <button class="star-btn ${isPool ? "active" : ""}" data-star="${safeName}" type="button" title="내 챔프폭 토글">${isPool ? "★" : "☆"}</button>
             </td>
-            <td>${champCell}</td>
-            <td>${col4}</td>
-            <td>${col5}</td>
+            <td class="${cNameCls}">${champCell}</td>
+            ${metricCols}
           </tr>
         `;
       }).join("");
@@ -1958,9 +2043,38 @@
      * 3. EVENT BINDING & BOOTSTRAP
      * ========================================================================= */
     function bindEvents() {
+      function applySortClick(sortKey) {
+        if (!sortKey) return;
+        if (state.sortKey === sortKey) {
+          state.sortDir = state.sortDir === "desc" ? "asc" : "desc";
+        } else {
+          state.sortKey = sortKey;
+          state.sortDir = (sortKey === "name" || sortKey === "hardCount") ? "asc" : "desc";
+        }
+        renderTierTable(false);
+      }
+
+      const tierHeadEl = document.getElementById("tierHead");
+      tierHeadEl.addEventListener("click", (e) => {
+        const th = e.target.closest("th[data-sort]");
+        if (th) applySortClick(th.getAttribute("data-sort"));
+      });
+      tierHeadEl.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          const th = e.target.closest("th[data-sort]");
+          if (th) {
+            e.preventDefault();
+            applySortClick(th.getAttribute("data-sort"));
+          }
+        }
+      });
+
       document.querySelectorAll(".mode-btn").forEach((btn) => {
         btn.addEventListener("click", () => {
           state.mode = btn.getAttribute("data-mode");
+          const def = DEFAULT_SORT_BY_MODE[state.mode] || { key: "metaScore", dir: "desc" };
+          state.sortKey = def.key;
+          state.sortDir = def.dir;
           document.querySelectorAll(".mode-btn").forEach((b) => b.classList.toggle("active", b === btn));
           renderTierTable(false);
         });
@@ -2036,6 +2150,9 @@
       });
 
       document.getElementById("btnResetFilters").addEventListener("click", () => {
+        const def = DEFAULT_SORT_BY_MODE[state.mode] || { key: "metaScore", dir: "desc" };
+        state.sortKey = def.key;
+        state.sortDir = def.dir;
         state.search = "";
         state.beginnerOnly = false;
         state.includeJoker = true;
@@ -2203,7 +2320,7 @@
       const apiSum = ANALYTICS.apiSummary || {};
       const apiTag = apiSum.hasAnyApiStats ? ` · 실측 ${apiSum.apiChampCount}종` : "";
       document.getElementById("patchPill").textContent =
-        `패치 ${m.patch || "26.23"} · 탑 ${ANALYTICS.items.length}종${apiTag} (v${window.BANPICK_ENGINE.VERSION || "2.4.1"})`;
+        `패치 ${m.patch || "26.23"} · 탑 ${ANALYTICS.items.length}종${apiTag} (v${UI_VERSION})`;
       const updatedEl = document.getElementById("updatedPill");
       if (updatedEl && m.updatedAt) {
         const matchCnt = m.totalPatchMatches || apiSum.approxMatches || 0;
