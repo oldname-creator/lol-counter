@@ -1,5 +1,5 @@
 /**
- * BANPICK - 순수 계산 & 분석 엔진 (engine.js v2.4.3)
+ * BANPICK - 순수 계산 & 분석 엔진 (engine.js v2.4.4)
  * - DOM / HTML과 완전히 분리된 순수 연산 모듈 (향후 UI 교체 및 미드·바텀 확장 공용)
  * - 티켓 1 반영: 50:50 평균 합산 폐기 -> 2축 분리 카운터 판정(승률 축 / 라인전 축)
  *   · 승률(+) & 라인전(+) -> 🔥 라인전 압도 (정석 카운터)
@@ -7,7 +7,7 @@
  *   · 승률(-) & 라인전(+) -> ⚠ 초반 압박 주의 (정식 카운터 제외, 주의 섹션 분리)
  */
 window.BANPICK_ENGINE = (function () {
-  const VERSION = "2.4.3";
+  const VERSION = "2.4.4";
 
   const TIER_BASE = { "OP": 95, "1티어": 83, "2티어": 69, "3티어": 55, "4티어": 41, "5티어": 28 };
   const TIER_ORDER = { "OP": 0, "1티어": 1, "2티어": 2, "3티어": 3, "4티어": 4, "5티어": 5 };
@@ -236,11 +236,12 @@ window.BANPICK_ENGINE = (function () {
       });
     });
 
-    // Pass 1 (v2.4.2): OP.GG·LOL.PS 방식 컴포넌트 Z-score 정규화로 실측 티어·메타 점수 산출
-    // - 베이지안 사전 표본 상한 80판으로 완화해 실측 승률 변별력 확보
-    // - 실측 20종 이상일 때 승률(58%)·로그픽률(28%)·로그밴률(14%) 각각 Z-score 표준화 후 재정규화
+    // Pass 1 (v2.4.4): 소표본 노이즈 & 타 라인 밴률 거품 차단 + 백분위·Z-score 결합 티어
+    // - 베이지안 사전 표본 250판 적용 (백분위 컷라인 덕분에 2티어 팽창 없이 40~80판 연승 거품만 억제)
+    // - 타 라인(미드·정글) 밴률 오염 차단: 실효 밴률 = min(밴률, 탑 픽률 × 3)
+    // - 실측 20종 이상일 때 승률(46%)·로그픽률(40%)·로그실효밴률(14%) 각각 Z-score 표준화 후 백분위 배정
     // - 실측 20종 미만(패치 직후)에는 중심화 절대 공식으로 안전 폴백
-    const effectivePrior = Math.min(80, priorGames);
+    const effectivePrior = Math.max(250, priorGames);
     const apiPrecalc = {};
     const effectiveTierMap = {};
     const apiEntries = [];
@@ -253,12 +254,13 @@ window.BANPICK_ENGINE = (function () {
         const winDelta = smoothedWr - avgWr;
         const pr = Math.max(0, stats.pr != null ? Number(stats.pr) : 1.0);
         const br = Math.max(0, stats.br != null ? Number(stats.br) : 0.0);
+        const effBr = Math.min(br, pr * 3.0);
         apiEntries.push({
           name,
           smoothedWr,
           winDelta,
           prLog: Math.log1p(pr),
-          brLog: Math.log1p(br)
+          brLog: Math.log1p(effBr)
         });
       } else {
         apiPrecalc[name] = { usedApiStats: false, smoothedWr: null, metaScore: null, unifiedTier: c.tier };
@@ -271,7 +273,7 @@ window.BANPICK_ENGINE = (function () {
       const zWr = zNormalizeArray(apiEntries.map((e) => e.winDelta));
       const zPr = zNormalizeArray(apiEntries.map((e) => e.prLog));
       const zBr = zNormalizeArray(apiEntries.map((e) => e.brLog));
-      const combined = apiEntries.map((_, i) => (0.58 * zWr[i]) + (0.28 * zPr[i]) + (0.14 * zBr[i]));
+      const combined = apiEntries.map((_, i) => (0.46 * zWr[i]) + (0.40 * zPr[i]) + (0.14 * zBr[i]));
       const zFinal = zNormalizeArray(combined);
 
       // 모든 챔피언 수치가 완전히 동일한 극단 케이스 방어 (std == 0 -> 중립 3티어 고정)

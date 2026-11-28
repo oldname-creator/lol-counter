@@ -815,6 +815,7 @@
     }
     .matchup-card:hover { border-color: var(--border-strong); }
     .matchup-card.is-mine { border-color: var(--gold-border); background: rgba(212, 175, 55, 0.07); }
+    .matchup-card.is-hard-dim { opacity: 0.72; }
     .matchup-top {
       display: flex;
       align-items: center;
@@ -1023,9 +1024,9 @@
 
   <div id="toast" class="toast"></div>
 
-  <!-- External Data & Calculation Engine (UI v2.6.0 / Engine v2.4.3) -->
-  <script src="data_top.js?v=2.4.1-20261128"></script>
-  <script src="engine.js?v=2.4.3"></script>
+  <!-- External Data & Calculation Engine (UI v2.6.1 / Engine v2.4.4) -->
+  <script src="data_top.js?v=2.4.1"></script>
+  <script src="engine.js?v=2.4.4"></script>
 
   <script>
     /* =========================================================================
@@ -1043,7 +1044,7 @@
     const DDRAGON_FALLBACK = "15.22.1";
     const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
-    const UI_VERSION = "2.6.0";
+    const UI_VERSION = "2.6.1";
     const DEFAULT_SORT_BY_MODE = {
       meta: { key: "metaScore", dir: "desc" },
       blind: { key: "blindScore", dir: "desc" },
@@ -1856,7 +1857,18 @@
         if (!list.length) {
           return `<div style="font-size:12px;color:var(--text-muted);padding:4px 0;">등록된 ${labelType === "hard" ? "하드카운터" : "일반 카운터"} 없음</div>`;
         }
-        return `<div class="matchup-list">${list.map((cName) => {
+        const orderedList = state.beginnerOnly
+          ? list
+              .map((cName, idx) => {
+                const cObj = ANALYTICS.byName[cName] || ANALYTICS.external[cName];
+                const d = cObj ? cObj.difficulty : null;
+                const rank = d === "쉬움" ? 0 : (d === "보통" ? 1 : (d === "어려움" ? 3 : 2));
+                return { cName, idx, rank };
+              })
+              .sort((a, b) => a.rank - b.rank || a.idx - b.idx)
+              .map((x) => x.cName)
+          : list;
+        return `<div class="matchup-list">${orderedList.map((cName) => {
           const cObj = ANALYTICS.byName[cName] || ANALYTICS.external[cName];
           const isExternal = !ANALYTICS.byName[cName];
           const isMine = poolSet.has(cName);
@@ -1887,7 +1899,7 @@
           }
 
           return `
-            <div class="matchup-card ${isMine ? "is-mine" : ""}" ${!isExternal ? `data-jump="${safeCName}"` : ""}>
+            <div class="matchup-card ${isMine ? "is-mine" : ""} ${warnHard ? "is-hard-dim" : ""}" ${!isExternal ? `data-jump="${safeCName}"` : ""}>
               <div class="matchup-top">
                 <div class="matchup-left">
                   ${avatarHtml(cName, "avatar-sm")}
@@ -1959,7 +1971,7 @@
               <div class="api-stat-card">
                 <div class="as-lbl">승률</div>
                 <div class="as-val" style="color:${Number(it.stats.wr) >= 51.5 ? "var(--emerald)" : (Number(it.stats.wr) <= 48.5 ? "var(--rose)" : "var(--text-main)")};">${Number(it.stats.wr).toFixed(1)}%</div>
-                <div class="as-sub">${it.smoothedWr != null && it.stats.games < 200 ? `보정 ${it.smoothedWr}%` : "실측 반영"}</div>
+                <div class="as-sub">${it.smoothedWr != null && it.stats.games < 250 ? `보정 ${it.smoothedWr}%` : "실측 반영"}</div>
               </div>
               <div class="api-stat-card">
                 <div class="as-lbl">픽률</div>
@@ -2032,7 +2044,7 @@
         <div class="insp-section">
           <div class="sec-title">
             <span style="color:var(--rose);">하드카운터 (7:3+) · ${it.hard.length}종</span>
-            <span style="font-size:11px;color:var(--text-muted);">클릭 시 이동</span>
+            <span style="font-size:11px;color:var(--text-muted);">${state.beginnerOnly ? `<span class="badge b-easy">🟢 쉬움·보통 우선</span>` : "클릭 시 이동"}</span>
           </div>
           ${renderCounterCards(it.hard, "hard")}
         </div>
@@ -2040,6 +2052,7 @@
         <div class="insp-section">
           <div class="sec-title">
             <span style="color:var(--amber);">일반 카운터 (6:4+) · ${it.counter.length}종</span>
+            ${state.beginnerOnly ? `<span class="badge b-easy">🟢 쉬움·보통 우선</span>` : ""}
           </div>
           ${renderCounterCards(it.counter, "soft")}
         </div>
@@ -2464,7 +2477,7 @@
     }
 
     async function bootstrap() {
-      const EXPECTED_ENGINE_VER = "2.4.3";
+      const EXPECTED_ENGINE_VER = "2.4.4";
       const err = document.getElementById("errorBanner");
       const topBundle = window.BANPICK_DATA && window.BANPICK_DATA.top;
       if (!topBundle || !topBundle.champions) {
