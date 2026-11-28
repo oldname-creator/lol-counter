@@ -12,7 +12,7 @@ window.BANPICK_DATA.top = {
   "lane": "top",
   "patch": "16.23",
   "tierScope": "EMERALD_PLUS",
-  "tierAvgWinRate": 50.23,
+  "tierAvgWinRate": 50.28,
   "isCollecting": false,
   "updatedAt": "2026-11-28",
   "rosterCutline": {
@@ -50,7 +50,7 @@ window.BANPICK_DATA.top = {
       "lane_trap": "⚠ 초반 압박 주의"
     }
   },
-  "totalPatchMatches": 2288
+  "totalPatchMatches": 2588
 },
   externalChampions: {
   "카르마": {
@@ -96,10 +96,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 41.33,
-      "pr": 3.28,
-      "br": 0.83,
-      "games": 75
+      "wr": 44.58,
+      "pr": 3.21,
+      "br": 0.85,
+      "games": 83
     },
     "patchFlag": {
       "status": null,
@@ -173,10 +173,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "OP",
     "stats": {
-      "wr": 59.63,
-      "pr": 4.76,
-      "br": 24.43,
-      "games": 109
+      "wr": 60.0,
+      "pr": 5.02,
+      "br": 24.61,
+      "games": 130
     },
     "patchFlag": {
       "status": "meta_up",
@@ -247,10 +247,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": 53.62,
-      "pr": 3.02,
-      "br": 0.22,
-      "games": 69
+      "wr": 53.95,
+      "pr": 2.94,
+      "br": 0.27,
+      "games": 76
     },
     "patchFlag": {
       "status": null,
@@ -303,10 +303,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "4티어",
     "stats": {
-      "wr": 53.23,
-      "pr": 2.71,
-      "br": 0.79,
-      "games": 62
+      "wr": 54.29,
+      "pr": 2.7,
+      "br": 0.77,
+      "games": 70
     },
     "patchFlag": {
       "status": null,
@@ -349,10 +349,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 55.86,
-      "pr": 4.85,
-      "br": 2.93,
-      "games": 111
+      "wr": 58.4,
+      "pr": 4.83,
+      "br": 2.86,
+      "games": 125
     },
     "patchFlag": {
       "status": "buff",
@@ -423,10 +423,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": 54.0,
-      "pr": 2.19,
+      "wr": 49.21,
+      "pr": 2.43,
       "br": 2.36,
-      "games": 50
+      "games": 63
     },
     "patchFlag": {
       "status": null,
@@ -467,10 +467,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "1티어",
     "stats": {
-      "wr": 48.18,
-      "pr": 4.81,
-      "br": 5.16,
-      "games": 110
+      "wr": 49.19,
+      "pr": 4.79,
+      "br": 5.53,
+      "games": 124
     },
     "patchFlag": {
       "status": "buff",
@@ -524,10 +524,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "4티어",
     "stats": {
-      "wr": 40.0,
-      "pr": 0.87,
-      "br": 0.87,
-      "games": 20
+      "wr": 45.45,
+      "pr": 0.85,
+      "br": 0.77,
+      "games": 22
     },
     "patchFlag": {
       "status": null,
@@ -566,10 +566,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 41.54,
-      "pr": 2.84,
-      "br": 2.01,
-      "games": 65
+      "wr": 39.13,
+      "pr": 2.67,
+      "br": 1.85,
+      "games": 69
     },
     "patchFlag": {
       "status": null,
@@ -661,10 +661,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "1티어",
     "stats": {
-      "wr": 42.45,
-      "pr": 6.08,
-      "br": 4.5,
-      "games": 139
+      "wr": 43.33,
+      "pr": 5.8,
+      "br": 4.6,
+      "games": 150
     },
     "patchFlag": {
       "status": "meta_up",
@@ -708,10 +708,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "4티어",
     "stats": {
-      "wr": 72.22,
-      "pr": 0.79,
-      "br": 3.23,
-      "games": 18
+      "wr": 65.0,
+      "pr": 0.77,
+      "br": 2.9,
+      "games": 20
     },
     "patchFlag": {
       "status": null,
@@ -750,10 +750,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 56.76,
-      "pr": 1.62,
-      "br": 0.22,
-      "games": 37
+      "wr": 53.85,
+      "pr": 1.51,
+      "br": 0.19,
+      "games": 39
     },
     "patchFlag": {
       "status": null,
@@ -825,10 +825,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 40.0,
-      "pr": 0.87,
-      "br": 1.7,
-      "games": 20
+      "wr": 41.67,
+      "pr": 0.93,
+      "br": 1.93,
+      "games": 24
     },
     "patchFlag": {
       "status": "meta_up",
@@ -868,10 +868,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "4티어",
     "stats": {
-      "wr": 37.5,
-      "pr": 0.7,
-      "br": 0.17,
-      "games": 16
+      "wr": 42.11,
+      "pr": 0.73,
+      "br": 0.15,
+      "games": 19
     },
     "patchFlag": {
       "status": null,
@@ -911,10 +911,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "1티어",
     "stats": {
-      "wr": 56.67,
-      "pr": 5.24,
-      "br": 10.1,
-      "games": 120
+      "wr": 52.86,
+      "pr": 5.41,
+      "br": 10.63,
+      "games": 140
     },
     "patchFlag": {
       "status": "meta_up",
@@ -948,15 +948,15 @@ window.BANPICK_DATA.top = {
         "archetype": "lane_dominate"
       },
       "제이스": {
-        "wr": 60.1,
-        "delta2": 4.94,
+        "wr": 62.3,
+        "delta2": 8.27,
         "gd15": null,
-        "games": 18,
+        "games": 19,
         "patches": 2,
         "tip": null,
         "firstTower": null,
-        "plates": 0.6,
-        "soloKill": 0.55,
+        "plates": 0.73,
+        "soloKill": 0.63,
         "csAdv": null,
         "archetype": null
       }
@@ -984,10 +984,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "1티어",
     "stats": {
-      "wr": 44.93,
-      "pr": 3.02,
-      "br": 0.7,
-      "games": 69
+      "wr": 46.75,
+      "pr": 2.98,
+      "br": 0.81,
+      "games": 77
     },
     "patchFlag": {
       "status": "meta_up",
@@ -1072,10 +1072,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": 50.98,
-      "pr": 2.23,
-      "br": 0.35,
-      "games": 51
+      "wr": 53.97,
+      "pr": 2.43,
+      "br": 0.39,
+      "games": 63
     },
     "patchFlag": {
       "status": null,
@@ -1176,10 +1176,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": 48.39,
-      "pr": 1.35,
-      "br": 1.79,
-      "games": 31
+      "wr": 46.51,
+      "pr": 1.66,
+      "br": 1.74,
+      "games": 43
     },
     "patchFlag": {
       "status": null,
@@ -1233,10 +1233,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 55.0,
-      "pr": 2.62,
-      "br": 0.79,
-      "games": 60
+      "wr": 54.41,
+      "pr": 2.63,
+      "br": 0.97,
+      "games": 68
     },
     "patchFlag": {
       "status": null,
@@ -1291,10 +1291,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": 44.44,
-      "pr": 1.18,
-      "br": 0.22,
-      "games": 27
+      "wr": 44.12,
+      "pr": 1.31,
+      "br": 0.19,
+      "games": 34
     },
     "patchFlag": {
       "status": null,
@@ -1334,10 +1334,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "1티어",
     "stats": {
-      "wr": 31.58,
-      "pr": 0.83,
-      "br": 10.84,
-      "games": 19
+      "wr": 33.33,
+      "pr": 0.93,
+      "br": 10.9,
+      "games": 24
     },
     "patchFlag": {
       "status": "meta_up",
@@ -1379,10 +1379,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "1티어",
     "stats": {
-      "wr": 50.0,
-      "pr": 4.2,
-      "br": 0.79,
-      "games": 96
+      "wr": 51.89,
+      "pr": 4.1,
+      "br": 0.85,
+      "games": 106
     },
     "patchFlag": {
       "status": "meta_up",
@@ -1425,10 +1425,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": 51.85,
-      "pr": 1.18,
-      "br": 23.16,
-      "games": 27
+      "wr": 47.06,
+      "pr": 1.31,
+      "br": 23.92,
+      "games": 34
     },
     "patchFlag": {
       "status": null,
@@ -1471,10 +1471,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 54.72,
-      "pr": 2.32,
-      "br": 0.74,
-      "games": 53
+      "wr": 53.12,
+      "pr": 2.47,
+      "br": 0.7,
+      "games": 64
     },
     "patchFlag": {
       "status": null,
@@ -1530,10 +1530,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 40.0,
-      "pr": 1.75,
-      "br": 0.04,
-      "games": 40
+      "wr": 39.53,
+      "pr": 1.66,
+      "br": 0.08,
+      "games": 43
     },
     "patchFlag": {
       "status": null,
@@ -1676,10 +1676,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 48.15,
-      "pr": 2.36,
-      "br": 1.14,
-      "games": 54
+      "wr": 51.39,
+      "pr": 2.78,
+      "br": 1.08,
+      "games": 72
     },
     "patchFlag": {
       "status": "meta_up",
@@ -1720,10 +1720,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": 43.68,
-      "pr": 3.8,
-      "br": 19.45,
-      "games": 87
+      "wr": 47.06,
+      "pr": 3.94,
+      "br": 19.82,
+      "games": 102
     },
     "patchFlag": {
       "status": null,
@@ -1760,10 +1760,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 51.94,
+      "wr": 52.74,
       "pr": 5.64,
-      "br": 2.36,
-      "games": 129
+      "br": 2.67,
+      "games": 146
     },
     "patchFlag": {
       "status": null,
@@ -1858,10 +1858,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 53.05,
-      "pr": 7.17,
-      "br": 3.1,
-      "games": 164
+      "wr": 51.16,
+      "pr": 6.65,
+      "br": 3.01,
+      "games": 172
     },
     "patchFlag": {
       "status": null,
@@ -1958,10 +1958,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": 60.32,
-      "pr": 2.75,
-      "br": 19.01,
-      "games": 63
+      "wr": 58.46,
+      "pr": 2.51,
+      "br": 18.74,
+      "games": 65
     },
     "patchFlag": {
       "status": null,
@@ -1999,10 +1999,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": 58.33,
-      "pr": 1.05,
-      "br": 2.32,
-      "games": 24
+      "wr": 60.0,
+      "pr": 0.97,
+      "br": 2.13,
+      "games": 25
     },
     "patchFlag": {
       "status": null,
@@ -2046,10 +2046,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "4티어",
     "stats": {
-      "wr": 58.62,
-      "pr": 1.27,
-      "br": 4.28,
-      "games": 29
+      "wr": 60.0,
+      "pr": 1.16,
+      "br": 4.29,
+      "games": 30
     },
     "patchFlag": {
       "status": null,
@@ -2134,10 +2134,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "1티어",
     "stats": {
-      "wr": 36.17,
-      "pr": 2.05,
-      "br": 0.31,
-      "games": 47
+      "wr": 36.21,
+      "pr": 2.24,
+      "br": 0.27,
+      "games": 58
     },
     "patchFlag": {
       "status": "meta_up",
@@ -2206,10 +2206,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "1티어",
     "stats": {
-      "wr": 51.08,
-      "pr": 6.08,
-      "br": 8.65,
-      "games": 139
+      "wr": 50.0,
+      "pr": 5.72,
+      "br": 8.46,
+      "games": 148
     },
     "patchFlag": {
       "status": null,
@@ -2261,10 +2261,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 54.49,
-      "pr": 7.78,
-      "br": 12.19,
-      "games": 178
+      "wr": 52.97,
+      "pr": 7.81,
+      "br": 12.64,
+      "games": 202
     },
     "patchFlag": {
       "status": null,
@@ -2279,7 +2279,21 @@ window.BANPICK_DATA.top = {
     "counter": [
       "레넥톤"
     ],
-    "matchupStats": {},
+    "matchupStats": {
+      "잭스": {
+        "wr": 53.3,
+        "delta2": 0.16,
+        "gd15": null,
+        "games": 15,
+        "patches": 1,
+        "tip": null,
+        "firstTower": null,
+        "plates": -1.87,
+        "soloKill": -1.6,
+        "csAdv": null,
+        "archetype": null
+      }
+    },
     "note": "초반 라인전 압박이 극심한 돌진형 브루저·암살자에 취약",
     "laneExtra": {},
     "rosterType": "main"
@@ -2302,10 +2316,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 32.14,
-      "pr": 2.45,
-      "br": 2.88,
-      "games": 56
+      "wr": 40.58,
+      "pr": 2.67,
+      "br": 2.94,
+      "games": 69
     },
     "patchFlag": {
       "status": null,
@@ -2418,8 +2432,8 @@ window.BANPICK_DATA.top = {
     "tier": "2티어",
     "stats": {
       "wr": 60.0,
-      "pr": 1.31,
-      "br": 0.17,
+      "pr": 1.16,
+      "br": 0.15,
       "games": 30
     },
     "patchFlag": {
@@ -2458,10 +2472,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 37.14,
-      "pr": 1.53,
-      "br": 0.35,
-      "games": 35
+      "wr": 39.47,
+      "pr": 1.47,
+      "br": 0.31,
+      "games": 38
     },
     "patchFlag": {
       "status": null,
@@ -2502,10 +2516,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "1티어",
     "stats": {
-      "wr": 49.38,
-      "pr": 6.99,
-      "br": 24.13,
-      "games": 160
+      "wr": 48.65,
+      "pr": 7.15,
+      "br": 24.23,
+      "games": 185
     },
     "patchFlag": {
       "status": "meta_up",
@@ -2589,10 +2603,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": 52.5,
-      "pr": 1.75,
-      "br": 1.09,
-      "games": 40
+      "wr": 52.08,
+      "pr": 1.85,
+      "br": 1.2,
+      "games": 48
     },
     "patchFlag": {
       "status": null,
@@ -2647,10 +2661,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": null,
-      "pr": null,
-      "br": null,
-      "games": null
+      "wr": 33.33,
+      "pr": 0.58,
+      "br": 0.66,
+      "games": 15
     },
     "patchFlag": {
       "status": null,
@@ -2691,10 +2705,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "1티어",
     "stats": {
-      "wr": 39.81,
-      "pr": 4.5,
-      "br": 0.52,
-      "games": 103
+      "wr": 44.0,
+      "pr": 4.83,
+      "br": 0.58,
+      "games": 125
     },
     "patchFlag": {
       "status": "meta_up",
@@ -2751,10 +2765,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "1티어",
     "stats": {
-      "wr": 44.93,
-      "pr": 9.05,
-      "br": 20.15,
-      "games": 207
+      "wr": 46.7,
+      "pr": 8.77,
+      "br": 19.36,
+      "games": 227
     },
     "patchFlag": {
       "status": null,
@@ -2855,6 +2869,19 @@ window.BANPICK_DATA.top = {
         "soloKill": null,
         "csAdv": null,
         "archetype": "lane_trap"
+      },
+      "요네": {
+        "wr": 46.7,
+        "delta2": -0.16,
+        "gd15": null,
+        "games": 15,
+        "patches": 1,
+        "tip": null,
+        "firstTower": null,
+        "plates": 1.87,
+        "soloKill": 1.6,
+        "csAdv": null,
+        "archetype": null
       }
     },
     "note": "26.23 상위권(4위). 지표상 신지드(66.7%), 우르곳(64.3%), 갱플랭크(63.0%), 가렌(58.1%), 말파이트(54.5%), 하이머딩거(15분 +1,907G) 강세",
@@ -2880,10 +2907,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": null,
-      "pr": null,
-      "br": null,
-      "games": null
+      "wr": 43.75,
+      "pr": 0.62,
+      "br": 19.86,
+      "games": 16
     },
     "patchFlag": {
       "status": "nerf",
@@ -2925,20 +2952,20 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 46.34,
-      "pr": 10.75,
-      "br": 26.4,
-      "games": 246
+      "wr": 44.81,
+      "pr": 10.43,
+      "br": 25.97,
+      "games": 270
     },
     "patchFlag": {
       "status": null,
       "label": null,
       "resetHistory": false
     },
-    "hard": [],
-    "counter": [
+    "hard": [
       "말파이트"
     ],
+    "counter": [],
     "matchupStats": {
       "카밀": {
         "wr": 36.4,
@@ -2980,15 +3007,15 @@ window.BANPICK_DATA.top = {
         "archetype": "late_turnaround"
       },
       "말파이트": {
-        "wr": 39.9,
-        "delta2": -4.94,
+        "wr": 37.7,
+        "delta2": -8.27,
         "gd15": null,
-        "games": 18,
+        "games": 19,
         "patches": 2,
         "tip": "6렙 전까지 말파이트 패시브 보호막을 계속 깨두고 6렙 궁 킬각을 조심하세요.",
         "firstTower": null,
-        "plates": -0.6,
-        "soloKill": -0.55,
+        "plates": -0.73,
+        "soloKill": -0.63,
         "csAdv": null,
         "archetype": "late_turnaround"
       },
@@ -3028,10 +3055,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": 72.22,
-      "pr": 0.79,
-      "br": 0.7,
-      "games": 18
+      "wr": 70.83,
+      "pr": 0.93,
+      "br": 0.85,
+      "games": 24
     },
     "patchFlag": {
       "status": null,
@@ -3072,10 +3099,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "1티어",
     "stats": {
-      "wr": 50.34,
-      "pr": 6.42,
-      "br": 1.14,
-      "games": 147
+      "wr": 50.96,
+      "pr": 6.07,
+      "br": 1.0,
+      "games": 157
     },
     "patchFlag": {
       "status": null,
@@ -3131,10 +3158,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": 77.78,
-      "pr": 0.79,
-      "br": 2.27,
-      "games": 18
+      "wr": 70.0,
+      "pr": 0.77,
+      "br": 2.2,
+      "games": 20
     },
     "patchFlag": {
       "status": null,
@@ -3173,10 +3200,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 53.85,
-      "pr": 3.41,
-      "br": 3.45,
-      "games": 78
+      "wr": 52.17,
+      "pr": 3.55,
+      "br": 3.21,
+      "games": 92
     },
     "patchFlag": {
       "status": null,
@@ -3216,10 +3243,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 62.5,
+      "wr": 61.11,
       "pr": 0.7,
-      "br": 0.35,
-      "games": 16
+      "br": 0.43,
+      "games": 18
     },
     "patchFlag": {
       "status": "buff",
@@ -3262,10 +3289,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 61.54,
-      "pr": 1.14,
-      "br": 0.39,
-      "games": 26
+      "wr": 58.62,
+      "pr": 1.12,
+      "br": 0.35,
+      "games": 29
     },
     "patchFlag": {
       "status": null,
@@ -3348,10 +3375,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 53.96,
-      "pr": 8.83,
-      "br": 6.08,
-      "games": 202
+      "wr": 54.91,
+      "pr": 8.66,
+      "br": 5.76,
+      "games": 224
     },
     "patchFlag": {
       "status": "buff",
@@ -3461,10 +3488,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": 59.52,
-      "pr": 1.84,
-      "br": 0.61,
-      "games": 42
+      "wr": 61.36,
+      "pr": 1.7,
+      "br": 0.58,
+      "games": 44
     },
     "patchFlag": {
       "status": null,
@@ -3563,10 +3590,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": null,
-      "pr": null,
-      "br": null,
-      "games": null
+      "wr": 44.44,
+      "pr": 0.7,
+      "br": 0.15,
+      "games": 18
     },
     "patchFlag": {
       "status": null,
@@ -3604,10 +3631,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 57.75,
-      "pr": 3.1,
-      "br": 1.27,
-      "games": 71
+      "wr": 57.33,
+      "pr": 2.9,
+      "br": 1.28,
+      "games": 75
     },
     "patchFlag": {
       "status": null,
@@ -3664,10 +3691,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 59.02,
-      "pr": 2.67,
-      "br": 3.98,
-      "games": 61
+      "wr": 56.76,
+      "pr": 2.86,
+      "br": 4.48,
+      "games": 74
     },
     "patchFlag": {
       "status": null,
@@ -3763,10 +3790,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "1티어",
     "stats": {
-      "wr": 51.81,
-      "pr": 3.63,
-      "br": 4.98,
-      "games": 83
+      "wr": 50.54,
+      "pr": 3.59,
+      "br": 5.06,
+      "games": 93
     },
     "patchFlag": {
       "status": null,
@@ -3818,10 +3845,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "1티어",
     "stats": {
-      "wr": 51.06,
-      "pr": 6.16,
-      "br": 5.9,
-      "games": 141
+      "wr": 50.99,
+      "pr": 5.83,
+      "br": 5.41,
+      "games": 151
     },
     "patchFlag": {
       "status": null,
@@ -3919,10 +3946,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "4티어",
     "stats": {
-      "wr": 35.0,
-      "pr": 0.87,
-      "br": 1.62,
-      "games": 20
+      "wr": 30.77,
+      "pr": 1.0,
+      "br": 1.66,
+      "games": 26
     },
     "patchFlag": {
       "status": null,
