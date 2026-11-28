@@ -1,7 +1,7 @@
 /**
- * BANPICK - LoL 16.23 패치 탑 라인 통합 데이터 (data_top.js v2.4.1-20261127)
+ * BANPICK - LoL 16.23 패치 탑 라인 통합 데이터 (data_top.js v2.4.1-20261128)
  * - 총 65종 탑 챔피언 + 목록 외 조커 픽(1종) 안전 매핑
- * - 스키마 v2.4.1-20261127: Riot API KR 에메랄드+ 자동 수집 + 2축 분리 카운터 & 3패치 표본 적응형
+ * - 스키마 v2.4.1-20261128: Riot API KR 에메랄드+ 자동 수집 + 2축 분리 카운터 & 3패치 표본 적응형
  */
 
 window.BANPICK_DATA = window.BANPICK_DATA || {};
@@ -12,16 +12,16 @@ window.BANPICK_DATA.top = {
   "lane": "top",
   "patch": "16.23",
   "tierScope": "EMERALD_PLUS",
-  "tierAvgWinRate": 49.15,
+  "tierAvgWinRate": 49.7,
   "isCollecting": true,
-  "updatedAt": "2026-11-27",
+  "updatedAt": "2026-11-28",
   "rosterCutline": {
     "mainMinPickRate": 0.5,
     "jokerMinPickRate": 0.15,
     "newOrReworkMinPickRate": 1.0,
     "bayesianPriorGames": 200
   },
-  "dataVersion": "2.4.1-20261127",
+  "dataVersion": "2.4.1-20261128",
   "counterModel": {
     "type": "two_axis_separated",
     "aggregation": "sample_adaptive_3patch",
@@ -50,7 +50,7 @@ window.BANPICK_DATA.top = {
       "lane_trap": "⚠ 초반 압박 주의"
     }
   },
-  "totalPatchMatches": 2
+  "totalPatchMatches": 122
 },
   externalChampions: {
   "카르마": {
