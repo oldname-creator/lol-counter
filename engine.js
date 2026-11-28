@@ -1,5 +1,5 @@
 /**
- * BANPICK - 순수 계산 & 분석 엔진 (engine.js v2.4.2)
+ * BANPICK - 순수 계산 & 분석 엔진 (engine.js v2.4.3)
  * - DOM / HTML과 완전히 분리된 순수 연산 모듈 (향후 UI 교체 및 미드·바텀 확장 공용)
  * - 티켓 1 반영: 50:50 평균 합산 폐기 -> 2축 분리 카운터 판정(승률 축 / 라인전 축)
  *   · 승률(+) & 라인전(+) -> 🔥 라인전 압도 (정석 카운터)
@@ -7,7 +7,7 @@
  *   · 승률(-) & 라인전(+) -> ⚠ 초반 압박 주의 (정식 카운터 제외, 주의 섹션 분리)
  */
 window.BANPICK_ENGINE = (function () {
-  const VERSION = "2.4.2";
+  const VERSION = "2.4.3";
 
   const TIER_BASE = { "OP": 95, "1티어": 83, "2티어": 69, "3티어": 55, "4티어": 41, "5티어": 28 };
   const TIER_ORDER = { "OP": 0, "1티어": 1, "2티어": 2, "3티어": 3, "4티어": 4, "5티어": 5 };
@@ -274,12 +274,38 @@ window.BANPICK_ENGINE = (function () {
       const combined = apiEntries.map((_, i) => (0.58 * zWr[i]) + (0.28 * zPr[i]) + (0.14 * zBr[i]));
       const zFinal = zNormalizeArray(combined);
 
-      apiEntries.forEach((e, i) => {
-        const metaScore = Math.max(15, Math.min(99, +(60 + zFinal[i] * 18.0).toFixed(1)));
-        const unifiedTier = scoreToUnifiedTier(metaScore, null);
-        apiPrecalc[e.name] = { usedApiStats: true, smoothedWr: e.smoothedWr, metaScore, unifiedTier };
-        effectiveTierMap[e.name] = unifiedTier;
-      });
+      // 모든 챔피언 수치가 완전히 동일한 극단 케이스 방어 (std == 0 -> 중립 3티어 고정)
+      const isFlat = zFinal.every((v) => Math.abs(v) < 1e-6);
+      if (isFlat) {
+        apiEntries.forEach((e) => {
+          apiPrecalc[e.name] = { usedApiStats: true, smoothedWr: e.smoothedWr, metaScore: 55.0, unifiedTier: "3티어" };
+          effectiveTierMap[e.name] = "3티어";
+        });
+      } else {
+        // v2.4.3: OP.GG·LOL.PS 방식 백분위 기반 티어 배정 (좌측 왜곡으로 1·2티어가 과다 팽창하는 문제 차단)
+        // OP: 상위 6.5%(z>=1.15) · 1티어: ~17.5% · 2티어: ~37.5% · 3티어: ~67.5% · 4티어: ~88.5% · 5티어: 하위 11.5%
+        const n = apiEntries.length;
+        const order = apiEntries.map((_, i) => i).sort((a, b) => (combined[b] - combined[a]) || (apiEntries[b].winDelta - apiEntries[a].winDelta));
+        order.forEach((origIdx, rankIdx) => {
+          const e = apiEntries[origIdx];
+          const pct = (rankIdx + 0.5) / n;
+          const z = zFinal[origIdx];
+          let unifiedTier;
+          if (pct <= 0.065 && z >= 1.15) unifiedTier = "OP";
+          else if (pct <= 0.175) unifiedTier = "1티어";
+          else if (pct <= 0.375) unifiedTier = "2티어";
+          else if (pct <= 0.675) unifiedTier = "3티어";
+          else if (pct <= 0.885) unifiedTier = "4티어";
+          else unifiedTier = "5티어";
+
+          // 백분위(60%) + Z-score(40%) 단조 결합: 순위·티어 역전 0건 + 최상위권 격차 보존
+          const pctAnchor = 96.0 - pct * 72.0;
+          const zAnchor = Math.max(18, Math.min(99, 58.0 + z * 16.0));
+          const metaScore = Math.max(15, Math.min(99, +(0.60 * pctAnchor + 0.40 * zAnchor).toFixed(1)));
+          apiPrecalc[e.name] = { usedApiStats: true, smoothedWr: e.smoothedWr, metaScore, unifiedTier };
+          effectiveTierMap[e.name] = unifiedTier;
+        });
+      }
     } else {
       apiEntries.forEach((e) => {
         const prCenter = e.prLog - 1.35;

@@ -197,8 +197,49 @@
     .pool-chip .remove-x:hover { color: var(--rose); }
     .coach-wrap {
       border-top: 1px dashed rgba(255, 255, 255, 0.1);
-      padding-top: 10px;
+      padding-top: 8px;
     }
+    .coach-summary-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      background: var(--bg-base);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+    .coach-summary-items {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+    .coach-summary-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+    .coach-summary-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-strong);
+      border-radius: 6px;
+      padding: 2px 7px 2px 3px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--text-main);
+      cursor: pointer;
+    }
+    .coach-summary-pill:hover { border-color: var(--gold-border); }
+    .coach-summary-pill.ban-pill { border-color: rgba(244, 63, 94, 0.45); }
+    .coach-summary-pill.rec-pill { border-color: rgba(16, 185, 129, 0.45); }
     .coach-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -895,9 +936,12 @@
           </div>
         </div>
         <div class="pool-actions">
-          <button id="btnToggleCoach" class="btn" type="button" style="display:none;">코치 접기 ▲</button>
+          <button id="btnToggleCoach" class="btn" type="button" style="display:none;">코치 상세 ▼</button>
           <button id="btnSamplePool" class="btn btn-gold" type="button">✨ 예시 체험 (모데·가렌·말파)</button>
           <button id="btnCopyLink" class="btn" type="button">🔗 링크 복사</button>
+          <button id="btnExportJson" class="btn" type="button" title="내 챔프폭과 개인 메모를 JSON 파일로 백업">💾 백업</button>
+          <button id="btnImportJson" class="btn" type="button" title="백업한 JSON 파일에서 챔프폭과 메모 복원">📂 복원</button>
+          <input id="importJsonInput" type="file" accept="application/json,.json" style="display:none;" />
           <button id="btnClearPool" class="btn" type="button">초기화</button>
         </div>
       </div>
@@ -979,9 +1023,9 @@
 
   <div id="toast" class="toast"></div>
 
-  <!-- External Data & Calculation Engine (UI v2.5.1 / Engine v2.4.2) -->
-  <script src="data_top.js?v=2.4.1-20261128"></script>
-  <script src="engine.js?v=2.4.2"></script>
+  <!-- External Data & Calculation Engine (UI v2.6.0 / Engine v2.4.3) -->
+  <script src="data_top.js?v=2.4.1"></script>
+  <script src="engine.js?v=2.4.3"></script>
 
   <script>
     /* =========================================================================
@@ -999,7 +1043,7 @@
     const DDRAGON_FALLBACK = "15.22.1";
     const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
-    const UI_VERSION = "2.5.1";
+    const UI_VERSION = "2.6.0";
     const DEFAULT_SORT_BY_MODE = {
       meta: { key: "metaScore", dir: "desc" },
       blind: { key: "blindScore", dir: "desc" },
@@ -1021,7 +1065,7 @@
       pool: [],
       memos: {},
       selected: null,
-      coachCollapsed: false
+      coachCollapsed: true
     };
 
     let ANALYTICS = null;
@@ -1082,9 +1126,10 @@
         if (m) state.memos = JSON.parse(m) || {};
       } catch (_) {}
 
-      // Load coach panel collapsed preference
+      // Load coach panel collapsed preference (default: true -> 1-line summary bar for First Fold)
       try {
-        state.coachCollapsed = localStorage.getItem(STORAGE_KEYS.COACH_COLLAPSED) === "1";
+        const savedCoach = localStorage.getItem(STORAGE_KEYS.COACH_COLLAPSED);
+        state.coachCollapsed = savedCoach === null ? true : savedCoach === "1";
       } catch (_) {}
 
       // Check URL ?pool=... first, then strip param so F5 never overwrites user edits
@@ -1329,10 +1374,45 @@
       }).join("");
 
       toggleBtn.style.display = "inline-block";
-      toggleBtn.textContent = state.coachCollapsed ? "코치 펼치기 ▼" : "코치 접기 ▲";
+      toggleBtn.textContent = state.coachCollapsed ? "코치 상세 ▼" : "코치 접기 ▲";
 
       if (state.coachCollapsed) {
-        coachEl.style.display = "none";
+        const topBan = coach.mustBans[0];
+        const topRec = coach.recommendations[0];
+        const banSummaryHtml = topBan
+          ? `<span class="coach-summary-item">
+               <span style="color:var(--rose);font-weight:800;">🚫 필밴 1위</span>
+               <span class="coach-summary-pill ban-pill" data-jump="${escapeHtml(topBan.name)}" title="클릭 시 상성 확인">
+                 ${avatarHtml(topBan.name, "avatar-chip")}
+                 <span>${escapeHtml(topBan.name)}</span>
+                 ${tierBadgeHtml(topBan.tier)}
+               </span>
+               <span style="font-size:11px;color:var(--text-muted);">${escapeHtml(topBan.reasons[0] || "")}</span>
+             </span>`
+          : `<span class="coach-summary-item" style="color:var(--text-muted);">🚫 치명적 역상성 없음</span>`;
+
+        const recSummaryHtml = topRec
+          ? `<span class="coach-summary-item">
+               <span style="color:var(--emerald);font-weight:800;">🧩 1픽 보완</span>
+               <span class="coach-summary-pill rec-pill" data-jump="${escapeHtml(topRec.name)}" title="클릭 시 상세 확인">
+                 ${avatarHtml(topRec.name, "avatar-chip")}
+                 <span>${escapeHtml(topRec.name)}</span>
+                 ${topRec.gainPct > 0 ? `<span class="badge b-buff">+${topRec.gainPct}%</span>` : ""}
+               </span>
+               <button class="btn-mini-add" type="button" data-add-pool="${escapeHtml(topRec.name)}" title="내 챔프폭에 바로 추가">+ 추가</button>
+             </span>`
+          : `<span class="coach-summary-item" style="color:var(--emerald);font-weight:700;">🧩 상위 티어 대응 완료</span>`;
+
+        coachEl.style.display = "block";
+        coachEl.innerHTML = `
+          <div class="coach-summary-bar">
+            <div class="coach-summary-items">
+              ${banSummaryHtml}
+              ${recSummaryHtml}
+            </div>
+            <button class="btn" type="button" data-expand-coach="1" style="padding:3px 8px;font-size:11px;">Top 3 상세 ▼</button>
+          </div>
+        `;
         return;
       }
 
@@ -1490,7 +1570,7 @@
           </tr>
         `;
         document.getElementById("formulaHint").textContent = apiSum.hasAnyApiStats
-          ? `열 제목 클릭 정렬 · ${apiSum.usedZScoreTier ? "Z-score 상대 티어" : "KR 실측"} (${apiSum.apiChampCount}/${apiSum.totalChamps}종)${sortHint}`
+          ? `열 제목 클릭 정렬 · ${apiSum.usedZScoreTier ? "백분위·Z-score 상대 티어" : "KR 실측"} (${apiSum.apiChampCount}/${apiSum.totalChamps}종)${sortHint}`
           : `열 제목 클릭 정렬 · 종합 메타 = 티어 체급 + 패치 변동 + 유틸${sortHint}`;
       } else if (state.mode === "blind") {
         thead.innerHTML = `
@@ -1845,34 +1925,7 @@
 
       const currentMemo = state.memos[it.name] || "";
 
-      box.innerHTML = `
-        <div class="mobile-back-bar">
-          <button id="btnMobileBackToList" class="btn" type="button">▲ 티어표로 돌아가기</button>
-        </div>
-
-        <div class="insp-head">
-          <div class="insp-title-block">
-            ${avatarHtml(it.name, "avatar-lg")}
-            <div>
-              <div class="insp-name">
-                <span>${safeName}</span>
-                ${tierBadgeHtml(it.tier)}
-                ${it.rosterType === "joker" ? `<span class="badge b-joker">조커</span>` : ""}
-              </div>
-              <div class="insp-pills">
-                ${diffBadgeHtml(it.difficulty)}
-                <span class="badge b-tag">타이밍: ${escapeHtml(it.timing)}</span>
-                <span class="badge b-tag">${escapeHtml(it.damageType)} · ${escapeHtml(it.rangeType)}</span>
-                ${it.playstyleTags.map((t) => `<span class="badge b-tag">${escapeHtml(t)}</span>`).join("")}
-                ${patchBadgeHtml(it.patchFlag)}
-              </div>
-            </div>
-          </div>
-          <button id="inspStarBtn" class="btn ${isPool ? "btn-gold" : ""}" type="button" data-star="${safeName}">
-            ${isPool ? "★ 내 챔프폭" : "☆ 챔프폭 추가"}
-          </button>
-        </div>
-
+      const scoreSectionHtml = `
         <div class="insp-section">
           <div class="sec-title"><span>3종 티어 엔진 산출 점수</span></div>
           <div class="score-grid">
@@ -1893,7 +1946,9 @@
             </div>
           </div>
         </div>
+      `;
 
+      const apiStatSectionHtml = `
         <div class="insp-section">
           <div class="sec-title">
             <span>📊 KR 에메랄드+ 실측 통계</span>
@@ -1928,11 +1983,51 @@
             </div>
           `}
         </div>
+      `;
 
+      const poolVerdictSectionHtml = `
         <div class="insp-section">
-          <div class="sec-title"><span>상대가 ${safeName} 뽑았을 때 → 내 챔프폭 판정</span></div>
+          <div class="sec-title">
+            <span>상대가 ${safeName} 뽑았을 때 → 내 챔프폭 판정</span>
+            ${state.pool.length ? `<span class="badge b-op">⚡ 30초 판정</span>` : ""}
+          </div>
           ${poolRecHtml}
         </div>
+      `;
+
+      const orderedTopSectionsHtml = state.pool.length
+        ? `${poolVerdictSectionHtml}${apiStatSectionHtml}${scoreSectionHtml}`
+        : `${scoreSectionHtml}${apiStatSectionHtml}${poolVerdictSectionHtml}`;
+
+      box.innerHTML = `
+        <div class="mobile-back-bar">
+          <button id="btnMobileBackToList" class="btn" type="button">▲ 티어표로 돌아가기</button>
+        </div>
+
+        <div class="insp-head">
+          <div class="insp-title-block">
+            ${avatarHtml(it.name, "avatar-lg")}
+            <div>
+              <div class="insp-name">
+                <span>${safeName}</span>
+                ${tierBadgeHtml(it.tier)}
+                ${it.rosterType === "joker" ? `<span class="badge b-joker">조커</span>` : ""}
+              </div>
+              <div class="insp-pills">
+                ${diffBadgeHtml(it.difficulty)}
+                <span class="badge b-tag">타이밍: ${escapeHtml(it.timing)}</span>
+                <span class="badge b-tag">${escapeHtml(it.damageType)} · ${escapeHtml(it.rangeType)}</span>
+                ${it.playstyleTags.map((t) => `<span class="badge b-tag">${escapeHtml(t)}</span>`).join("")}
+                ${patchBadgeHtml(it.patchFlag)}
+              </div>
+            </div>
+          </div>
+          <button id="inspStarBtn" class="btn ${isPool ? "btn-gold" : ""}" type="button" data-star="${safeName}">
+            ${isPool ? "★ 내 챔프폭" : "☆ 챔프폭 추가"}
+          </button>
+        </div>
+
+        ${orderedTopSectionsHtml}
 
         <div class="insp-section">
           <div class="sec-title">
@@ -2211,6 +2306,84 @@
         }
       });
 
+      // Ticket 5-2: 챔프폭 + 개인 메모 JSON 백업 / 복원
+      document.getElementById("btnExportJson").addEventListener("click", () => {
+        const memoCount = Object.keys(state.memos).length;
+        if (!state.pool.length && !memoCount) {
+          showToast("백업할 챔프폭이나 메모가 아직 없습니다.");
+          return;
+        }
+        const payload = {
+          app: "BANPICK",
+          schemaVersion: 1,
+          lane: "top",
+          exportedAt: new Date().toISOString(),
+          pool: state.pool,
+          memos: state.memos
+        };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+        a.href = url;
+        a.download = `banpick_top_backup_${stamp}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        showToast(`백업 완료: 챔프폭 ${state.pool.length}개 · 메모 ${memoCount}개`);
+      });
+
+      const importInputEl = document.getElementById("importJsonInput");
+      document.getElementById("btnImportJson").addEventListener("click", () => {
+        importInputEl.value = "";
+        importInputEl.click();
+      });
+
+      importInputEl.addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const parsed = JSON.parse(String(reader.result || ""));
+            if (!parsed || typeof parsed !== "object" || (!Array.isArray(parsed.pool) && (!parsed.memos || typeof parsed.memos !== "object"))) {
+              showToast("올바른 BANPICK 백업 파일이 아닙니다.");
+              return;
+            }
+            const nextPool = Array.isArray(parsed.pool)
+              ? Array.from(new Set(parsed.pool.filter((n) => typeof n === "string" && ANALYTICS.byName[n])))
+              : state.pool;
+            const hasMemosField = parsed.memos && typeof parsed.memos === "object" && !Array.isArray(parsed.memos);
+            const nextMemos = {};
+            if (hasMemosField) {
+              Object.keys(parsed.memos).forEach((k) => {
+                const v = parsed.memos[k];
+                if (ANALYTICS.byName[k] && typeof v === "string" && v.trim()) {
+                  nextMemos[k] = v;
+                }
+              });
+            }
+            state.pool = nextPool;
+            if (hasMemosField) state.memos = nextMemos;
+            if (!state.pool.length && state.poolOnly) {
+              state.poolOnly = false;
+              const poolBtn = document.getElementById("btnPoolOnly");
+              if (poolBtn) poolBtn.classList.remove("on-gold");
+            }
+            savePool();
+            saveMemos();
+            renderPoolBar();
+            renderTierTable(true);
+            renderInspector();
+            showToast(`복원 완료: 챔프폭 ${state.pool.length}개 · 메모 ${Object.keys(state.memos).length}개`);
+          } catch (_) {
+            showToast("JSON 파일을 읽지 못했습니다. 파일 형식을 확인해 주세요.");
+          }
+        };
+        reader.readAsText(file, "utf-8");
+      });
+
       document.getElementById("poolChips").addEventListener("click", (e) => {
         const rm = e.target.closest("[data-remove]");
         if (rm) {
@@ -2233,6 +2406,16 @@
       });
 
       document.getElementById("poolCoach").addEventListener("click", (e) => {
+        const expandBtn = e.target.closest("[data-expand-coach]");
+        if (expandBtn) {
+          e.stopPropagation();
+          state.coachCollapsed = false;
+          try {
+            localStorage.setItem(STORAGE_KEYS.COACH_COLLAPSED, "0");
+          } catch (_) {}
+          renderPoolBar();
+          return;
+        }
         const addBtn = e.target.closest("[data-add-pool]");
         if (addBtn) {
           e.stopPropagation();
@@ -2281,7 +2464,7 @@
     }
 
     async function bootstrap() {
-      const EXPECTED_ENGINE_VER = "2.4.2";
+      const EXPECTED_ENGINE_VER = "2.4.3";
       const err = document.getElementById("errorBanner");
       const topBundle = window.BANPICK_DATA && window.BANPICK_DATA.top;
       if (!topBundle || !topBundle.champions) {
