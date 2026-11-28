@@ -7,9 +7,14 @@ on:
   workflow_dispatch:
     inputs:
       max_matches:
-        description: '1회 실행당 수집할 최대 신규 탑 경기 수 (테스트 시 60~120 권장)'
+        description: '1회 실행당 수집할 최대 신규 탑 경기 수 (수동 실행 시 250~300 권장)'
         required: false
         default: '120'
+
+# 동시 실행 잠금: 실행 중 1개 + 대기 1개 순차 처리 (git push 충돌 원천 차단)
+concurrency:
+  group: banpick-top-data-collector
+  cancel-in-progress: false
 
 permissions:
   contents: write
