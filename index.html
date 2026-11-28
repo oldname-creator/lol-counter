@@ -687,16 +687,78 @@
       padding: 16px;
       scroll-margin-top: 72px;
     }
+    .mobile-quick-bar {
+      display: none;
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 0 12px 9px;
+      position: relative;
+    }
+    .mobile-quick-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+    }
+    .mobile-quick-input {
+      flex: 1;
+      background: var(--bg-base);
+      color: var(--text-main);
+      border: 1px solid var(--gold-border);
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 13px;
+      outline: none;
+    }
+    .mobile-quick-results {
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      top: calc(100% - 4px);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-strong);
+      border-radius: 9px;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55);
+      z-index: 60;
+      overflow: hidden;
+      display: none;
+    }
+    .mobile-quick-results.open { display: block; }
+    .mq-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(44, 44, 56, 0.7);
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .mq-item:last-child { border-bottom: none; }
+    .mq-item:hover { background: var(--bg-hover); }
+    .mq-left { display: flex; align-items: center; gap: 8px; }
+    .mobile-filter-btn { display: none; }
+    .filter-collapsible {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
     .mobile-back-bar {
       display: none;
       margin-bottom: 10px;
     }
     @media (max-width: 1024px) {
+      .mobile-quick-bar { display: block; }
       .inspector { position: static; max-height: none; }
       .mobile-back-bar { display: flex; justify-content: flex-end; }
     }
     @media (max-width: 680px) {
+      .header-inner { padding: 8px 12px; gap: 8px; }
+      .brand-logo { font-size: 16px; }
       .container { padding: 10px 10px 36px; }
+      .mobile-filter-btn { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+      .filter-collapsible { display: none; }
+      .filter-collapsible.open { display: flex; }
       .mode-btn { padding: 8px 4px; }
       .mode-btn .m-title { font-size: 12px; }
       .mode-btn .m-desc { font-size: 10px; }
@@ -799,6 +861,47 @@
     .pool-row.t-forb { border-left: 3px solid var(--rose); background: rgba(244, 63, 94, 0.06); }
     .pool-row-left { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .pool-row-right { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+    .pool-row.t-ban { border-left: 3px solid var(--text-muted); opacity: 0.62; }
+    .pool-row.t-ban strong { text-decoration: line-through; color: var(--text-muted); }
+    .verdict-controls { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+    .mini-toggle {
+      background: var(--bg-elevated);
+      color: var(--text-sub);
+      border: 1px solid var(--border-strong);
+      border-radius: 6px;
+      padding: 2px 7px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .mini-toggle:hover { background: var(--bg-hover); color: var(--text-main); }
+    .mini-toggle.on-sky {
+      background: rgba(56, 189, 248, 0.16);
+      border-color: rgba(56, 189, 248, 0.5);
+      color: #7DD3FC;
+    }
+    .mini-toggle.on-rose {
+      background: var(--rose-dim);
+      border-color: rgba(244, 63, 94, 0.45);
+      color: #FDA4AF;
+    }
+    .btn-row-ban, .btn-row-unban {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 1px 6px;
+      font-size: 10.5px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-row-ban:hover { color: var(--rose); border-color: rgba(244, 63, 94, 0.45); background: var(--rose-dim); }
+    .btn-row-unban { color: var(--sky); border-color: rgba(56, 189, 248, 0.4); }
+    .btn-row-unban:hover { background: rgba(56, 189, 248, 0.14); }
+    .wr-low-sample { opacity: 0.66; }
+    .low-sample-dot { font-size: 10px; color: var(--text-muted); margin-left: 2px; }
 
     .matchup-list {
       display: flex;
@@ -927,6 +1030,13 @@
         <button class="lane-tab" type="button" disabled title="탑 기능 검증 완료 후 확장 예정">🏹 바텀 (준비 중)</button>
       </div>
     </div>
+    <div class="mobile-quick-bar" aria-label="모바일 빠른 챔프 검색">
+      <div class="mobile-quick-row">
+        <input id="mobileQuickSearch" class="mobile-quick-input" type="text" placeholder="⚡ 상대 챔프 빠른 검색 (초성·이름) → 바로 판정" autocomplete="off" />
+        <button id="btnMobileQuickClear" class="btn" type="button" style="display:none;padding:6px 9px;">✕</button>
+      </div>
+      <div id="mobileQuickResults" class="mobile-quick-results"></div>
+    </div>
   </header>
 
   <main class="container">
@@ -976,30 +1086,35 @@
 
         <div class="filter-bar">
           <div class="filter-row">
-            <input id="searchInput" class="search-input" type="text" placeholder="챔피언 · 초성(ㄱㄹ) · 별명 · Enter 선택 / Esc 초기화" autocomplete="off" />
-            <button id="btnBeginnerFilter" class="toggle-pill" type="button">🟢 초보 친화 (어려움 제외)</button>
-            <button id="btnJokerToggle" class="toggle-pill on-violet" type="button">🎭 조커 픽 포함</button>
-            <button id="btnPoolOnly" class="toggle-pill" type="button">★ 내 챔프폭만</button>
+            <input id="searchInput" class="search-input" type="text" placeholder="챔피언 · 초성(ㄱㄹ) · 별명 (검색 시 필터 자동 우회)" autocomplete="off" />
+            <button id="btnMobileFilterToggle" class="btn mobile-filter-btn" type="button">필터 ▾</button>
           </div>
-          <div class="filter-row">
-            <select id="selDamage" class="filter-select" aria-label="공격 타입 필터">
-              <option value="ALL">공격: 전체</option>
-              <option value="AD">공격: AD</option>
-              <option value="AP">공격: AP</option>
-              <option value="혼합">공격: 혼합</option>
-            </select>
-            <select id="selRange" class="filter-select" aria-label="사거리 필터">
-              <option value="ALL">사거리: 전체</option>
-              <option value="근접">사거리: 근접</option>
-              <option value="원거리">사거리: 원거리</option>
-            </select>
-            <select id="selTiming" class="filter-select" aria-label="강한 타이밍 필터">
-              <option value="ALL">타이밍: 전체</option>
-              <option value="초반">타이밍: 초반</option>
-              <option value="중반">타이밍: 중반</option>
-              <option value="후반">타이밍: 후반</option>
-            </select>
-            <button id="btnResetFilters" class="btn" type="button" style="margin-left:auto;">필터 초기화</button>
+          <div id="filterCollapsible" class="filter-collapsible">
+            <div class="filter-row">
+              <button id="btnBeginnerFilter" class="toggle-pill" type="button">🟢 초보 친화 (어려움 제외)</button>
+              <button id="btnJokerToggle" class="toggle-pill on-violet" type="button">🎭 조커 픽 포함</button>
+              <button id="btnPoolOnly" class="toggle-pill" type="button">★ 내 챔프폭만</button>
+            </div>
+            <div class="filter-row">
+              <select id="selDamage" class="filter-select" aria-label="공격 타입 필터">
+                <option value="ALL">공격: 전체</option>
+                <option value="AD">공격: AD</option>
+                <option value="AP">공격: AP</option>
+                <option value="혼합">공격: 혼합</option>
+              </select>
+              <select id="selRange" class="filter-select" aria-label="사거리 필터">
+                <option value="ALL">사거리: 전체</option>
+                <option value="근접">사거리: 근접</option>
+                <option value="원거리">사거리: 원거리</option>
+              </select>
+              <select id="selTiming" class="filter-select" aria-label="강한 타이밍 필터">
+                <option value="ALL">타이밍: 전체</option>
+                <option value="초반">타이밍: 초반</option>
+                <option value="중반">타이밍: 중반</option>
+                <option value="후반">타이밍: 후반</option>
+              </select>
+              <button id="btnResetFilters" class="btn" type="button" style="margin-left:auto;">필터 초기화</button>
+            </div>
           </div>
         </div>
 
@@ -1029,9 +1144,9 @@
 
   <div id="toast" class="toast"></div>
 
-  <!-- External Data, Tips & Calculation Engine (UI v2.6.2 / Engine v2.4.5 / Tips v1.0.0) -->
-  <script src="data_top.js?v=2.4.1-20261128"></script>
-  <script src="tips_top.js?v=1.0.0"></script>
+  <!-- External Data, Tips & Calculation Engine (UI v2.7.0 / Engine v2.4.5 / Tips v1.1.0) -->
+  <script src="data_top.js?v=2.4.1"></script>
+  <script src="tips_top.js?v=1.1.0"></script>
   <script src="engine.js?v=2.4.5"></script>
 
   <script>
@@ -1050,7 +1165,7 @@
     const DDRAGON_FALLBACK = "15.22.1";
     const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
-    const UI_VERSION = "2.6.2";
+    const UI_VERSION = "2.7.0";
     const DEFAULT_SORT_BY_MODE = {
       meta: { key: "metaScore", dir: "desc" },
       blind: { key: "blindScore", dir: "desc" },
@@ -1072,28 +1187,104 @@
       pool: [],
       memos: {},
       selected: null,
-      coachCollapsed: true
+      coachCollapsed: true,
+      preferAP: false,
+      sessionBanned: [],
+      mobileFiltersOpen: false
     };
 
     let ANALYTICS = null;
     let poolEvalCacheKey = "";
     let poolEvalCache = {};
 
+    function getActivePool() {
+      if (!state.sessionBanned.length) return state.pool;
+      const bannedSet = new Set(state.sessionBanned);
+      return state.pool.filter((n) => !bannedSet.has(n));
+    }
+
     function getCachedPoolEval(enemyName) {
-      const key = state.pool.join(",");
+      const activePool = getActivePool();
+      const key = activePool.join(",");
       if (key !== poolEvalCacheKey) {
         poolEvalCacheKey = key;
         poolEvalCache = {};
       }
       if (!Object.prototype.hasOwnProperty.call(poolEvalCache, enemyName)) {
         poolEvalCache[enemyName] = window.BANPICK_ENGINE.evaluatePoolVsEnemy(
-          state.pool,
+          activePool,
           enemyName,
           ANALYTICS.byName,
           ANALYTICS.counterModel
         );
       }
       return poolEvalCache[enemyName];
+    }
+
+    function applyApPreferenceToEval(poolEval) {
+      if (!state.preferAP || !poolEval || poolEval.state !== "ready") {
+        return { evalObj: poolEval, apApplied: false, noApInPool: false };
+      }
+      const isAp = (name) => {
+        const o = ANALYTICS.byName[name];
+        return Boolean(o && (o.damageType === "AP" || o.damageType === "혼합"));
+      };
+      const apCands = poolEval.candidates.filter((c) => isAp(c.name));
+      if (!apCands.length) {
+        return { evalObj: poolEval, apApplied: false, noApInPool: true };
+      }
+      const apOpt = apCands.filter((c) => c.tier === 1);
+      const apNeu = apCands.filter((c) => c.tier === 2);
+      const apDis = apCands.filter((c) => c.tier === 3);
+      const apForb = apCands.filter((c) => c.tier === 4);
+
+      let chosen = null;
+      let nextVerdict = poolEval.verdict;
+      if (poolEval.verdict === "damage_control") {
+        chosen = apDis[0] || apForb[0] || poolEval.bestPick;
+        nextVerdict = "damage_control";
+      } else if (apOpt.length) {
+        chosen = apOpt[0];
+        nextVerdict = "optimal";
+      } else if (apNeu.length) {
+        chosen = apNeu[0];
+        nextVerdict = "neutral";
+      } else {
+        // Keep safe AD optimal/neutral pick instead of forcing a 3:7 AP suicide pick
+        return { evalObj: poolEval, apApplied: false, noApInPool: false, apOnlyBad: true };
+      }
+
+      const reordered = [chosen, ...poolEval.candidates.filter((c) => c.name !== chosen.name)];
+      return {
+        evalObj: Object.assign({}, poolEval, {
+          verdict: nextVerdict,
+          bestPick: chosen,
+          candidates: reordered
+        }),
+        apApplied: true,
+        noApInPool: false,
+        apOnlyBad: false
+      };
+    }
+
+    function countActiveFilters() {
+      let c = 0;
+      if (state.beginnerOnly) c++;
+      if (!state.includeJoker) c++;
+      if (state.poolOnly) c++;
+      if (state.damageFilter !== "ALL") c++;
+      if (state.rangeFilter !== "ALL") c++;
+      if (state.timingFilter !== "ALL") c++;
+      return c;
+    }
+
+    function updateMobileFilterButtonLabel() {
+      const btn = document.getElementById("btnMobileFilterToggle");
+      if (!btn) return;
+      const cnt = countActiveFilters();
+      const arrow = state.mobileFiltersOpen ? "▴" : "▾";
+      btn.textContent = cnt > 0 ? `필터 (${cnt}) ${arrow}` : `필터 ${arrow}`;
+      btn.classList.toggle("btn-gold", cnt > 0 || state.mobileFiltersOpen);
     }
 
     function escapeHtml(str) {
@@ -1294,13 +1485,16 @@
       const poolSet = new Set(state.pool);
 
       const filtered = ANALYTICS.items.filter((it) => {
+        // 검색어 입력 시 활성 필터(초보 친화·내 챔프폭만 등)를 자동 우회해 상대 선픽을 즉시 조회
+        if (q) {
+          return it.searchTokens.includes(q);
+        }
         if (!state.includeJoker && it.rosterType === "joker") return false;
         if (state.beginnerOnly && it.difficulty === "어려움") return false;
         if (state.poolOnly && !poolSet.has(it.name)) return false;
         if (state.damageFilter !== "ALL" && it.damageType !== state.damageFilter) return false;
         if (state.rangeFilter !== "ALL" && it.rangeType !== state.rangeFilter) return false;
         if (state.timingFilter !== "ALL" && it.timing !== state.timingFilter) return false;
-        if (q && !it.searchTokens.includes(q)) return false;
         return true;
       });
 
@@ -1524,9 +1718,13 @@
       const val = Number(it.stats[field]);
       const txt = `${val.toFixed(1)}%`;
       if (field === "wr") {
-        const col = val >= 51.5 ? "var(--emerald)" : (val <= 48.5 ? "var(--rose)" : "var(--text-main)");
-        const tip = `KR 실측 ${Number(it.stats.games || 0).toLocaleString()}판${it.smoothedWr != null ? ` · 보정 승률 ${it.smoothedWr}%` : ""}`;
-        return `<span style="color:${col};font-weight:700;" title="${escapeHtml(tip)}">${txt}</span>`;
+        const games = Number(it.stats.games || 0);
+        const isLowSample = games > 0 && games < 80;
+        const col = isLowSample
+          ? "var(--text-sub)"
+          : (val >= 51.5 ? "var(--emerald)" : (val <= 48.5 ? "var(--rose)" : "var(--text-main)"));
+        const tip = `${isLowSample ? "소표본 주의 · " : ""}KR 실측 ${games.toLocaleString()}판${it.smoothedWr != null ? ` · 보정 승률 ${it.smoothedWr}%` : ""}`;
+        return `<span class="${isLowSample ? "wr-low-sample" : ""}" style="color:${col};font-weight:${isLowSample ? 600 : 700};" title="${escapeHtml(tip)}">${txt}${isLowSample ? `<span class="low-sample-dot">*</span>` : ""}</span>`;
       }
       if (field === "pr") {
         const col = val >= 8.0 ? "var(--sky)" : "var(--text-sub)";
@@ -1610,8 +1808,11 @@
       }
 
       const jokerCount = list.filter((x) => x.rosterType === "joker").length;
-      document.getElementById("listCountText").textContent =
-        `표시 중: ${list.length}종 (메인 ${list.length - jokerCount} · 조커 ${jokerCount})`;
+      const hasSearchQ = Boolean(window.BANPICK_ENGINE.normalizeSearch(state.search));
+      const activeFilterCnt = countActiveFilters();
+      document.getElementById("listCountText").textContent = (hasSearchQ && activeFilterCnt > 0)
+        ? `검색 결과: ${list.length}종 (전체 65종 검색 · 활성 필터 ${activeFilterCnt}개 자동 우회 중)`
+        : `표시 중: ${list.length}종 (메인 ${list.length - jokerCount} · 조커 ${jokerCount})`;
 
       if (!list.length) {
         tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center;padding:28px;color:var(--text-muted);">조건에 맞는 챔피언이 없습니다. 필터를 초기화해 보세요.</td></tr>`;
@@ -1755,8 +1956,11 @@
       const isPool = poolSet.has(it.name);
       const safeName = escapeHtml(it.name);
 
-      // Ticket 2: 4-Tier Pool Response Verdict & Damage-Control Fallback vs Enemy Pick
-      const poolEval = getCachedPoolEval(it.name);
+      // Ticket 2 + v2.7.0: 4-Tier Pool Response Verdict + AP 우선 + 이번 판 밴됨 1클릭 임시 제외
+      const rawPoolEval = getCachedPoolEval(it.name);
+      const apRes = applyApPreferenceToEval(rawPoolEval);
+      const poolEval = apRes.evalObj;
+      const bannedInPool = state.sessionBanned.filter((n) => poolSet.has(n) && n !== it.name);
       let poolRecHtml = "";
 
       function renderArchBadge(archetype, label) {
@@ -1765,16 +1969,54 @@
         return `<span class="badge ${cls}">${escapeHtml(label)}</span>`;
       }
 
-      if (!poolEval || poolEval.state === "empty") {
-        poolRecHtml = `<div class="pool-rec-box">내 챔프폭을 등록하면 상대가 <strong>${safeName}</strong>을(를) 선픽했을 때 내 폭 안의 최적 후픽·역상성 금지·차악 픽을 바로 판정해 줍니다.</div>`;
+      const bannedRowsHtml = bannedInPool.map((bName) => `
+        <div class="pool-row t-ban">
+          <div class="pool-row-left">
+            ${avatarHtml(bName, "avatar-chip")}
+            <strong>${escapeHtml(bName)}</strong>
+            <span class="badge b-tag">이번 판 밴됨</span>
+          </div>
+          <div class="pool-row-right">
+            <button class="btn-row-unban" type="button" data-unban-pool="${escapeHtml(bName)}">복원</button>
+          </div>
+        </div>
+      `).join("");
+
+      if (!state.pool.length) {
+        poolRecHtml = `
+          <div class="pool-rec-box">
+            <div>내 챔프폭을 등록하면 상대가 <strong>${safeName}</strong>을(를) 선픽했을 때 내 폭 안의 최적 후픽·역상성 금지·차악 픽을 바로 판정해 줍니다.</div>
+            <button class="btn btn-gold" type="button" data-apply-sample="1" style="margin-top:8px;">✨ 예시 챔프폭으로 판정 바로 보기</button>
+          </div>
+        `;
+      } else if (!poolEval || poolEval.state === "empty") {
+        poolRecHtml = `
+          <div class="pool-rec-box warn">
+            <div style="font-weight:700;color:var(--amber);">🚫 내 챔프폭이 모두 '이번 판 밴됨'으로 제외되었습니다.</div>
+            <div style="margin-top:6px;"><button class="btn btn-gold" type="button" data-reset-ban="1">임시 밴 제외 초기화</button></div>
+            ${bannedRowsHtml ? `<div class="pool-matrix">${bannedRowsHtml}</div>` : ""}
+          </div>
+        `;
       } else if (poolEval.state === "only_self") {
-        poolRecHtml = `<div class="pool-rec-box warn"><div style="font-weight:700;color:var(--amber);">⚠ 내 챔프폭에 ${safeName} 1개만 등록됨</div><div style="font-size:12px;color:var(--text-sub);margin-top:3px;">상대가 ${safeName}을(를) 먼저 뺏어갈 경우 꺼낼 대체 픽이 없습니다. 서브 챔프를 1~2개 추가해 보세요.</div></div>`;
+        poolRecHtml = `
+          <div class="pool-rec-box warn">
+            <div style="font-weight:700;color:var(--amber);">⚠ 꺼낼 수 있는 대체 챔프가 없습니다 (${safeName} 선점${bannedInPool.length ? ` · 밴 제외 ${bannedInPool.length}종` : ""})</div>
+            <div style="font-size:12px;color:var(--text-sub);margin-top:3px;">서브 챔프를 추가하거나 아래 밴 제외된 픽을 복원해 보세요.</div>
+            ${bannedRowsHtml ? `<div class="pool-matrix">${bannedRowsHtml}</div>` : ""}
+          </div>
+        `;
       } else {
         const bp = poolEval.bestPick;
         const safeBp = bp ? escapeHtml(bp.name) : "";
+        const bpObj = bp && ANALYTICS.byName[bp.name];
         const selfNote = poolEval.excludedSelf
           ? `<span style="font-size:11px;color:var(--text-muted);">상대가 내 ${safeName} 선점 가정</span>`
           : "";
+        const apStatusNote = apRes.apApplied
+          ? `<span class="badge b-t2">🔮 AP 우선 적용</span>`
+          : (apRes.noApInPool
+            ? `<span class="badge b-warn">내 폭에 AP·혼합 없음</span>`
+            : (apRes.apOnlyBad ? `<span class="badge b-warn">AP 픽은 역상성이라 안전 픽 유지</span>` : ""));
 
         let boxCls = "neutral";
         let verdictTitle = "";
@@ -1796,7 +2038,7 @@
           }
         } else if (poolEval.verdict === "neutral") {
           boxCls = "neutral";
-          verdictTitle = `<span class="verdict-title" style="color:var(--sky);">⚖️ 카운터 없음 · 차선책(반반) 추천</span>`;
+          verdictTitle = `<span class="verdict-title" style="color:var(--sky);">⚖️ ${apRes.apApplied ? "AP 우선 · 반반(5:5) 추천" : "카운터 없음 · 차선책(반반) 추천"}</span>`;
           heroBadges = `
             <span class="badge ${bp.laneTrapWarning ? "b-trap" : "b-t2"}">${escapeHtml(bp.tierLabel)}</span>
             <span class="badge b-tag">선픽 ${bp.blindScore}점</span>
@@ -1820,16 +2062,20 @@
           const rowCls = c.tier === 1 ? "t-opt" : (c.tier === 2 ? "t-neu" : (c.tier === 3 ? "t-dis" : "t-forb"));
           const badgeCls = c.tier === 1 ? (c.strength === "hard" ? "b-op" : "b-t1") : (c.tier === 2 ? (c.laneTrapWarning ? "b-trap" : "b-t2") : (c.tier === 3 ? "b-warn" : "b-nerf"));
           const isBest = bp && c.name === bp.name;
+          const cData = ANALYTICS.byName[c.name];
+          const isApTag = cData && (cData.damageType === "AP" || cData.damageType === "혼합");
           return `
             <div class="pool-row ${rowCls}" data-jump="${escapeHtml(c.name)}">
               <div class="pool-row-left">
                 ${avatarHtml(c.name, "avatar-chip")}
                 <strong>${escapeHtml(c.name)}</strong>
+                ${isApTag ? `<span class="badge b-t2">${escapeHtml(cData.damageType)}</span>` : ""}
                 ${isBest ? `<span class="badge ${poolEval.verdict === "damage_control" ? "b-warn" : "b-op"}">${poolEval.verdict === "damage_control" ? "차악 1순위" : "1순위"}</span>` : ""}
               </div>
               <div class="pool-row-right">
                 ${c.tier === 1 ? renderArchBadge(c.archetype, c.archetypeLabel) : ""}
                 <span class="badge ${badgeCls}">${escapeHtml(c.tierLabel)}</span>
+                <button class="btn-row-ban" type="button" data-ban-pool="${escapeHtml(c.name)}" title="이번 판 밴됨 · 추천에서 임시 제외">밴</button>
               </div>
             </div>
           `;
@@ -1839,12 +2085,13 @@
           <div class="pool-rec-box ${boxCls}">
             <div class="verdict-head">
               ${verdictTitle}
-              ${selfNote}
+              <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">${apStatusNote}${selfNote}</div>
             </div>
             <div class="verdict-hero" data-jump="${safeBp}">
               <div class="verdict-hero-left">
                 ${avatarHtml(bp.name, "avatar-sm")}
                 <strong style="font-size:14px;">${safeBp}</strong>
+                ${bpObj && (bpObj.damageType === "AP" || bpObj.damageType === "혼합") ? `<span class="badge b-t2">${escapeHtml(bpObj.damageType)}</span>` : ""}
                 ${diffBadgeHtml(bp.difficulty)}
               </div>
               <div style="display:flex;gap:4px;flex-wrap:wrap;">${heroBadges}</div>
@@ -1852,10 +2099,11 @@
             ${tipHtml}
             <div class="pool-matrix">
               <div class="pool-matrix-title">
-                <span>내 챔프폭 전체 판정 (${poolEval.candidates.length}종)</span>
+                <span>내 챔프폭 전체 판정 (${poolEval.candidates.length}종${bannedInPool.length ? ` · 밴 제외 ${bannedInPool.length}` : ""})</span>
                 <span>최적 → 반반 → 불리 → 금지</span>
               </div>
               ${matrixRows}
+              ${bannedRowsHtml}
             </div>
           </div>
         `;
@@ -2011,7 +2259,13 @@
         <div class="insp-section">
           <div class="sec-title">
             <span>상대가 ${safeName} 뽑았을 때 → 내 챔프폭 판정</span>
-            ${state.pool.length ? `<span class="badge b-op">⚡ 30초 판정</span>` : ""}
+            ${state.pool.length ? `
+              <div class="verdict-controls">
+                <button class="mini-toggle ${state.preferAP ? "on-sky" : ""}" type="button" data-toggle-ap="1" title="아군이 올 AD일 때 내 챔프폭의 AP·혼합 픽을 우선 추천">🔮 AP 우선</button>
+                ${state.sessionBanned.length ? `<button class="mini-toggle on-rose" type="button" data-reset-ban="1" title="이번 판 임시 밴 제외 초기화">밴 해제 (${state.sessionBanned.length})</button>` : ""}
+                <span class="badge b-op">⚡ 30초 판정</span>
+              </div>
+            ` : ""}
           </div>
           ${poolRecHtml}
         </div>
@@ -2125,6 +2379,7 @@
       const idx = state.pool.indexOf(name);
       if (idx >= 0) {
         state.pool.splice(idx, 1);
+        state.sessionBanned = state.sessionBanned.filter((n) => n !== name);
         showToast(`${name} — 내 챔프폭에서 제거`);
       } else {
         state.pool.push(name);
@@ -2233,9 +2488,102 @@
         }
       });
 
+      // Mobile collapsible filter toggle
+      const mobFilterBtn = document.getElementById("btnMobileFilterToggle");
+      const filterCollEl = document.getElementById("filterCollapsible");
+      if (mobFilterBtn && filterCollEl) {
+        mobFilterBtn.addEventListener("click", () => {
+          state.mobileFiltersOpen = !state.mobileFiltersOpen;
+          filterCollEl.classList.toggle("open", state.mobileFiltersOpen);
+          updateMobileFilterButtonLabel();
+        });
+      }
+
+      // Mobile sticky quick search bar (1-tap jump to Inspector from anywhere)
+      const mqInput = document.getElementById("mobileQuickSearch");
+      const mqClear = document.getElementById("btnMobileQuickClear");
+      const mqResults = document.getElementById("mobileQuickResults");
+
+      function renderMobileQuickResults(rawText) {
+        if (!mqResults) return;
+        const q = window.BANPICK_ENGINE.normalizeSearch(rawText);
+        if (mqClear) mqClear.style.display = rawText ? "inline-block" : "none";
+        if (!q) {
+          mqResults.classList.remove("open");
+          mqResults.innerHTML = "";
+          return;
+        }
+        const matches = ANALYTICS.items
+          .filter((it) => it.searchTokens.includes(q))
+          .sort((a, b) => b.metaScore - a.metaScore)
+          .slice(0, 6);
+        if (!matches.length) {
+          mqResults.innerHTML = `<div class="mq-item" style="color:var(--text-muted);cursor:default;">일치하는 챔피언이 없습니다.</div>`;
+          mqResults.classList.add("open");
+          return;
+        }
+        mqResults.innerHTML = matches.map((it) => `
+          <div class="mq-item" data-mq-pick="${escapeHtml(it.name)}">
+            <div class="mq-left">
+              ${avatarHtml(it.name, "avatar-sm")}
+              <strong>${escapeHtml(it.name)}</strong>
+              ${tierBadgeHtml(it.tier)}
+            </div>
+            <span style="font-size:11px;color:var(--gold);font-weight:700;">판정 보기 →</span>
+          </div>
+        `).join("");
+        mqResults.classList.add("open");
+      }
+
+      if (mqInput) {
+        mqInput.addEventListener("input", (e) => renderMobileQuickResults(e.target.value));
+        mqInput.addEventListener("focus", (e) => {
+          if (e.target.value.trim()) renderMobileQuickResults(e.target.value);
+        });
+        mqInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            const first = mqResults && mqResults.querySelector("[data-mq-pick]");
+            if (first) {
+              e.preventDefault();
+              const picked = first.getAttribute("data-mq-pick");
+              mqInput.value = "";
+              renderMobileQuickResults("");
+              mqInput.blur();
+              selectChampion(picked, true, true);
+            }
+          } else if (e.key === "Escape") {
+            mqInput.value = "";
+            renderMobileQuickResults("");
+            mqInput.blur();
+          }
+        });
+      }
+      if (mqClear) {
+        mqClear.addEventListener("click", () => {
+          if (mqInput) mqInput.value = "";
+          renderMobileQuickResults("");
+        });
+      }
+      if (mqResults) {
+        mqResults.addEventListener("click", (e) => {
+          const item = e.target.closest("[data-mq-pick]");
+          if (!item) return;
+          const picked = item.getAttribute("data-mq-pick");
+          if (mqInput) mqInput.value = "";
+          renderMobileQuickResults("");
+          selectChampion(picked, true, true);
+        });
+      }
+      document.addEventListener("click", (e) => {
+        if (mqResults && mqResults.classList.contains("open") && !e.target.closest(".mobile-quick-bar")) {
+          mqResults.classList.remove("open");
+        }
+      });
+
       document.getElementById("btnBeginnerFilter").addEventListener("click", (e) => {
         state.beginnerOnly = !state.beginnerOnly;
         e.currentTarget.classList.toggle("on-emerald", state.beginnerOnly);
+        updateMobileFilterButtonLabel();
         renderPoolBar();
         renderTierTable(false);
         renderInspector();
@@ -2244,6 +2592,7 @@
       document.getElementById("btnJokerToggle").addEventListener("click", (e) => {
         state.includeJoker = !state.includeJoker;
         e.currentTarget.classList.toggle("on-violet", state.includeJoker);
+        updateMobileFilterButtonLabel();
         renderPoolBar();
         renderTierTable(false);
       });
@@ -2251,19 +2600,23 @@
       document.getElementById("btnPoolOnly").addEventListener("click", (e) => {
         state.poolOnly = !state.poolOnly;
         e.currentTarget.classList.toggle("on-gold", state.poolOnly);
+        updateMobileFilterButtonLabel();
         renderTierTable(false);
       });
 
       document.getElementById("selDamage").addEventListener("change", (e) => {
         state.damageFilter = e.target.value;
+        updateMobileFilterButtonLabel();
         renderTierTable(false);
       });
       document.getElementById("selRange").addEventListener("change", (e) => {
         state.rangeFilter = e.target.value;
+        updateMobileFilterButtonLabel();
         renderTierTable(false);
       });
       document.getElementById("selTiming").addEventListener("change", (e) => {
         state.timingFilter = e.target.value;
+        updateMobileFilterButtonLabel();
         renderTierTable(false);
       });
 
@@ -2285,6 +2638,7 @@
         document.getElementById("selDamage").value = "ALL";
         document.getElementById("selRange").value = "ALL";
         document.getElementById("selTiming").value = "ALL";
+        updateMobileFilterButtonLabel();
         renderPoolBar();
         renderTierTable(false);
         renderInspector();
@@ -2292,6 +2646,7 @@
 
       document.getElementById("btnSamplePool").addEventListener("click", () => {
         state.pool = ["모데카이저", "가렌", "말파이트"].filter((n) => ANALYTICS.byName[n]);
+        state.sessionBanned = [];
         savePool();
         renderPoolBar();
         renderTierTable(true);
@@ -2301,6 +2656,7 @@
 
       document.getElementById("btnClearPool").addEventListener("click", () => {
         state.pool = [];
+        state.sessionBanned = [];
         if (state.poolOnly) {
           state.poolOnly = false;
           const poolBtn = document.getElementById("btnPoolOnly");
@@ -2388,6 +2744,7 @@
               });
             }
             state.pool = nextPool;
+            state.sessionBanned = [];
             if (hasMemosField) state.memos = nextMemos;
             if (!state.pool.length && state.poolOnly) {
               state.poolOnly = false;
@@ -2471,6 +2828,51 @@
       });
 
       document.getElementById("inspector").addEventListener("click", (e) => {
+        const apToggle = e.target.closest("[data-toggle-ap]");
+        if (apToggle) {
+          e.stopPropagation();
+          state.preferAP = !state.preferAP;
+          renderInspector();
+          showToast(state.preferAP ? "AP·혼합 픽 우선 추천 ON" : "AP 우선 추천 OFF");
+          return;
+        }
+        const banBtn = e.target.closest("[data-ban-pool]");
+        if (banBtn) {
+          e.stopPropagation();
+          const bName = banBtn.getAttribute("data-ban-pool");
+          if (bName && !state.sessionBanned.includes(bName)) {
+            state.sessionBanned.push(bName);
+            renderTierTable(true);
+            renderInspector();
+            showToast(`${bName} — 이번 판 밴됨으로 임시 제외`);
+          }
+          return;
+        }
+        const unbanBtn = e.target.closest("[data-unban-pool]");
+        if (unbanBtn) {
+          e.stopPropagation();
+          const uName = unbanBtn.getAttribute("data-unban-pool");
+          state.sessionBanned = state.sessionBanned.filter((n) => n !== uName);
+          renderTierTable(true);
+          renderInspector();
+          showToast(`${uName} — 임시 제외 복원`);
+          return;
+        }
+        const resetBan = e.target.closest("[data-reset-ban]");
+        if (resetBan) {
+          e.stopPropagation();
+          state.sessionBanned = [];
+          renderTierTable(true);
+          renderInspector();
+          showToast("이번 판 임시 밴 제외를 모두 해제했습니다.");
+          return;
+        }
+        const sampleBtn = e.target.closest("[data-apply-sample]");
+        if (sampleBtn) {
+          e.stopPropagation();
+          document.getElementById("btnSamplePool").click();
+          return;
+        }
         const star = e.target.closest("[data-star]");
         if (star) {
           togglePoolChamp(star.getAttribute("data-star"));
@@ -2545,6 +2947,7 @@
       state.selected = initialList.length ? initialList[0].name : null;
 
       bindEvents();
+      updateMobileFilterButtonLabel();
       renderPoolBar();
       renderTierTable(false);
       renderInspector();
