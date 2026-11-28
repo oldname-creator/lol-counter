@@ -12,7 +12,7 @@ window.BANPICK_DATA.top = {
   "lane": "top",
   "patch": "16.23",
   "tierScope": "EMERALD_PLUS",
-  "tierAvgWinRate": 50.2,
+  "tierAvgWinRate": 50.18,
   "isCollecting": false,
   "updatedAt": "2026-11-28",
   "rosterCutline": {
@@ -50,7 +50,7 @@ window.BANPICK_DATA.top = {
       "lane_trap": "⚠ 초반 압박 주의"
     }
   },
-  "totalPatchMatches": 4688
+  "totalPatchMatches": 4988
 },
   externalChampions: {
   "카르마": {
@@ -96,10 +96,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 49.3,
-      "pr": 3.03,
-      "br": 0.77,
-      "games": 142
+      "wr": 48.98,
+      "pr": 2.95,
+      "br": 0.86,
+      "games": 147
     },
     "patchFlag": {
       "status": null,
@@ -149,7 +149,7 @@ window.BANPICK_DATA.top = {
       },
       "잭스": {
         "wr": 60.0,
-        "delta2": 9.8,
+        "delta2": 10.34,
         "gd15": null,
         "games": 20,
         "patches": 1,
@@ -186,10 +186,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "OP",
     "stats": {
-      "wr": 55.14,
-      "pr": 5.18,
-      "br": 26.11,
-      "games": 243
+      "wr": 54.28,
+      "pr": 5.39,
+      "br": 25.68,
+      "games": 269
     },
     "patchFlag": {
       "status": "meta_up",
@@ -236,7 +236,7 @@ window.BANPICK_DATA.top = {
       },
       "아트록스": {
         "wr": 50.0,
-        "delta2": -2.48,
+        "delta2": -2.41,
         "gd15": null,
         "games": 16,
         "patches": 1,
@@ -244,6 +244,19 @@ window.BANPICK_DATA.top = {
         "firstTower": null,
         "plates": -0.69,
         "soloKill": -0.06,
+        "csAdv": null,
+        "archetype": null
+      },
+      "제이스": {
+        "wr": 26.7,
+        "delta2": -26.82,
+        "gd15": null,
+        "games": 15,
+        "patches": 1,
+        "tip": null,
+        "firstTower": null,
+        "plates": -6.47,
+        "soloKill": -0.87,
         "csAdv": null,
         "archetype": null
       }
@@ -273,10 +286,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": 53.72,
-      "pr": 2.58,
+      "wr": 51.97,
+      "pr": 2.55,
       "br": 0.26,
-      "games": 121
+      "games": 127
     },
     "patchFlag": {
       "status": null,
@@ -305,15 +318,15 @@ window.BANPICK_DATA.top = {
         "archetype": "lane_dominate"
       },
       "잭스": {
-        "wr": 47.4,
-        "delta2": -5.01,
+        "wr": 45.0,
+        "delta2": -6.16,
         "gd15": null,
-        "games": 19,
+        "games": 20,
         "patches": 1,
         "tip": null,
         "firstTower": null,
-        "plates": -0.11,
-        "soloKill": 0.0,
+        "plates": -1.1,
+        "soloKill": -0.15,
         "csAdv": null,
         "archetype": null
       }
@@ -342,10 +355,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "4티어",
     "stats": {
-      "wr": 55.88,
-      "pr": 2.9,
-      "br": 0.79,
-      "games": 136
+      "wr": 54.48,
+      "pr": 2.91,
+      "br": 0.78,
+      "games": 145
     },
     "patchFlag": {
       "status": null,
@@ -388,10 +401,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 53.78,
-      "pr": 5.08,
-      "br": 2.6,
-      "games": 238
+      "wr": 54.0,
+      "pr": 5.01,
+      "br": 2.61,
+      "games": 250
     },
     "patchFlag": {
       "status": "buff",
@@ -417,34 +430,34 @@ window.BANPICK_DATA.top = {
         "archetype": "lane_dominate"
       },
       "제이스": {
-        "wr": 66.7,
-        "delta2": 13.13,
+        "wr": 70.6,
+        "delta2": 17.22,
         "gd15": null,
-        "games": 15,
+        "games": 17,
         "patches": 1,
         "tip": "제이스 해머 Q 진입 타이밍에 E로 거리를 벌리고 메가 나르 타이밍에 반격하세요.",
         "firstTower": null,
-        "plates": -1.27,
-        "soloKill": -0.4,
+        "plates": -0.29,
+        "soloKill": 0.0,
         "csAdv": null,
         "archetype": "lane_dominate"
       },
       "크산테": {
-        "wr": 45.0,
-        "delta2": -6.16,
+        "wr": 45.5,
+        "delta2": -5.7,
         "gd15": null,
-        "games": 20,
+        "games": 22,
         "patches": 1,
         "tip": null,
         "firstTower": null,
-        "plates": -1.2,
-        "soloKill": -0.7,
+        "plates": -1.59,
+        "soloKill": -1.0,
         "csAdv": null,
         "archetype": null
       },
       "요네": {
         "wr": 50.0,
-        "delta2": -2.14,
+        "delta2": -2.18,
         "gd15": null,
         "games": 16,
         "patches": 1,
@@ -480,10 +493,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": 48.72,
-      "pr": 2.5,
-      "br": 2.22,
-      "games": 117
+      "wr": 47.58,
+      "pr": 2.49,
+      "br": 2.15,
+      "games": 124
     },
     "patchFlag": {
       "status": null,
@@ -524,10 +537,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "1티어",
     "stats": {
-      "wr": 49.78,
-      "pr": 4.8,
-      "br": 6.04,
-      "games": 225
+      "wr": 49.0,
+      "pr": 4.99,
+      "br": 6.09,
+      "games": 249
     },
     "patchFlag": {
       "status": "buff",
@@ -558,15 +571,15 @@ window.BANPICK_DATA.top = {
         "archetype": "lane_dominate"
       },
       "크산테": {
-        "wr": 52.6,
-        "delta2": 3.45,
+        "wr": 52.4,
+        "delta2": 3.7,
         "gd15": null,
-        "games": 19,
+        "games": 21,
         "patches": 1,
         "tip": null,
         "firstTower": null,
-        "plates": 3.26,
-        "soloKill": -0.11,
+        "plates": 3.05,
+        "soloKill": -0.29,
         "csAdv": null,
         "archetype": null
       }
@@ -594,10 +607,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "4티어",
     "stats": {
-      "wr": 52.5,
-      "pr": 0.85,
-      "br": 0.53,
-      "games": 40
+      "wr": 53.66,
+      "pr": 0.82,
+      "br": 0.52,
+      "games": 41
     },
     "patchFlag": {
       "status": null,
@@ -636,10 +649,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 38.58,
-      "pr": 2.71,
-      "br": 1.9,
-      "games": 127
+      "wr": 37.31,
+      "pr": 2.69,
+      "br": 1.94,
+      "games": 134
     },
     "patchFlag": {
       "status": null,
@@ -731,10 +744,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "1티어",
     "stats": {
-      "wr": 43.21,
-      "pr": 6.12,
+      "wr": 43.85,
+      "pr": 6.03,
       "br": 4.61,
-      "games": 287
+      "games": 301
     },
     "patchFlag": {
       "status": "meta_up",
@@ -747,21 +760,21 @@ window.BANPICK_DATA.top = {
     "counter": [],
     "matchupStats": {
       "요네": {
-        "wr": 65.4,
-        "delta2": 18.55,
+        "wr": 63.0,
+        "delta2": 15.89,
         "gd15": null,
-        "games": 26,
+        "games": 27,
         "patches": 1,
         "tip": null,
         "firstTower": null,
-        "plates": 2.19,
-        "soloKill": 0.38,
+        "plates": 1.59,
+        "soloKill": 0.37,
         "csAdv": null,
         "archetype": null
       },
       "암베사": {
         "wr": 20.0,
-        "delta2": -25.66,
+        "delta2": -26.27,
         "gd15": null,
         "games": 20,
         "patches": 1,
@@ -773,21 +786,21 @@ window.BANPICK_DATA.top = {
         "archetype": null
       },
       "크산테": {
-        "wr": 37.5,
-        "delta2": -8.37,
+        "wr": 41.2,
+        "delta2": -4.92,
         "gd15": null,
-        "games": 16,
+        "games": 17,
         "patches": 1,
         "tip": null,
         "firstTower": null,
-        "plates": -1.56,
-        "soloKill": -0.31,
+        "plates": -0.59,
+        "soloKill": -0.29,
         "csAdv": null,
         "archetype": null
       },
       "카밀": {
         "wr": 46.7,
-        "delta2": 0.94,
+        "delta2": 1.3,
         "gd15": null,
         "games": 15,
         "patches": 1,
@@ -823,10 +836,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "4티어",
     "stats": {
-      "wr": 65.71,
-      "pr": 0.75,
-      "br": 2.18,
-      "games": 35
+      "wr": 62.16,
+      "pr": 0.74,
+      "br": 2.19,
+      "games": 37
     },
     "patchFlag": {
       "status": null,
@@ -865,10 +878,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 50.0,
-      "pr": 1.45,
-      "br": 0.17,
-      "games": 68
+      "wr": 49.3,
+      "pr": 1.42,
+      "br": 0.16,
+      "games": 71
     },
     "patchFlag": {
       "status": null,
@@ -940,10 +953,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 45.95,
-      "pr": 0.79,
+      "wr": 47.37,
+      "pr": 0.76,
       "br": 1.96,
-      "games": 37
+      "games": 38
     },
     "patchFlag": {
       "status": "meta_up",
@@ -983,10 +996,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "4티어",
     "stats": {
-      "wr": 47.06,
-      "pr": 0.73,
-      "br": 0.13,
-      "games": 34
+      "wr": 44.44,
+      "pr": 0.72,
+      "br": 0.16,
+      "games": 36
     },
     "patchFlag": {
       "status": null,
@@ -1026,10 +1039,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "1티어",
     "stats": {
-      "wr": 52.31,
-      "pr": 5.55,
-      "br": 11.35,
-      "games": 260
+      "wr": 50.7,
+      "pr": 5.69,
+      "br": 11.31,
+      "games": 284
     },
     "patchFlag": {
       "status": "meta_up",
@@ -1063,15 +1076,15 @@ window.BANPICK_DATA.top = {
         "archetype": "lane_dominate"
       },
       "제이스": {
-        "wr": 58.3,
-        "delta2": 5.46,
+        "wr": 61.7,
+        "delta2": 9.97,
         "gd15": null,
-        "games": 34,
+        "games": 37,
         "patches": 2,
         "tip": null,
         "firstTower": null,
-        "plates": 0.46,
-        "soloKill": 0.67,
+        "plates": 1.0,
+        "soloKill": 0.7,
         "csAdv": null,
         "archetype": null
       }
@@ -1099,10 +1112,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "1티어",
     "stats": {
-      "wr": 48.57,
-      "pr": 2.99,
-      "br": 1.02,
-      "games": 140
+      "wr": 49.31,
+      "pr": 2.89,
+      "br": 1.04,
+      "games": 144
     },
     "patchFlag": {
       "status": "meta_up",
@@ -1187,10 +1200,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": 52.83,
-      "pr": 2.26,
-      "br": 0.45,
-      "games": 106
+      "wr": 51.28,
+      "pr": 2.35,
+      "br": 0.44,
+      "games": 117
     },
     "patchFlag": {
       "status": null,
@@ -1249,8 +1262,8 @@ window.BANPICK_DATA.top = {
     "tier": "3티어",
     "stats": {
       "wr": 35.71,
-      "pr": 0.6,
-      "br": 0.87,
+      "pr": 0.56,
+      "br": 0.86,
       "games": 28
     },
     "patchFlag": {
@@ -1291,10 +1304,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": 56.47,
-      "pr": 1.81,
-      "br": 1.88,
-      "games": 85
+      "wr": 56.38,
+      "pr": 1.88,
+      "br": 1.94,
+      "games": 94
     },
     "patchFlag": {
       "status": null,
@@ -1325,7 +1338,7 @@ window.BANPICK_DATA.top = {
       },
       "크산테": {
         "wr": 64.7,
-        "delta2": 12.2,
+        "delta2": 12.32,
         "gd15": null,
         "games": 19,
         "patches": 2,
@@ -1361,10 +1374,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 51.43,
-      "pr": 2.99,
+      "wr": 50.0,
+      "pr": 3.01,
       "br": 1.0,
-      "games": 140
+      "games": 150
     },
     "patchFlag": {
       "status": null,
@@ -1419,10 +1432,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": 41.07,
-      "pr": 1.19,
+      "wr": 41.38,
+      "pr": 1.16,
       "br": 0.3,
-      "games": 56
+      "games": 58
     },
     "patchFlag": {
       "status": null,
@@ -1462,10 +1475,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "1티어",
     "stats": {
-      "wr": 48.39,
-      "pr": 1.32,
+      "wr": 47.69,
+      "pr": 1.3,
       "br": 10.0,
-      "games": 62
+      "games": 65
     },
     "patchFlag": {
       "status": "meta_up",
@@ -1507,10 +1520,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "1티어",
     "stats": {
-      "wr": 53.59,
-      "pr": 3.86,
-      "br": 0.73,
-      "games": 181
+      "wr": 53.89,
+      "pr": 3.87,
+      "br": 0.74,
+      "games": 193
     },
     "patchFlag": {
       "status": "meta_up",
@@ -1531,7 +1544,7 @@ window.BANPICK_DATA.top = {
     "matchupStats": {
       "제이스": {
         "wr": 75.6,
-        "delta2": 22.12,
+        "delta2": 22.27,
         "gd15": null,
         "games": 15,
         "patches": 2,
@@ -1567,10 +1580,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": 47.37,
-      "pr": 1.62,
-      "br": 24.21,
-      "games": 76
+      "wr": 48.78,
+      "pr": 1.64,
+      "br": 24.28,
+      "games": 82
     },
     "patchFlag": {
       "status": null,
@@ -1613,10 +1626,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 44.64,
+      "wr": 47.06,
       "pr": 2.39,
-      "br": 0.53,
-      "games": 112
+      "br": 0.58,
+      "games": 119
     },
     "patchFlag": {
       "status": null,
@@ -1672,10 +1685,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 41.86,
-      "pr": 1.83,
-      "br": 0.13,
-      "games": 86
+      "wr": 40.62,
+      "pr": 1.92,
+      "br": 0.12,
+      "games": 96
     },
     "patchFlag": {
       "status": null,
@@ -1775,10 +1788,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "4티어",
     "stats": {
-      "wr": 64.71,
+      "wr": 66.67,
       "pr": 0.36,
-      "br": 0.85,
-      "games": 17
+      "br": 0.88,
+      "games": 18
     },
     "patchFlag": {
       "status": null,
@@ -1818,10 +1831,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 53.23,
-      "pr": 2.65,
-      "br": 0.9,
-      "games": 124
+      "wr": 53.28,
+      "pr": 2.75,
+      "br": 0.86,
+      "games": 137
     },
     "patchFlag": {
       "status": "meta_up",
@@ -1862,10 +1875,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": 50.57,
-      "pr": 3.75,
-      "br": 19.97,
-      "games": 176
+      "wr": 50.53,
+      "pr": 3.77,
+      "br": 19.93,
+      "games": 188
     },
     "patchFlag": {
       "status": null,
@@ -1880,15 +1893,15 @@ window.BANPICK_DATA.top = {
     ],
     "matchupStats": {
       "요네": {
-        "wr": 73.3,
-        "delta2": 22.76,
+        "wr": 75.0,
+        "delta2": 24.55,
         "gd15": null,
-        "games": 15,
+        "games": 16,
         "patches": 1,
         "tip": null,
         "firstTower": null,
-        "plates": -0.2,
-        "soloKill": 2.47,
+        "plates": 0.38,
+        "soloKill": 2.62,
         "csAdv": null,
         "archetype": null
       }
@@ -1916,10 +1929,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 50.19,
-      "pr": 5.74,
-      "br": 2.69,
-      "games": 269
+      "wr": 49.47,
+      "pr": 5.71,
+      "br": 2.75,
+      "games": 285
     },
     "patchFlag": {
       "status": null,
@@ -1940,7 +1953,7 @@ window.BANPICK_DATA.top = {
     "matchupStats": {
       "갱플랭크": {
         "wr": 50.0,
-        "delta2": 2.48,
+        "delta2": 2.41,
         "gd15": null,
         "games": 16,
         "patches": 1,
@@ -1991,15 +2004,15 @@ window.BANPICK_DATA.top = {
         "archetype": "lane_trap"
       },
       "제이스": {
-        "wr": 50.0,
-        "delta2": -1.77,
+        "wr": 47.1,
+        "delta2": -4.01,
         "gd15": null,
-        "games": 16,
+        "games": 17,
         "patches": 1,
         "tip": null,
         "firstTower": null,
-        "plates": -0.19,
-        "soloKill": 1.12,
+        "plates": -1.18,
+        "soloKill": 0.82,
         "csAdv": null,
         "archetype": null
       }
@@ -2027,10 +2040,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 51.9,
-      "pr": 6.16,
-      "br": 2.84,
-      "games": 289
+      "wr": 51.31,
+      "pr": 6.13,
+      "br": 2.81,
+      "games": 306
     },
     "patchFlag": {
       "status": null,
@@ -2041,7 +2054,9 @@ window.BANPICK_DATA.top = {
       "카밀",
       "크산테"
     ],
-    "counter": [],
+    "counter": [
+      "제이스"
+    ],
     "matchupStats": {
       "아트록스": {
         "wr": 41.2,
@@ -2058,7 +2073,7 @@ window.BANPICK_DATA.top = {
       },
       "레넥톤": {
         "wr": 80.0,
-        "delta2": 25.66,
+        "delta2": 26.27,
         "gd15": null,
         "games": 20,
         "patches": 1,
@@ -2097,7 +2112,7 @@ window.BANPICK_DATA.top = {
       },
       "크산테": {
         "wr": 43.8,
-        "delta2": -6.42,
+        "delta2": -6.05,
         "gd15": null,
         "games": 16,
         "patches": 1,
@@ -2109,21 +2124,21 @@ window.BANPICK_DATA.top = {
         "archetype": null
       },
       "제이스": {
-        "wr": 52.4,
-        "delta2": -0.23,
+        "wr": 47.8,
+        "delta2": -4.24,
         "gd15": null,
-        "games": 21,
+        "games": 23,
         "patches": 1,
         "tip": null,
         "firstTower": null,
-        "plates": -1.76,
-        "soloKill": 0.0,
+        "plates": -2.87,
+        "soloKill": 0.04,
         "csAdv": null,
         "archetype": null
       },
       "요네": {
         "wr": 62.5,
-        "delta2": 11.3,
+        "delta2": 11.66,
         "gd15": null,
         "games": 16,
         "patches": 1,
@@ -2135,15 +2150,15 @@ window.BANPICK_DATA.top = {
         "archetype": null
       },
       "카밀": {
-        "wr": 40.0,
-        "delta2": -10.11,
+        "wr": 35.3,
+        "delta2": -13.83,
         "gd15": null,
-        "games": 15,
+        "games": 17,
         "patches": 1,
         "tip": null,
         "firstTower": null,
-        "plates": 0.33,
-        "soloKill": 0.0,
+        "plates": -0.47,
+        "soloKill": -0.35,
         "csAdv": null,
         "archetype": null
       }
@@ -2172,10 +2187,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": 51.33,
-      "pr": 2.41,
-      "br": 19.71,
-      "games": 113
+      "wr": 51.61,
+      "pr": 2.49,
+      "br": 19.39,
+      "games": 124
     },
     "patchFlag": {
       "status": null,
@@ -2213,10 +2228,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": 57.41,
-      "pr": 1.15,
-      "br": 2.62,
-      "games": 54
+      "wr": 57.38,
+      "pr": 1.22,
+      "br": 2.53,
+      "games": 61
     },
     "patchFlag": {
       "status": null,
@@ -2260,10 +2275,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "4티어",
     "stats": {
-      "wr": 61.7,
-      "pr": 1.0,
-      "br": 4.01,
-      "games": 47
+      "wr": 62.75,
+      "pr": 1.02,
+      "br": 3.97,
+      "games": 51
     },
     "patchFlag": {
       "status": null,
@@ -2305,10 +2320,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "4티어",
     "stats": {
-      "wr": 60.0,
-      "pr": 0.75,
-      "br": 0.68,
-      "games": 35
+      "wr": 63.16,
+      "pr": 0.76,
+      "br": 0.64,
+      "games": 38
     },
     "patchFlag": {
       "status": null,
@@ -2348,10 +2363,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "1티어",
     "stats": {
-      "wr": 46.43,
-      "pr": 2.39,
-      "br": 0.19,
-      "games": 112
+      "wr": 46.61,
+      "pr": 2.37,
+      "br": 0.18,
+      "games": 118
     },
     "patchFlag": {
       "status": "meta_up",
@@ -2420,10 +2435,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "1티어",
     "stats": {
-      "wr": 51.36,
-      "pr": 5.48,
-      "br": 8.94,
-      "games": 257
+      "wr": 52.3,
+      "pr": 5.67,
+      "br": 8.78,
+      "games": 283
     },
     "patchFlag": {
       "status": null,
@@ -2452,21 +2467,21 @@ window.BANPICK_DATA.top = {
         "archetype": "lane_dominate"
       },
       "제이스": {
-        "wr": 56.9,
-        "delta2": 4.54,
+        "wr": 59.1,
+        "delta2": 6.57,
         "gd15": null,
-        "games": 19,
+        "games": 20,
         "patches": 2,
         "tip": null,
         "firstTower": null,
-        "plates": 4.17,
-        "soloKill": 1.33,
+        "plates": 4.68,
+        "soloKill": 1.53,
         "csAdv": null,
         "archetype": null
       },
       "카밀": {
         "wr": 38.9,
-        "delta2": -10.94,
+        "delta2": -10.73,
         "gd15": null,
         "games": 18,
         "patches": 1,
@@ -2478,15 +2493,15 @@ window.BANPICK_DATA.top = {
         "archetype": null
       },
       "잭스": {
-        "wr": 60.0,
-        "delta2": 8.77,
+        "wr": 62.5,
+        "delta2": 11.18,
         "gd15": null,
-        "games": 15,
+        "games": 16,
         "patches": 1,
         "tip": null,
         "firstTower": null,
-        "plates": 1.07,
-        "soloKill": 1.13,
+        "plates": 1.62,
+        "soloKill": 1.31,
         "csAdv": null,
         "archetype": null
       }
@@ -2513,10 +2528,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 49.5,
-      "pr": 8.49,
-      "br": 12.09,
-      "games": 398
+      "wr": 49.64,
+      "pr": 8.28,
+      "br": 12.33,
+      "games": 413
     },
     "patchFlag": {
       "status": null,
@@ -2529,76 +2544,78 @@ window.BANPICK_DATA.top = {
       "암베사",
       "제이스"
     ],
-    "counter": [],
+    "counter": [
+      "잭스"
+    ],
     "matchupStats": {
       "잭스": {
-        "wr": 48.0,
-        "delta2": -2.3,
-        "gd15": null,
-        "games": 25,
-        "patches": 1,
-        "tip": null,
-        "firstTower": null,
-        "plates": -1.6,
-        "soloKill": -1.92,
-        "csAdv": null,
-        "archetype": null
-      },
-      "제이스": {
-        "wr": 43.0,
-        "delta2": -8.43,
-        "gd15": null,
-        "games": 24,
-        "patches": 2,
-        "tip": null,
-        "firstTower": null,
-        "plates": -2.93,
-        "soloKill": -1.05,
-        "csAdv": null,
-        "archetype": null
-      },
-      "레넥톤": {
-        "wr": 34.6,
-        "delta2": -18.54,
+        "wr": 46.2,
+        "delta2": -3.79,
         "gd15": null,
         "games": 26,
         "patches": 1,
         "tip": null,
         "firstTower": null,
-        "plates": -2.19,
-        "soloKill": -0.38,
+        "plates": -1.69,
+        "soloKill": -2.0,
+        "csAdv": null,
+        "archetype": null
+      },
+      "제이스": {
+        "wr": 41.9,
+        "delta2": -9.3,
+        "gd15": null,
+        "games": 27,
+        "patches": 2,
+        "tip": null,
+        "firstTower": null,
+        "plates": -1.98,
+        "soloKill": -0.59,
+        "csAdv": null,
+        "archetype": null
+      },
+      "레넥톤": {
+        "wr": 37.0,
+        "delta2": -15.89,
+        "gd15": null,
+        "games": 27,
+        "patches": 1,
+        "tip": null,
+        "firstTower": null,
+        "plates": -1.59,
+        "soloKill": -0.37,
         "csAdv": null,
         "archetype": null
       },
       "크산테": {
-        "wr": 57.0,
-        "delta2": 7.98,
+        "wr": 53.9,
+        "delta2": 4.88,
         "gd15": null,
-        "games": 18,
+        "games": 19,
         "patches": 2,
         "tip": null,
         "firstTower": null,
-        "plates": 1.71,
-        "soloKill": -0.57,
+        "plates": 1.35,
+        "soloKill": -0.49,
         "csAdv": null,
         "archetype": null
       },
       "아칼리": {
-        "wr": 26.7,
-        "delta2": -22.77,
+        "wr": 25.0,
+        "delta2": -24.55,
         "gd15": null,
-        "games": 15,
+        "games": 16,
         "patches": 1,
         "tip": null,
         "firstTower": null,
-        "plates": 0.2,
-        "soloKill": -2.47,
+        "plates": -0.38,
+        "soloKill": -2.62,
         "csAdv": null,
         "archetype": null
       },
       "암베사": {
         "wr": 37.5,
-        "delta2": -11.3,
+        "delta2": -11.66,
         "gd15": null,
         "games": 16,
         "patches": 1,
@@ -2611,7 +2628,7 @@ window.BANPICK_DATA.top = {
       },
       "이렐리아": {
         "wr": 55.0,
-        "delta2": 4.35,
+        "delta2": 3.85,
         "gd15": null,
         "games": 15,
         "patches": 2,
@@ -2624,7 +2641,7 @@ window.BANPICK_DATA.top = {
       },
       "나르": {
         "wr": 50.0,
-        "delta2": 2.14,
+        "delta2": 2.18,
         "gd15": null,
         "games": 16,
         "patches": 1,
@@ -2658,10 +2675,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 42.98,
-      "pr": 2.43,
-      "br": 3.35,
-      "games": 114
+      "wr": 42.62,
+      "pr": 2.45,
+      "br": 3.39,
+      "games": 122
     },
     "patchFlag": {
       "status": null,
@@ -2730,8 +2747,8 @@ window.BANPICK_DATA.top = {
     "tier": "4티어",
     "stats": {
       "wr": 38.46,
-      "pr": 0.55,
-      "br": 0.13,
+      "pr": 0.52,
+      "br": 0.12,
       "games": 26
     },
     "patchFlag": {
@@ -2773,10 +2790,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 55.93,
+      "wr": 57.14,
       "pr": 1.26,
-      "br": 0.11,
-      "games": 59
+      "br": 0.1,
+      "games": 63
     },
     "patchFlag": {
       "status": "meta_up",
@@ -2814,10 +2831,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 47.83,
-      "pr": 1.47,
-      "br": 0.36,
-      "games": 69
+      "wr": 46.67,
+      "pr": 1.5,
+      "br": 0.42,
+      "games": 75
     },
     "patchFlag": {
       "status": null,
@@ -2858,10 +2875,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "1티어",
     "stats": {
-      "wr": 48.2,
-      "pr": 6.51,
-      "br": 24.0,
-      "games": 305
+      "wr": 47.34,
+      "pr": 6.4,
+      "br": 24.12,
+      "games": 319
     },
     "patchFlag": {
       "status": "meta_up",
@@ -2922,7 +2939,7 @@ window.BANPICK_DATA.top = {
       },
       "제이스": {
         "wr": 52.9,
-        "delta2": 2.12,
+        "delta2": 2.85,
         "gd15": null,
         "games": 17,
         "patches": 1,
@@ -2935,7 +2952,7 @@ window.BANPICK_DATA.top = {
       },
       "요네": {
         "wr": 45.0,
-        "delta2": -4.35,
+        "delta2": -3.85,
         "gd15": null,
         "games": 15,
         "patches": 2,
@@ -2971,10 +2988,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": 55.88,
-      "pr": 1.45,
-      "br": 1.24,
-      "games": 68
+      "wr": 54.79,
+      "pr": 1.46,
+      "br": 1.28,
+      "games": 73
     },
     "patchFlag": {
       "status": null,
@@ -3029,10 +3046,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": 29.17,
-      "pr": 0.51,
-      "br": 0.83,
-      "games": 24
+      "wr": 29.63,
+      "pr": 0.54,
+      "br": 0.82,
+      "games": 27
     },
     "patchFlag": {
       "status": null,
@@ -3073,10 +3090,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "1티어",
     "stats": {
-      "wr": 47.12,
-      "pr": 4.44,
-      "br": 0.6,
-      "games": 208
+      "wr": 47.73,
+      "pr": 4.41,
+      "br": 0.58,
+      "games": 220
     },
     "patchFlag": {
       "status": "meta_up",
@@ -3111,7 +3128,7 @@ window.BANPICK_DATA.top = {
       },
       "크산테": {
         "wr": 66.7,
-        "delta2": 18.88,
+        "delta2": 18.64,
         "gd15": null,
         "games": 15,
         "patches": 1,
@@ -3146,10 +3163,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "1티어",
     "stats": {
-      "wr": 48.91,
-      "pr": 8.81,
-      "br": 18.43,
-      "games": 413
+      "wr": 49.66,
+      "pr": 8.72,
+      "br": 18.42,
+      "games": 435
     },
     "patchFlag": {
       "status": null,
@@ -3157,14 +3174,12 @@ window.BANPICK_DATA.top = {
       "resetHistory": false
     },
     "hard": [
+      "올라프",
       "가렌",
       "피오라",
-      "올라프",
       "크산테"
     ],
-    "counter": [
-      "카밀"
-    ],
+    "counter": [],
     "matchupStats": {
       "신지드": {
         "wr": 33.3,
@@ -3207,7 +3222,7 @@ window.BANPICK_DATA.top = {
       },
       "가렌": {
         "wr": 40.0,
-        "delta2": -9.8,
+        "delta2": -10.34,
         "gd15": null,
         "games": 20,
         "patches": 1,
@@ -3245,34 +3260,34 @@ window.BANPICK_DATA.top = {
         "archetype": "lane_trap"
       },
       "요네": {
-        "wr": 52.0,
-        "delta2": 2.3,
+        "wr": 53.8,
+        "delta2": 3.79,
         "gd15": null,
-        "games": 25,
+        "games": 26,
         "patches": 1,
         "tip": null,
         "firstTower": null,
-        "plates": 1.6,
-        "soloKill": 1.92,
+        "plates": 1.69,
+        "soloKill": 2.0,
         "csAdv": null,
         "archetype": null
       },
       "그라가스": {
-        "wr": 52.6,
-        "delta2": 5.01,
+        "wr": 55.0,
+        "delta2": 6.16,
         "gd15": null,
-        "games": 19,
+        "games": 20,
         "patches": 1,
         "tip": null,
         "firstTower": null,
-        "plates": 0.11,
-        "soloKill": 0.0,
+        "plates": 1.1,
+        "soloKill": 0.15,
         "csAdv": null,
         "archetype": null
       },
       "크산테": {
         "wr": 40.0,
-        "delta2": -8.72,
+        "delta2": -9.02,
         "gd15": null,
         "games": 20,
         "patches": 1,
@@ -3284,47 +3299,47 @@ window.BANPICK_DATA.top = {
         "archetype": null
       },
       "카밀": {
-        "wr": 45.7,
-        "delta2": -2.91,
+        "wr": 48.3,
+        "delta2": -0.01,
         "gd15": null,
-        "games": 21,
+        "games": 22,
         "patches": 2,
         "tip": null,
         "firstTower": null,
-        "plates": 4.3,
-        "soloKill": 0.56,
+        "plates": 4.53,
+        "soloKill": 0.58,
         "csAdv": null,
         "archetype": null
       },
       "제이스": {
-        "wr": 57.1,
-        "delta2": 5.97,
+        "wr": 60.9,
+        "delta2": 9.69,
         "gd15": null,
-        "games": 21,
+        "games": 23,
         "patches": 1,
         "tip": null,
         "firstTower": null,
-        "plates": -0.29,
-        "soloKill": 0.29,
+        "plates": 0.09,
+        "soloKill": 0.04,
         "csAdv": null,
         "archetype": null
       },
       "올라프": {
-        "wr": 40.0,
-        "delta2": -8.77,
+        "wr": 37.5,
+        "delta2": -11.18,
         "gd15": null,
-        "games": 15,
+        "games": 16,
         "patches": 1,
         "tip": null,
         "firstTower": null,
-        "plates": -1.07,
-        "soloKill": -1.13,
+        "plates": -1.62,
+        "soloKill": -1.31,
         "csAdv": null,
         "archetype": null
       },
       "피오라": {
         "wr": 40.0,
-        "delta2": -9.45,
+        "delta2": -9.92,
         "gd15": null,
         "games": 15,
         "patches": 1,
@@ -3359,10 +3374,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": 35.71,
-      "pr": 0.6,
-      "br": 21.35,
-      "games": 28
+      "wr": 38.71,
+      "pr": 0.62,
+      "br": 21.27,
+      "games": 31
     },
     "patchFlag": {
       "status": "nerf",
@@ -3404,10 +3419,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 46.64,
-      "pr": 10.47,
+      "wr": 47.24,
+      "pr": 10.53,
       "br": 25.34,
-      "games": 491
+      "games": 525
     },
     "patchFlag": {
       "status": null,
@@ -3418,16 +3433,17 @@ window.BANPICK_DATA.top = {
       "사이온",
       "나르",
       "크산테",
-      "잭스"
+      "말파이트",
+      "잭스",
+      "올라프"
     ],
     "counter": [
-      "말파이트",
-      "올라프"
+      "이렐리아"
     ],
     "matchupStats": {
       "카밀": {
         "wr": 50.0,
-        "delta2": 2.52,
+        "delta2": 2.9,
         "gd15": null,
         "games": 18,
         "patches": 1,
@@ -3439,21 +3455,21 @@ window.BANPICK_DATA.top = {
         "archetype": "late_turnaround"
       },
       "갱플랭크": {
-        "wr": 39.7,
-        "delta2": null,
+        "wr": 73.3,
+        "delta2": 26.82,
         "gd15": null,
-        "games": null,
+        "games": 15,
         "patches": 1,
         "tip": "초반 평타 사거리로 화약통을 먼저 깨면서 주도권을 잡아야 합니다.",
         "firstTower": null,
-        "plates": null,
-        "soloKill": null,
+        "plates": 6.47,
+        "soloKill": 0.87,
         "csAdv": null,
         "archetype": "late_turnaround"
       },
       "사이온": {
         "wr": 24.4,
-        "delta2": -22.12,
+        "delta2": -22.28,
         "gd15": null,
         "games": 15,
         "patches": 2,
@@ -3465,21 +3481,21 @@ window.BANPICK_DATA.top = {
         "archetype": "late_turnaround"
       },
       "말파이트": {
-        "wr": 41.7,
-        "delta2": -5.46,
+        "wr": 38.3,
+        "delta2": -9.97,
         "gd15": null,
-        "games": 34,
+        "games": 37,
         "patches": 2,
         "tip": "6렙 전까지 말파이트 패시브 보호막을 계속 깨두고 6렙 궁 킬각을 조심하세요.",
         "firstTower": null,
-        "plates": -0.46,
-        "soloKill": -0.67,
+        "plates": -1.0,
+        "soloKill": -0.7,
         "csAdv": null,
         "archetype": "late_turnaround"
       },
       "이렐리아": {
         "wr": 47.1,
-        "delta2": -2.12,
+        "delta2": -2.85,
         "gd15": -830,
         "games": 17,
         "patches": 1,
@@ -3491,21 +3507,21 @@ window.BANPICK_DATA.top = {
         "archetype": "lane_dominate"
       },
       "요네": {
-        "wr": 57.0,
-        "delta2": 8.43,
+        "wr": 58.1,
+        "delta2": 9.3,
         "gd15": null,
-        "games": 24,
+        "games": 27,
         "patches": 2,
         "tip": null,
         "firstTower": null,
-        "plates": 2.93,
-        "soloKill": 1.05,
+        "plates": 1.98,
+        "soloKill": 0.59,
         "csAdv": null,
         "archetype": null
       },
       "크산테": {
         "wr": 36.0,
-        "delta2": -11.59,
+        "delta2": -11.82,
         "gd15": null,
         "games": 25,
         "patches": 1,
@@ -3517,47 +3533,47 @@ window.BANPICK_DATA.top = {
         "archetype": null
       },
       "올라프": {
-        "wr": 43.1,
-        "delta2": -4.54,
+        "wr": 40.9,
+        "delta2": -6.57,
         "gd15": null,
-        "games": 19,
+        "games": 20,
         "patches": 2,
         "tip": null,
         "firstTower": null,
-        "plates": -4.17,
-        "soloKill": -1.33,
+        "plates": -4.68,
+        "soloKill": -1.53,
         "csAdv": null,
         "archetype": null
       },
       "잭스": {
-        "wr": 42.9,
-        "delta2": -5.97,
+        "wr": 39.1,
+        "delta2": -9.69,
         "gd15": null,
-        "games": 21,
+        "games": 23,
         "patches": 1,
         "tip": null,
         "firstTower": null,
-        "plates": 0.29,
-        "soloKill": -0.29,
+        "plates": -0.09,
+        "soloKill": -0.04,
         "csAdv": null,
         "archetype": null
       },
       "암베사": {
-        "wr": 47.6,
-        "delta2": 0.23,
+        "wr": 52.2,
+        "delta2": 4.24,
         "gd15": null,
-        "games": 21,
+        "games": 23,
         "patches": 1,
         "tip": null,
         "firstTower": null,
-        "plates": 1.76,
-        "soloKill": 0.0,
+        "plates": 2.87,
+        "soloKill": -0.04,
         "csAdv": null,
         "archetype": null
       },
       "피오라": {
         "wr": 52.9,
-        "delta2": 4.58,
+        "delta2": 4.19,
         "gd15": null,
         "games": 17,
         "patches": 1,
@@ -3569,28 +3585,28 @@ window.BANPICK_DATA.top = {
         "archetype": null
       },
       "아트록스": {
-        "wr": 50.0,
-        "delta2": 1.77,
+        "wr": 52.9,
+        "delta2": 4.01,
         "gd15": null,
-        "games": 16,
+        "games": 17,
         "patches": 1,
         "tip": null,
         "firstTower": null,
-        "plates": 0.19,
-        "soloKill": -1.12,
+        "plates": 1.18,
+        "soloKill": -0.82,
         "csAdv": null,
         "archetype": null
       },
       "나르": {
-        "wr": 33.3,
-        "delta2": -13.13,
+        "wr": 29.4,
+        "delta2": -17.22,
         "gd15": null,
-        "games": 15,
+        "games": 17,
         "patches": 1,
         "tip": null,
         "firstTower": null,
-        "plates": 1.27,
-        "soloKill": 0.4,
+        "plates": 0.29,
+        "soloKill": 0.0,
         "csAdv": null,
         "archetype": null
       }
@@ -3617,10 +3633,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": 63.83,
-      "pr": 1.0,
-      "br": 0.77,
-      "games": 47
+      "wr": 60.38,
+      "pr": 1.06,
+      "br": 0.8,
+      "games": 53
     },
     "patchFlag": {
       "status": null,
@@ -3661,10 +3677,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "1티어",
     "stats": {
-      "wr": 51.69,
-      "pr": 5.7,
-      "br": 1.43,
-      "games": 267
+      "wr": 53.05,
+      "pr": 5.59,
+      "br": 1.4,
+      "games": 279
     },
     "patchFlag": {
       "status": null,
@@ -3677,21 +3693,21 @@ window.BANPICK_DATA.top = {
     ],
     "matchupStats": {
       "잭스": {
-        "wr": 54.3,
-        "delta2": 2.91,
+        "wr": 51.7,
+        "delta2": 0.01,
         "gd15": null,
-        "games": 21,
+        "games": 22,
         "patches": 2,
         "tip": "카밀 Q2타 고정 피해가 잭스 반격(E)에 막힙니다. 잭스 E가 돌 때 E(갈고리)로 빠지세요.",
         "firstTower": null,
-        "plates": -4.3,
-        "soloKill": -0.56,
+        "plates": -4.53,
+        "soloKill": -0.58,
         "csAdv": null,
         "archetype": "late_turnaround"
       },
       "올라프": {
         "wr": 61.1,
-        "delta2": 10.94,
+        "delta2": 10.73,
         "gd15": null,
         "games": 18,
         "patches": 1,
@@ -3704,7 +3720,7 @@ window.BANPICK_DATA.top = {
       },
       "레넥톤": {
         "wr": 53.3,
-        "delta2": -0.94,
+        "delta2": -1.3,
         "gd15": null,
         "games": 15,
         "patches": 1,
@@ -3717,7 +3733,7 @@ window.BANPICK_DATA.top = {
       },
       "제이스": {
         "wr": 50.0,
-        "delta2": -2.52,
+        "delta2": -2.9,
         "gd15": null,
         "games": 18,
         "patches": 1,
@@ -3729,15 +3745,15 @@ window.BANPICK_DATA.top = {
         "archetype": null
       },
       "암베사": {
-        "wr": 60.0,
-        "delta2": 10.11,
+        "wr": 64.7,
+        "delta2": 13.83,
         "gd15": null,
-        "games": 15,
+        "games": 17,
         "patches": 1,
         "tip": null,
         "firstTower": null,
-        "plates": -0.33,
-        "soloKill": 0.0,
+        "plates": 0.47,
+        "soloKill": 0.35,
         "csAdv": null,
         "archetype": null
       }
@@ -3765,10 +3781,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": 60.0,
-      "pr": 0.75,
-      "br": 2.01,
-      "games": 35
+      "wr": 59.46,
+      "pr": 0.74,
+      "br": 2.0,
+      "games": 37
     },
     "patchFlag": {
       "status": null,
@@ -3807,10 +3823,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 48.48,
-      "pr": 3.52,
-      "br": 2.92,
-      "games": 165
+      "wr": 49.71,
+      "pr": 3.43,
+      "br": 2.99,
+      "games": 171
     },
     "patchFlag": {
       "status": null,
@@ -3850,10 +3866,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 52.78,
-      "pr": 0.77,
-      "br": 0.34,
-      "games": 36
+      "wr": 52.63,
+      "pr": 0.76,
+      "br": 0.32,
+      "games": 38
     },
     "patchFlag": {
       "status": "buff",
@@ -3896,10 +3912,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 56.52,
+      "wr": 59.18,
       "pr": 0.98,
       "br": 0.36,
-      "games": 46
+      "games": 49
     },
     "patchFlag": {
       "status": null,
@@ -3982,10 +3998,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 51.47,
+      "wr": 51.61,
       "pr": 8.7,
-      "br": 5.72,
-      "games": 408
+      "br": 5.69,
+      "games": 434
     },
     "patchFlag": {
       "status": "buff",
@@ -3994,16 +4010,16 @@ window.BANPICK_DATA.top = {
     },
     "hard": [
       "자헨",
-      "베인",
-      "요네"
+      "베인"
     ],
     "counter": [
+      "요네",
       "다리우스"
     ],
     "matchupStats": {
       "암베사": {
         "wr": 56.2,
-        "delta2": 6.42,
+        "delta2": 6.05,
         "gd15": null,
         "games": 16,
         "patches": 1,
@@ -4054,21 +4070,21 @@ window.BANPICK_DATA.top = {
         "archetype": "lane_dominate"
       },
       "나르": {
-        "wr": 55.0,
-        "delta2": 6.16,
+        "wr": 54.5,
+        "delta2": 5.7,
         "gd15": -563,
-        "games": 20,
+        "games": 22,
         "patches": 1,
         "tip": "도란 방패+재바로 버티며 6렙 이후 벽각을 노리세요.",
         "firstTower": null,
-        "plates": 1.2,
-        "soloKill": 0.7,
+        "plates": 1.59,
+        "soloKill": 1.0,
         "csAdv": null,
         "archetype": "lane_dominate"
       },
       "제이스": {
         "wr": 64.0,
-        "delta2": 11.59,
+        "delta2": 11.82,
         "gd15": null,
         "games": 25,
         "patches": 1,
@@ -4081,7 +4097,7 @@ window.BANPICK_DATA.top = {
       },
       "잭스": {
         "wr": 60.0,
-        "delta2": 8.72,
+        "delta2": 9.02,
         "gd15": null,
         "games": 20,
         "patches": 1,
@@ -4093,47 +4109,47 @@ window.BANPICK_DATA.top = {
         "archetype": null
       },
       "레넥톤": {
-        "wr": 62.5,
-        "delta2": 8.37,
+        "wr": 58.8,
+        "delta2": 4.92,
         "gd15": null,
-        "games": 16,
+        "games": 17,
         "patches": 1,
         "tip": null,
         "firstTower": null,
-        "plates": 1.56,
-        "soloKill": 0.31,
+        "plates": 0.59,
+        "soloKill": 0.29,
         "csAdv": null,
         "archetype": null
       },
       "다리우스": {
-        "wr": 47.4,
-        "delta2": -3.45,
+        "wr": 47.6,
+        "delta2": -3.7,
         "gd15": null,
-        "games": 19,
+        "games": 21,
         "patches": 1,
         "tip": null,
         "firstTower": null,
-        "plates": -3.26,
-        "soloKill": 0.11,
+        "plates": -3.05,
+        "soloKill": 0.29,
         "csAdv": null,
         "archetype": null
       },
       "요네": {
-        "wr": 43.0,
-        "delta2": -7.98,
+        "wr": 46.1,
+        "delta2": -4.88,
         "gd15": null,
-        "games": 18,
+        "games": 19,
         "patches": 2,
         "tip": null,
         "firstTower": null,
-        "plates": -1.71,
-        "soloKill": 0.57,
+        "plates": -1.35,
+        "soloKill": 0.49,
         "csAdv": null,
         "archetype": null
       },
       "베인": {
         "wr": 35.3,
-        "delta2": -12.2,
+        "delta2": -12.32,
         "gd15": null,
         "games": 19,
         "patches": 2,
@@ -4146,7 +4162,7 @@ window.BANPICK_DATA.top = {
       },
       "자헨": {
         "wr": 33.3,
-        "delta2": -18.88,
+        "delta2": -18.64,
         "gd15": null,
         "games": 15,
         "patches": 1,
@@ -4181,10 +4197,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": 59.49,
-      "pr": 1.69,
-      "br": 0.58,
-      "games": 79
+      "wr": 59.09,
+      "pr": 1.76,
+      "br": 0.56,
+      "games": 88
     },
     "patchFlag": {
       "status": null,
@@ -4242,10 +4258,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": 36.0,
-      "pr": 0.53,
-      "br": 0.23,
-      "games": 25
+      "wr": 37.04,
+      "pr": 0.54,
+      "br": 0.22,
+      "games": 27
     },
     "patchFlag": {
       "status": null,
@@ -4283,10 +4299,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "3티어",
     "stats": {
-      "wr": 54.05,
-      "pr": 0.79,
-      "br": 0.17,
-      "games": 37
+      "wr": 51.16,
+      "pr": 0.86,
+      "br": 0.16,
+      "games": 43
     },
     "patchFlag": {
       "status": null,
@@ -4324,10 +4340,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 51.47,
-      "pr": 2.9,
-      "br": 1.24,
-      "games": 136
+      "wr": 50.68,
+      "pr": 2.93,
+      "br": 1.2,
+      "games": 146
     },
     "patchFlag": {
       "status": null,
@@ -4384,10 +4400,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "2티어",
     "stats": {
-      "wr": 54.93,
-      "pr": 3.03,
-      "br": 4.33,
-      "games": 142
+      "wr": 54.73,
+      "pr": 2.97,
+      "br": 4.47,
+      "games": 148
     },
     "patchFlag": {
       "status": null,
@@ -4483,10 +4499,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "1티어",
     "stats": {
-      "wr": 53.37,
-      "pr": 4.12,
-      "br": 5.08,
-      "games": 193
+      "wr": 54.31,
+      "pr": 3.95,
+      "br": 4.95,
+      "games": 197
     },
     "patchFlag": {
       "status": null,
@@ -4538,10 +4554,10 @@ window.BANPICK_DATA.top = {
     ],
     "tier": "1티어",
     "stats": {
-      "wr": 50.0,
-      "pr": 5.84,
-      "br": 5.76,
-      "games": 274
+      "wr": 49.82,
+      "pr": 5.67,
+      "br": 5.81,
+      "games": 283
     },
     "patchFlag": {
       "status": null,
@@ -4616,7 +4632,7 @@ window.BANPICK_DATA.top = {
       },
       "제이스": {
         "wr": 47.1,
-        "delta2": -4.58,
+        "delta2": -4.19,
         "gd15": null,
         "games": 17,
         "patches": 1,
@@ -4629,7 +4645,7 @@ window.BANPICK_DATA.top = {
       },
       "잭스": {
         "wr": 60.0,
-        "delta2": 9.45,
+        "delta2": 9.92,
         "gd15": null,
         "games": 15,
         "patches": 1,
@@ -4666,8 +4682,8 @@ window.BANPICK_DATA.top = {
     "tier": "4티어",
     "stats": {
       "wr": 46.67,
-      "pr": 0.96,
-      "br": 1.73,
+      "pr": 0.9,
+      "br": 1.82,
       "games": 45
     },
     "patchFlag": {
