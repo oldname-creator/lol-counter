@@ -1,5 +1,5 @@
 /**
- * BANPICK - 순수 계산 & 분석 엔진 (engine.js v2.4.1)
+ * BANPICK - 순수 계산 & 분석 엔진 (engine.js v2.4.2)
  * - DOM / HTML과 완전히 분리된 순수 연산 모듈 (향후 UI 교체 및 미드·바텀 확장 공용)
  * - 티켓 1 반영: 50:50 평균 합산 폐기 -> 2축 분리 카운터 판정(승률 축 / 라인전 축)
  *   · 승률(+) & 라인전(+) -> 🔥 라인전 압도 (정석 카운터)
@@ -7,7 +7,7 @@
  *   · 승률(-) & 라인전(+) -> ⚠ 초반 압박 주의 (정식 카운터 제외, 주의 섹션 분리)
  */
 window.BANPICK_ENGINE = (function () {
-  const VERSION = "2.4.1";
+  const VERSION = "2.4.2";
 
   const TIER_BASE = { "OP": 95, "1티어": 83, "2티어": 69, "3티어": 55, "4티어": 41, "5티어": 28 };
   const TIER_ORDER = { "OP": 0, "1티어": 1, "2티어": 2, "3티어": 3, "4티어": 4, "5티어": 5 };
@@ -56,12 +56,26 @@ window.BANPICK_ENGINE = (function () {
 
   function scoreToUnifiedTier(score, fallbackTier) {
     if (fallbackTier) return fallbackTier;
-    if (score >= 90) return "OP";
-    if (score >= 78) return "1티어";
-    if (score >= 64) return "2티어";
-    if (score >= 50) return "3티어";
-    if (score >= 36) return "4티어";
+    if (score >= 88) return "OP";
+    if (score >= 74) return "1티어";
+    if (score >= 60) return "2티어";
+    if (score >= 47) return "3티어";
+    if (score >= 38) return "4티어";
     return "5티어";
+  }
+
+  function zNormalizeArray(values) {
+    const n = values.length;
+    if (!n) return [];
+    const mean = values.reduce((a, b) => a + b, 0) / n;
+    let varSum = 0;
+    for (let i = 0; i < n; i++) {
+      const d = values[i] - mean;
+      varSum += d * d;
+    }
+    const std = n > 1 ? Math.sqrt(varSum / (n - 1)) : 0;
+    if (std < 1e-6) return values.map(() => 0);
+    return values.map((v) => (v - mean) / std);
   }
 
   /**
@@ -222,27 +236,60 @@ window.BANPICK_ENGINE = (function () {
       });
     });
 
-    // Pass 1 (v2.4.1 Bug 2 fix): API 실측 기반 최신 티어(effectiveTier)를 먼저 산출하여
-    // 선픽 안정성·후픽 저격력 계산이 구버전 수동 c.tier에 고착되지 않도록 동기화
+    // Pass 1 (v2.4.2): OP.GG·LOL.PS 방식 컴포넌트 Z-score 정규화로 실측 티어·메타 점수 산출
+    // - 베이지안 사전 표본 상한 80판으로 완화해 실측 승률 변별력 확보
+    // - 실측 20종 이상일 때 승률(58%)·로그픽률(28%)·로그밴률(14%) 각각 Z-score 표준화 후 재정규화
+    // - 실측 20종 미만(패치 직후)에는 중심화 절대 공식으로 안전 폴백
+    const effectivePrior = Math.min(80, priorGames);
     const apiPrecalc = {};
     const effectiveTierMap = {};
+    const apiEntries = [];
+
     names.forEach((name) => {
       const c = raw[name];
       const stats = c.stats || {};
       if (stats.wr != null && stats.games) {
-        const smoothedWr = +(((stats.wr * stats.games) + (avgWr * priorGames)) / (stats.games + priorGames)).toFixed(2);
+        const smoothedWr = +(((stats.wr * stats.games) + (avgWr * effectivePrior)) / (stats.games + effectivePrior)).toFixed(2);
         const winDelta = smoothedWr - avgWr;
-        const pr = stats.pr || 1.0;
-        const br = stats.br || 0.0;
-        const metaScore = Math.max(15, Math.min(99, +(65 + winDelta * 7.5 + Math.min(12, pr * 0.9) + Math.min(8, br * 0.35)).toFixed(1)));
-        const unifiedTier = scoreToUnifiedTier(metaScore, null);
-        apiPrecalc[name] = { usedApiStats: true, smoothedWr, metaScore, unifiedTier };
-        effectiveTierMap[name] = unifiedTier;
+        const pr = Math.max(0, stats.pr != null ? Number(stats.pr) : 1.0);
+        const br = Math.max(0, stats.br != null ? Number(stats.br) : 0.0);
+        apiEntries.push({
+          name,
+          smoothedWr,
+          winDelta,
+          prLog: Math.log1p(pr),
+          brLog: Math.log1p(br)
+        });
       } else {
         apiPrecalc[name] = { usedApiStats: false, smoothedWr: null, metaScore: null, unifiedTier: c.tier };
         effectiveTierMap[name] = c.tier;
       }
     });
+
+    const usedZScoreTier = apiEntries.length >= 20;
+    if (usedZScoreTier) {
+      const zWr = zNormalizeArray(apiEntries.map((e) => e.winDelta));
+      const zPr = zNormalizeArray(apiEntries.map((e) => e.prLog));
+      const zBr = zNormalizeArray(apiEntries.map((e) => e.brLog));
+      const combined = apiEntries.map((_, i) => (0.58 * zWr[i]) + (0.28 * zPr[i]) + (0.14 * zBr[i]));
+      const zFinal = zNormalizeArray(combined);
+
+      apiEntries.forEach((e, i) => {
+        const metaScore = Math.max(15, Math.min(99, +(60 + zFinal[i] * 18.0).toFixed(1)));
+        const unifiedTier = scoreToUnifiedTier(metaScore, null);
+        apiPrecalc[e.name] = { usedApiStats: true, smoothedWr: e.smoothedWr, metaScore, unifiedTier };
+        effectiveTierMap[e.name] = unifiedTier;
+      });
+    } else {
+      apiEntries.forEach((e) => {
+        const prCenter = e.prLog - 1.35;
+        const brCenter = e.brLog - 1.15;
+        const metaScore = Math.max(15, Math.min(99, +(60 + e.winDelta * 9.0 + prCenter * 7.5 + brCenter * 3.5).toFixed(1)));
+        const unifiedTier = scoreToUnifiedTier(metaScore, null);
+        apiPrecalc[e.name] = { usedApiStats: true, smoothedWr: e.smoothedWr, metaScore, unifiedTier };
+        effectiveTierMap[e.name] = unifiedTier;
+      });
+    }
 
     // Pass 2: 최신 effectiveTierMap 기반으로 선픽·후픽·메타 3축 점수 일괄 산출
     const items = names.map((name) => {
@@ -402,6 +449,7 @@ window.BANPICK_ENGINE = (function () {
 
     const apiSummary = {
       hasAnyApiStats: apiChampCount > 0,
+      usedZScoreTier,
       apiChampCount,
       totalChamps: items.length,
       approxMatches: Math.round(totalChampGames / 2),

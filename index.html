@@ -979,9 +979,9 @@
 
   <div id="toast" class="toast"></div>
 
-  <!-- External Data & Calculation Engine (UI v2.5.0 / Engine v2.4.1) -->
-  <script src="data_top.js?v=2.4.1-20261128"></script>
-  <script src="engine.js?v=2.4.1"></script>
+  <!-- External Data & Calculation Engine (UI v2.5.1 / Engine v2.4.2) -->
+  <script src="data_top.js?v=2.4.1"></script>
+  <script src="engine.js?v=2.4.2"></script>
 
   <script>
     /* =========================================================================
@@ -999,7 +999,7 @@
     const DDRAGON_FALLBACK = "15.22.1";
     const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
-    const UI_VERSION = "2.5.0";
+    const UI_VERSION = "2.5.1";
     const DEFAULT_SORT_BY_MODE = {
       meta: { key: "metaScore", dir: "desc" },
       blind: { key: "blindScore", dir: "desc" },
@@ -1490,7 +1490,7 @@
           </tr>
         `;
         document.getElementById("formulaHint").textContent = apiSum.hasAnyApiStats
-          ? `열 제목 클릭 정렬 · KR 실측 ${apiSum.apiChampCount}/${apiSum.totalChamps}종 반영${sortHint}`
+          ? `열 제목 클릭 정렬 · ${apiSum.usedZScoreTier ? "Z-score 상대 티어" : "KR 실측"} (${apiSum.apiChampCount}/${apiSum.totalChamps}종)${sortHint}`
           : `열 제목 클릭 정렬 · 종합 메타 = 티어 체급 + 패치 변동 + 유틸${sortHint}`;
       } else if (state.mode === "blind") {
         thead.innerHTML = `
@@ -2281,7 +2281,7 @@
     }
 
     async function bootstrap() {
-      const EXPECTED_ENGINE_VER = "2.4.1";
+      const EXPECTED_ENGINE_VER = "2.4.2";
       const err = document.getElementById("errorBanner");
       const topBundle = window.BANPICK_DATA && window.BANPICK_DATA.top;
       if (!topBundle || !topBundle.champions) {
