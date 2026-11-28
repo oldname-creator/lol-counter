@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-BANPICK - KR 솔랭 탑 라인 자동 수집 & 집계기 (scripts/collect_top.py v1.3.0)
+BANPICK - KR 솔랭 탑 라인 자동 수집 & 집계기 (scripts/collect_top.py v1.3.1)
 - 외부 라이브러리(pip install) 없이 Python 3 표준 라이브러리만으로 즉시 실행 가능
 - 기능:
   1) DDragon 최신 패치 버전 조회 및 챔피언 ID <-> 한국어 이름 매핑
@@ -43,8 +43,9 @@ RATE_LIMIT_120S = 95
 
 # 표본 성숙도 기준 (소량 테스트 수집 시 기존 수동 데이터 오염 방지)
 MIN_CHAMP_GAMES_FOR_STATS = 15       # 챔피언 승률/픽률/밴률 반영 최소 판수
-MIN_CHAMP_GAMES_FOR_COUNTERS = 80    # 카운터 목록(hard/counter) 자동 전환 최소 누적 판수
+MIN_CHAMP_GAMES_FOR_COUNTERS = 120   # 카운터 목록(hard/counter) 자동 전환 최소 누적 판수
 MIN_MATCHUP_GAMES = 15               # 개별 1:1 매치업 판정 최소 판수
+MIN_MATURE_MATCHUPS_FOR_COUNTERS = 5 # 자동 카운터 전환 최소 성숙 매치업 수 (1~2개 매치업으로 전체 덮어쓰기 방지)
 MAX_SEEN_IDS_PER_PATCH = 30000       # 패치당 중복 방지 ID 최대 보관 수
 MAX_STORED_PATCHES = 4               # 히스토리 파일에 보관할 최대 패치 수
 
@@ -445,6 +446,7 @@ def aggregate_and_merge(
     min_champ_games: int = MIN_CHAMP_GAMES_FOR_STATS,
     min_counter_champ_games: int = MIN_CHAMP_GAMES_FOR_COUNTERS,
     min_matchup_games: int = MIN_MATCHUP_GAMES,
+    min_mature_matchups: int = MIN_MATURE_MATCHUPS_FOR_COUNTERS,
 ):
     """
     티어표는 최신 패치 단독(표본 부족 시 직전 패치 30% 혼합),
@@ -538,6 +540,7 @@ def aggregate_and_merge(
         existing_ms = c_data.get("matchupStats") or {}
         merged_ms = dict(existing_ms)
         total_c_matchup_games = 0
+        mature_matchup_count = 0
         auto_hard = []
         auto_soft = []
 
@@ -620,6 +623,7 @@ def aggregate_and_merge(
             })
             merged_ms[opp] = prev_entry
             updated_matchups += 1
+            mature_matchup_count += 1
 
             # 상대 우세도(winAxis = -delta2) 기준 카운터 분류
             opp_adv = -delta2
@@ -630,8 +634,12 @@ def aggregate_and_merge(
 
         c_data["matchupStats"] = merged_ms
 
-        # 누적 판수가 충분히 성숙했을 때만 수동 카운터 목록을 API 실측 카운터로 전환
-        if total_c_matchup_games >= min_counter_champ_games and (auto_hard or auto_soft):
+        # 누적 판수와 성숙 매치업 수(5종 이상)가 모두 충분할 때만 수동 카운터를 API 실측 카운터로 전환
+        if (
+            total_c_matchup_games >= min_counter_champ_games
+            and mature_matchup_count >= min_mature_matchups
+            and (auto_hard or auto_soft)
+        ):
             auto_hard.sort(reverse=True)
             auto_soft.sort(reverse=True)
             c_data["hard"] = [name for _, name in auto_hard[:6]]
@@ -738,11 +746,14 @@ def run_self_test(data_js_path: str):
     meta, ext, champs = load_existing_data_js(data_js_path)
     assert len(champs) == 65, f"기대 챔피언 수 65종 불일치: {len(champs)}"
 
-    # 가상 Match-V5 경기 200판 생성 (잭스 vs 가렌, 제이스 vs 이렐리아, 럼블 vs 아트록스 등)
+    # 가상 Match-V5 경기 270판 생성
+    # - 가렌 > 잭스 > 이렐리아 > 가렌 순환 상성(각 전체 승률 50%)으로 Delta2 순수 상성 계산을 실제 검증
+    # - live data_top.js의 카운터가 실전 수집으로 바뀌어도 셀프 테스트가 깨지지 않도록 독립 검증
     fake_history = {"schemaVersion": "1.0", "patches": {}}
     sample_pairs = [
         ("가렌", "잭스", 0.62, 60),
-        ("이렐리아", "제이스", 0.60, 50),
+        ("잭스", "이렐리아", 0.62, 60),
+        ("이렐리아", "가렌", 0.62, 60),
         ("럼블", "아트록스", 0.56, 45),
         ("암베사", "크산테", 0.61, 45),
     ]
@@ -755,7 +766,7 @@ def run_self_test(data_js_path: str):
         {"puuid": "low_act", "inactive": False, "wins": 10, "losses": 10},
         {"puuid": "high_act", "inactive": False, "wins": 120, "losses": 110},
     ]
-    assert pick_active_puuids(mock_entries, 5) == ["high_act", "low_act"], "pick_active_puuids 필터 오류!" 
+    assert pick_active_puuids(mock_entries, 5) == ["high_act", "low_act"], "pick_active_puuids 필터 오류!"
 
     for winner_c, loser_c, win_prob, n_games in sample_pairs:
         for i in range(n_games):
@@ -772,25 +783,28 @@ def run_self_test(data_js_path: str):
             assert ingest_match_into_history(fake_history, rec) is False
             mid += 1
 
-    # 원본 수동 팁 보존 여부 확인
-    orig_tip = champs["잭스"]["matchupStats"]["가렌"]["tip"]
-    assert orig_tip, "기존 잭스 vs 가렌 수동 팁이 비어 있음"
+    # 원본 수동 팁 보존 검증 + 기존 hard 목록 비운 상태에서도 API 자동 카운터 전환이 실제로 작동하는지 검증
+    jax_ms = champs["잭스"].setdefault("matchupStats", {})
+    orig_tip = (jax_ms.get("가렌") or {}).get("tip") or "QA_PRESERVE_TIP"
+    jax_ms.setdefault("가렌", {})["tip"] = orig_tip
+    champs["잭스"]["hard"] = []
 
     new_meta, new_champs, summary = aggregate_and_merge(
         meta, ext, champs, fake_history, meta.get("patch", "26.23"),
-        min_champ_games=10, min_counter_champ_games=30, min_matchup_games=10
+        min_champ_games=10, min_counter_champ_games=30, min_matchup_games=10, min_mature_matchups=2
     )
-    assert summary["totalPatchMatches"] == 200
-    assert new_meta["totalPatchMatches"] == 200
+    assert summary["totalPatchMatches"] == 270
+    assert new_meta["totalPatchMatches"] == 270
     assert new_meta["tierAvgWinRate"] == 50.0, f"avg_wr 왜곡 감지: {new_meta['tierAvgWinRate']}"
-    assert new_champs["잭스"]["stats"]["games"] == 60
+    assert new_champs["잭스"]["stats"]["games"] == 120
     assert new_champs["잭스"]["matchupStats"]["가렌"]["tip"] == orig_tip, "수동 팁 유실!"
     assert new_champs["잭스"]["matchupStats"]["가렌"]["wr"] == 36.7
+    assert new_champs["잭스"]["matchupStats"]["가렌"]["delta2"] == -13.3
     assert new_champs["잭스"]["matchupStats"]["가렌"]["soloKill"] == -1.0
     assert new_champs["잭스"]["matchupStats"]["가렌"]["plates"] == -2.0
     assert "가렌" in new_champs["잭스"]["hard"]
     assert "잭스" not in new_champs["가렌"]["hard"] and "잭스" not in new_champs["가렌"]["counter"]
-    print(f"  [PASS] 200판 가상 집계 · 패치정렬 · 솔킬/채굴 · 평균승률 · 상호충돌방어 검증 완료: {summary}")
+    print(f"  [PASS] 270판 가상 집계 · 패치정렬 · Delta2 자동카운터 · 솔킬/채굴 · 상호충돌방어 검증 완료: {summary}")
 
 
 # ==============================================================================
